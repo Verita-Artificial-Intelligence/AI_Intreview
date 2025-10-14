@@ -197,9 +197,13 @@ const Marketplace = () => {
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="bg-white rounded-xl">
           <DialogHeader>
-            <DialogTitle className="text-2xl" style={{ color: '#2c3e50' }}>Start AI Interview</DialogTitle>
+            <DialogTitle className="text-2xl" style={{ color: '#2c3e50' }}>
+              Start {interviewType === 'audio' ? '🎙️ Voice' : '💬 Text'} Interview
+            </DialogTitle>
             <DialogDescription className="text-gray-600">
-              You're about to start an AI-powered interview with this candidate.
+              {interviewType === 'audio' 
+                ? "You're about to start a voice-based AI interview. Make sure your microphone is working."
+                : "You're about to start a text-based AI interview with this candidate."}
             </DialogDescription>
           </DialogHeader>
           {selectedCandidate && (
@@ -223,6 +227,27 @@ const Marketplace = () => {
                   ))}
                 </div>
               </div>
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Interview Type</p>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setInterviewType('text')}
+                    variant={interviewType === 'text' ? 'default' : 'outline'}
+                    className="flex-1 rounded-lg"
+                    style={interviewType === 'text' ? { background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' } : {}}
+                  >
+                    💬 Text Chat
+                  </Button>
+                  <Button
+                    onClick={() => setInterviewType('audio')}
+                    variant={interviewType === 'audio' ? 'default' : 'outline'}
+                    className="flex-1 rounded-lg"
+                    style={interviewType === 'audio' ? { background: 'linear-gradient(135deg, #48dbfb 0%, #0abde3 100%)' } : {}}
+                  >
+                    🎙️ Voice Call
+                  </Button>
+                </div>
+              </div>
               <div className="flex gap-3 pt-4">
                 <Button
                   onClick={() => setShowDialog(false)}
@@ -237,7 +262,11 @@ const Marketplace = () => {
                   data-testid="confirm-start-interview-button"
                   disabled={startingInterview}
                   className="flex-1 rounded-lg font-medium"
-                  style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+                  style={{ 
+                    background: interviewType === 'audio'
+                      ? 'linear-gradient(135deg, #48dbfb 0%, #0abde3 100%)'
+                      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
+                  }}
                 >
                   {startingInterview ? 'Starting...' : 'Start Interview'}
                 </Button>
