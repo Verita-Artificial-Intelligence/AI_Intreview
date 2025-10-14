@@ -253,12 +253,12 @@ async def get_interview(interview_id: str):
 # ==================== Chat Routes ====================
 
 @api_router.get("/interviews/{interview_id}/messages", response_model=List[ChatMessage])
-async def get_messages(interview_id: str, user_id: str = Depends(get_current_user)):
+async def get_messages(interview_id: str):
     messages = await db.messages.find({"interview_id": interview_id}, {"_id": 0}).sort("timestamp", 1).to_list(1000)
     return [ChatMessage(**parse_from_mongo(m)) for m in messages]
 
 @api_router.post("/chat")
-async def chat(chat_req: ChatRequest, user_id: str = Depends(get_current_user)):
+async def chat(chat_req: ChatRequest):
     # Verify interview exists
     interview = await db.interviews.find_one({"id": chat_req.interview_id})
     if not interview:
