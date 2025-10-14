@@ -8,7 +8,7 @@ import { Users, Briefcase, Clock, CheckCircle } from 'lucide-react';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const Dashboard = ({ user, onLogout }) => {
+const Dashboard = () => {
   const navigate = useNavigate();
   const [interviews, setInterviews] = useState([]);
   const [candidates, setCandidates] = useState([]);
