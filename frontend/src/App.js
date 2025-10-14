@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Marketplace from './pages/Marketplace';
 import InterviewPage from './pages/InterviewPage';
+import AudioInterviewPage from './pages/AudioInterviewPage';
 import '@/App.css';
 
 function App() {
