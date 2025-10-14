@@ -3,6 +3,7 @@ import Dashboard from './pages/Dashboard';
 import Marketplace from './pages/Marketplace';
 import InterviewPage from './pages/InterviewPage';
 import AudioInterviewPage from './pages/AudioInterviewPage';
+import InterviewPrep from './pages/InterviewPrep';
 import '@/App.css';
 
 function App() {
