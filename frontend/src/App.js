@@ -13,6 +13,7 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/interview/:interviewId" element={<InterviewPage />} />
+          <Route path="/audio-interview/:interviewId" element={<AudioInterviewPage />} />
         </Routes>
       </BrowserRouter>
     </div>
