@@ -211,7 +211,7 @@ async def get_candidate(candidate_id: str):
 # ==================== Interview Routes ====================
 
 @api_router.post("/interviews", response_model=Interview)
-async def create_interview(interview_data: InterviewCreate, user_id: str = Depends(get_current_user)):
+async def create_interview(interview_data: InterviewCreate):
     # Get candidate
     candidate = await db.candidates.find_one({"id": interview_data.candidate_id}, {"_id": 0})
     if not candidate:
@@ -239,12 +239,12 @@ async def create_interview(interview_data: InterviewCreate, user_id: str = Depen
     return interview
 
 @api_router.get("/interviews", response_model=List[Interview])
-async def get_interviews(user_id: str = Depends(get_current_user)):
+async def get_interviews():
     interviews = await db.interviews.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
     return [Interview(**parse_from_mongo(i)) for i in interviews]
 
 @api_router.get("/interviews/{interview_id}", response_model=Interview)
-async def get_interview(interview_id: str, user_id: str = Depends(get_current_user)):
+async def get_interview(interview_id: str):
     interview = await db.interviews.find_one({"id": interview_id}, {"_id": 0})
     if not interview:
         raise HTTPException(status_code=404, detail="Interview not found")
