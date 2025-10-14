@@ -326,7 +326,7 @@ Conduct a thorough but efficient interview."""
         raise HTTPException(status_code=500, detail=f"AI service error: {str(e)}")
 
 @api_router.post("/interviews/{interview_id}/complete")
-async def complete_interview(interview_id: str, user_id: str = Depends(get_current_user)):
+async def complete_interview(interview_id: str):
     interview = await db.interviews.find_one({"id": interview_id})
     if not interview:
         raise HTTPException(status_code=404, detail="Interview not found")
