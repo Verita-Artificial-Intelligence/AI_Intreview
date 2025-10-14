@@ -59,11 +59,10 @@ const Marketplace = () => {
         candidate_id: selectedCandidate.id
       });
       
-      // Navigate based on interview type
-      const path = interviewType === 'audio' 
-        ? `/audio-interview/${response.data.id}`
-        : `/interview/${response.data.id}`;
-      navigate(path);
+      // Navigate to prep page with interview type in state
+      navigate(`/interview-prep/${response.data.id}`, { 
+        state: { interviewType }
+      });
     } catch (error) {
       console.error('Error starting interview:', error);
       alert('Failed to start interview');
