@@ -180,14 +180,14 @@ async def login(login_data: UserLogin):
 # ==================== Candidate Routes ====================
 
 @api_router.post("/candidates", response_model=Candidate)
-async def create_candidate(candidate_data: CandidateCreate, user_id: str = Depends(get_current_user)):
+async def create_candidate(candidate_data: CandidateCreate):
     candidate = Candidate(**candidate_data.model_dump())
     doc = prepare_for_mongo(candidate.model_dump())
     await db.candidates.insert_one(doc)
     return candidate
 
 @api_router.get("/candidates", response_model=List[Candidate])
-async def get_candidates(search: Optional[str] = None, user_id: str = Depends(get_current_user)):
+async def get_candidates(search: Optional[str] = None):
     query = {}
     if search:
         query = {
@@ -202,7 +202,7 @@ async def get_candidates(search: Optional[str] = None, user_id: str = Depends(ge
     return [Candidate(**parse_from_mongo(c)) for c in candidates]
 
 @api_router.get("/candidates/{candidate_id}", response_model=Candidate)
-async def get_candidate(candidate_id: str, user_id: str = Depends(get_current_user)):
+async def get_candidate(candidate_id: str):
     candidate = await db.candidates.find_one({"id": candidate_id}, {"_id": 0})
     if not candidate:
         raise HTTPException(status_code=404, detail="Candidate not found")
