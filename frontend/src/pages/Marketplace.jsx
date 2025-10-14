@@ -18,6 +18,7 @@ const Marketplace = () => {
   const [loading, setLoading] = useState(true);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [showDialog, setShowDialog] = useState(false);
+  const [interviewType, setInterviewType] = useState('text'); // 'text' or 'audio'
   const [startingInterview, setStartingInterview] = useState(false);
 
   useEffect(() => {
