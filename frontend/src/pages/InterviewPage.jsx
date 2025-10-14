@@ -9,7 +9,7 @@ import { Send, ArrowLeft, CheckCircle } from 'lucide-react';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const InterviewPage = ({ user, onLogout }) => {
+const InterviewPage = () => {
   const { interviewId } = useParams();
   const navigate = useNavigate();
   const [interview, setInterview] = useState(null);
