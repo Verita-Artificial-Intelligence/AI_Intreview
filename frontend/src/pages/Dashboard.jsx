@@ -67,7 +67,7 @@ const Dashboard = () => {
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold" style={{ color: '#2c3e50' }}>AI Interviewer</h1>
-            <p className="text-sm text-gray-600">Welcome back, {user.username}</p>
+            <p className="text-sm text-gray-600">Scale your hiring with AI-powered interviews</p>
           </div>
           <div className="flex gap-3">
             <Button
@@ -77,13 +77,6 @@ const Dashboard = () => {
               style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
             >
               Browse Candidates
-            </Button>
-            <Button
-              onClick={onLogout}
-              variant="outline"
-              className="rounded-lg border-gray-300"
-            >
-              Logout
             </Button>
           </div>
         </div>
