@@ -31,6 +31,10 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 JWT_SECRET = os.environ.get('JWT_SECRET', 'default_secret_key')
 EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY')
+ELEVENLABS_API_KEY = os.environ.get('ELEVENLABS_API_KEY')
+
+# Initialize ElevenLabs client
+eleven_client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
 
 # Create the main app without a prefix
 app = FastAPI()
