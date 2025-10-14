@@ -395,6 +395,89 @@ async def complete_interview(interview_id: str):
         )
         return {"message": "Interview completed"}
 
+# ==================== Audio Routes ====================
+
+@api_router.post("/audio/tts", response_model=TTSResponse)
+async def generate_tts(request: TTSRequest):
+    """Generate text-to-speech audio using ElevenLabs"""
+    try:
+        # Generate audio using ElevenLabs
+        audio_generator = eleven_client.text_to_speech.convert(
+            text=request.text,
+            voice_id=request.voice_id,
+            model_id="eleven_multilingual_v2",
+            voice_settings=VoiceSettings(
+                stability=request.stability,
+                similarity_boost=request.similarity_boost
+            )
+        )
+        
+        # Collect audio data
+        audio_data = b""
+        for chunk in audio_generator:
+            audio_data += chunk
+        
+        # Convert to base64 for transfer
+        audio_b64 = base64.b64encode(audio_data).decode()
+        
+        # Create response
+        tts_response = TTSResponse(
+            audio_url=f"data:audio/mpeg;base64,{audio_b64}",
+            text=request.text,
+            voice_id=request.voice_id
+        )
+        
+        return tts_response
+        
+    except Exception as e:
+        logging.error(f"Error generating TTS: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating TTS: {str(e)}")
+
+@api_router.post("/audio/stt", response_model=STTResponse)
+async def transcribe_audio(audio_file: UploadFile = File(...)):
+    """Transcribe audio file to text using ElevenLabs Speech-to-Text"""
+    try:
+        # Read uploaded audio file
+        audio_content = await audio_file.read()
+        
+        # Transcribe using ElevenLabs Speech-to-Text
+        transcription_response = eleven_client.speech_to_text.convert(
+            file=io.BytesIO(audio_content),
+            model_id="scribe_v1"
+        )
+        
+        # Extract text
+        transcribed_text = transcription_response.text if hasattr(transcription_response, 'text') else str(transcription_response)
+        
+        # Create response
+        stt_response = STTResponse(
+            transcribed_text=transcribed_text,
+            filename=audio_file.filename or "unknown.audio"
+        )
+        
+        return stt_response
+        
+    except Exception as e:
+        logging.error(f"Error transcribing audio: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error transcribing audio: {str(e)}")
+
+@api_router.get("/audio/voices")
+async def get_voices():
+    """Get available ElevenLabs voices"""
+    try:
+        voices_response = eleven_client.voices.get_all()
+        voices = []
+        for voice in voices_response.voices:
+            voices.append({
+                "voice_id": voice.voice_id,
+                "name": voice.name,
+                "category": voice.category if hasattr(voice, 'category') else 'general'
+            })
+        return {"voices": voices}
+    except Exception as e:
+        logging.error(f"Error fetching voices: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error fetching voices: {str(e)}")
+
 # ==================== Root Routes ====================
 
 @api_router.get("/")
