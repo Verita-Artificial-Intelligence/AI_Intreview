@@ -10,7 +10,7 @@ import { Search, Briefcase, Mail, Award } from 'lucide-react';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const Marketplace = ({ user, onLogout }) => {
+const Marketplace = () => {
   const navigate = useNavigate();
   const [candidates, setCandidates] = useState([]);
   const [filteredCandidates, setFilteredCandidates] = useState([]);
