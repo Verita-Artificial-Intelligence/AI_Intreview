@@ -83,13 +83,6 @@ const Marketplace = () => {
             >
               Dashboard
             </Button>
-            <Button
-              onClick={onLogout}
-              variant="outline"
-              className="rounded-lg border-gray-300"
-            >
-              Logout
-            </Button>
           </div>
         </div>
       </div>
