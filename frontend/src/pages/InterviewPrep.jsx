@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -11,23 +11,20 @@ const API = `${BACKEND_URL}/api`;
 const InterviewPrep = () => {
   const { interviewId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [interview, setInterview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [cameraPermission, setCameraPermission] = useState(false);
   const [micPermission, setMicPermission] = useState(false);
   const [testingMic, setTestingMic] = useState(false);
   const [testingSpeaker, setTestingSpeaker] = useState(false);
-  const [interviewType, setInterviewType] = useState('text'); // from URL or state
+  const [interviewType, setInterviewType] = useState(location.state?.interviewType || 'text');
   
   const videoRef = useRef(null);
   const audioContextRef = useRef(null);
 
   useEffect(() => {
     fetchInterview();
-    // Check if this is audio interview from URL
-    if (window.location.pathname.includes('audio-interview')) {
-      setInterviewType('audio');
-    }
   }, [interviewId]);
 
   const fetchInterview = async () => {
