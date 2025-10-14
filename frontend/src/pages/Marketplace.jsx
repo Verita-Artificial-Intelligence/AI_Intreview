@@ -58,7 +58,12 @@ const Marketplace = () => {
       const response = await axios.post(`${API}/interviews`, {
         candidate_id: selectedCandidate.id
       });
-      navigate(`/interview/${response.data.id}`);
+      
+      // Navigate based on interview type
+      const path = interviewType === 'audio' 
+        ? `/audio-interview/${response.data.id}`
+        : `/interview/${response.data.id}`;
+      navigate(path);
     } catch (error) {
       console.error('Error starting interview:', error);
       alert('Failed to start interview');
