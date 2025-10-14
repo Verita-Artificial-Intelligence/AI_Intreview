@@ -42,11 +42,6 @@ app = FastAPI()
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
-# Initialize OpenAI Realtime for audio
-realtime_chat = OpenAIChatRealtime(api_key=EMERGENT_LLM_KEY)
-realtime_router = APIRouter()
-OpenAIChatRealtime.register_openai_realtime_router(realtime_router, realtime_chat)
-
 # ==================== Models ====================
 
 class User(BaseModel):
