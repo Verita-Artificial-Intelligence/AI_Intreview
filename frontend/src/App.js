@@ -4,6 +4,7 @@ import Marketplace from './pages/Marketplace';
 import InterviewPage from './pages/InterviewPage';
 import AudioInterviewPage from './pages/AudioInterviewPage';
 import InterviewPrep from './pages/InterviewPrep';
+import AdminInterviewReview from './pages/AdminInterviewReview';
 import '@/App.css';
 
 function App() {
