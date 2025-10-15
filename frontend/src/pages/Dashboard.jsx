@@ -150,10 +150,22 @@ const Dashboard = () => {
                       Continue Interview
                     </Button>
                   )}
-                  {interview.status === 'completed' && interview.summary && (
-                    <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                      <p className="text-xs text-gray-700 line-clamp-3">{interview.summary}</p>
-                    </div>
+                  {interview.status === 'completed' && (
+                    <>
+                      {interview.summary && (
+                        <div className="mt-3 p-3 bg-gray-50 rounded-lg mb-3">
+                          <p className="text-xs text-gray-700 line-clamp-3">{interview.summary}</p>
+                        </div>
+                      )}
+                      <Button
+                        onClick={() => navigate(`/admin/review/${interview.id}`)}
+                        data-testid={`view-results-${interview.id}`}
+                        className="w-full rounded-lg font-medium"
+                        style={{ background: 'linear-gradient(135deg, #48dbfb 0%, #0abde3 100%)' }}
+                      >
+                        View Detailed Results
+                      </Button>
+                    </>
                   )}
                 </Card>
               ))}
