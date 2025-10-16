@@ -240,6 +240,7 @@ const InterviewPrep = () => {
                   <video
                     ref={videoRef}
                     autoPlay
+                    playsInline
                     muted
                     className="w-full h-full object-cover"
                   />
@@ -247,9 +248,10 @@ const InterviewPrep = () => {
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
                     <Video className="w-16 h-16 mb-4 opacity-50" />
                     <p className="text-xl font-semibold mb-2">Camera permission required</p>
-                    <p className="text-sm mb-4 opacity-75">You must enable camera access before joining the AI interview</p>
+                    <p className="text-sm mb-4 opacity-75 max-w-md text-center px-4">Enable camera access to verify your setup before the interview</p>
                     <Button
                       onClick={requestCameraPermission}
+                      data-testid="enable-camera-button"
                       className="rounded-lg font-medium"
                       style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
                     >
