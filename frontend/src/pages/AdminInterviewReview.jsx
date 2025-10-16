@@ -245,6 +245,21 @@ const AdminInterviewReview = () => {
               </div>
             </Card>
 
+            {/* Key Insights */}
+            {analysis?.key_insights && analysis.key_insights.length > 0 && (
+              <Card className="p-6 bg-white rounded-xl border-0 shadow-md">
+                <h3 className="text-lg font-bold mb-4" style={{ color: '#2c3e50' }}>Key Insights</h3>
+                <ul className="space-y-2">
+                  {analysis.key_insights.map((insight, index) => (
+                    <li key={index} className="flex gap-2 text-sm text-gray-700">
+                      <span className="text-blue-600 mt-1">💡</span>
+                      <span>{insight}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )}
+
             {/* Strengths & Improvements */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="p-6 bg-white rounded-xl border-0 shadow-md">
@@ -277,6 +292,99 @@ const AdminInterviewReview = () => {
                 </ul>
               </Card>
             </div>
+
+            {/* Standout Moments & Red Flags */}
+            {(analysis?.standout_moments?.length > 0 || analysis?.red_flags?.length > 0) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {analysis.standout_moments?.length > 0 && (
+                  <Card className="p-6 bg-white rounded-xl border-0 shadow-md">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Star className="w-5 h-5 text-yellow-500" />
+                      <h3 className="font-bold text-lg" style={{ color: '#2c3e50' }}>Standout Moments</h3>
+                    </div>
+                    <ul className="space-y-2">
+                      {analysis.standout_moments.map((moment, index) => (
+                        <li key={index} className="flex gap-2 text-sm text-gray-700">
+                          <span className="text-yellow-500 mt-1">⭐</span>
+                          <span>{moment}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Card>
+                )}
+                
+                {analysis?.red_flags?.length > 0 && (
+                  <Card className="p-6 bg-white rounded-xl border-0 shadow-md">
+                    <div className="flex items-center gap-2 mb-4">
+                      <XCircle className="w-5 h-5 text-red-600" />
+                      <h3 className="font-bold text-lg" style={{ color: '#2c3e50' }}>Red Flags</h3>
+                    </div>
+                    <ul className="space-y-2">
+                      {analysis.red_flags.map((flag, index) => (
+                        <li key={index} className="flex gap-2 text-sm text-gray-700">
+                          <span className="text-red-600 mt-1">⚠️</span>
+                          <span>{flag}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Card>
+                )}
+              </div>
+            )}
+
+            {/* Communication & Technical Assessment */}
+            {(analysis?.communication_assessment || analysis?.technical_depth || analysis?.problem_solving) && (
+              <Card className="p-6 bg-white rounded-xl border-0 shadow-md">
+                <h3 className="text-lg font-bold mb-4" style={{ color: '#2c3e50' }}>Detailed Assessment</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {analysis?.communication_assessment && (
+                    <div>
+                      <p className="font-semibold text-gray-900 mb-2">Communication</p>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Clarity:</span>
+                          <span className="font-medium">{analysis.communication_assessment.clarity_score}/10</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Articulation:</span>
+                          <span className="font-medium">{analysis.communication_assessment.articulation_score}/10</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Confidence:</span>
+                          <span className="font-medium">{analysis.communication_assessment.confidence_score}/10</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {analysis?.technical_depth && (
+                    <div>
+                      <p className="font-semibold text-gray-900 mb-2">Technical Depth</p>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between mb-2">
+                          <span className="text-gray-600">Score:</span>
+                          <span className="font-medium">{analysis.technical_depth.score}/10</span>
+                        </div>
+                        <p className="text-gray-700">{analysis.technical_depth.notes}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {analysis?.problem_solving && (
+                    <div>
+                      <p className="font-semibold text-gray-900 mb-2">Problem Solving</p>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between mb-2">
+                          <span className="text-gray-600">Score:</span>
+                          <span className="font-medium">{analysis.problem_solving.score}/10</span>
+                        </div>
+                        <p className="text-gray-700">{analysis.problem_solving.approach}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            )}
 
             {/* Recommendation */}
             <Card className="p-6 bg-white rounded-xl border-0 shadow-md">
