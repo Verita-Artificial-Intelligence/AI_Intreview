@@ -25,6 +25,14 @@ const InterviewPrep = () => {
 
   useEffect(() => {
     fetchInterview();
+    
+    // Cleanup camera stream on unmount
+    return () => {
+      if (videoRef.current && videoRef.current.srcObject) {
+        const tracks = videoRef.current.srcObject.getTracks();
+        tracks.forEach(track => track.stop());
+      }
+    };
   }, [interviewId]);
 
   const fetchInterview = async () => {
