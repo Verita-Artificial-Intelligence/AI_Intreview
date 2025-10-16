@@ -12,7 +12,37 @@ import uuid
 from datetime import datetime, timezone, timedelta
 import jwt
 from passlib.context import CryptContext
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+# In-memory fallback database for local development
+try:  # pragma: no cover - import guarded for production
+    from .in_memory_db import InMemoryDatabase, InMemoryMongoClient
+except ImportError:  # pragma: no cover - relative import fallback when running as script
+    from in_memory_db import InMemoryDatabase, InMemoryMongoClient
+
+try:
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+except ImportError:  # pragma: no cover - allow local testing without the package
+    class UserMessage:
+        def __init__(self, text: str):
+            self.text = text
+
+    class LlmChat:
+        def __init__(self, api_key=None, session_id=None, system_message=None):
+            self.api_key = api_key
+            self.session_id = session_id
+            self.system_message = system_message
+            self._provider = None
+            self._model = None
+
+        def with_model(self, provider: str, model: str):
+            self._provider = provider
+            self._model = model
+            return self
+
+        async def send_message(self, user_message: UserMessage):
+            return (
+                "[Test Mode] AI response stub. Configure emergentintegrations for real responses."
+            )
+
 from openai import AsyncOpenAI
 import base64
 import io
@@ -21,9 +51,16 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+USE_IN_MEMORY_DB = os.environ.get("USE_IN_MEMORY_DB", "false").lower() == "true"
+
+if USE_IN_MEMORY_DB:
+    in_memory_db = InMemoryDatabase()
+    client = InMemoryMongoClient(in_memory_db)
+    db = in_memory_db
+else:
+    mongo_url = os.environ['MONGO_URL']
+    client = AsyncIOMotorClient(mongo_url)
+    db = client[os.environ['DB_NAME']]
 
 # Security
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -783,4 +820,5 @@ logger = logging.getLogger(__name__)
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
-    client.close()
+    if not USE_IN_MEMORY_DB:
+        client.close()
