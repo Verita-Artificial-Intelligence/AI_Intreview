@@ -129,11 +129,38 @@ const InterviewPrep = () => {
     }
   };
 
-  const testSpeakers = () => {
+  const testSpeakers = async () => {
     setTestingSpeaker(true);
-    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBzGH0fPTgjMGHm7A7+OZXRIMO5Xx8LBZGwc+jNn0y4A2BSlxy/Daizsff');
-    audio.play();
-    setTimeout(() => setTestingSpeaker(false), 2000);
+    try {
+      // Create a proper test tone using Web Audio API
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      // Create a pleasant test tone (middle C = 261.63 Hz)
+      oscillator.frequency.value = 440; // A4 note
+      oscillator.type = 'sine';
+      
+      // Fade in and out
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.1);
+      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 1.9);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 2);
+      
+      setTimeout(() => {
+        setTestingSpeaker(false);
+        audioContext.close();
+      }, 2000);
+    } catch (error) {
+      console.error('Error testing speakers:', error);
+      setTestingSpeaker(false);
+      alert('Unable to test speakers. Please check your audio output device.');
+    }
   };
 
   const startInterview = () => {
