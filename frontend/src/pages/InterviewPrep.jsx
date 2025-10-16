@@ -19,6 +19,9 @@ const InterviewPrep = () => {
   const [testingMic, setTestingMic] = useState(false);
   const [testingSpeaker, setTestingSpeaker] = useState(false);
   const [interviewType, setInterviewType] = useState(location.state?.interviewType || 'text');
+  const [audioDevices, setAudioDevices] = useState({ speakers: [], microphones: [] });
+  const [selectedSpeaker, setSelectedSpeaker] = useState('default');
+  const [selectedMicrophone, setSelectedMicrophone] = useState('default');
   
   const videoRef = useRef(null);
   const audioContextRef = useRef(null);
