@@ -13,8 +13,7 @@ from datetime import datetime, timezone, timedelta
 import jwt
 from passlib.context import CryptContext
 from emergentintegrations.llm.chat import LlmChat, UserMessage
-from elevenlabs import ElevenLabs
-from elevenlabs.types import VoiceSettings
+from openai import AsyncOpenAI
 import base64
 import io
 
