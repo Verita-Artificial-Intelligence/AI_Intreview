@@ -333,42 +333,69 @@ const InterviewPrep = () => {
             <Card className="p-6 bg-white rounded-xl border-0 shadow-md">
               <h3 className="text-lg font-bold mb-4" style={{ color: '#2c3e50' }}>Audio Setup</h3>
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
+                {/* Microphone Selection */}
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3 mb-3">
                     <Mic className="w-5 h-5 text-gray-600" />
-                    <div>
-                      <p className="font-medium text-gray-900">Microphone</p>
-                      <p className="text-sm text-gray-600">Default Microphone</p>
-                    </div>
+                    <p className="font-medium text-gray-900">Microphone</p>
                   </div>
+                  <select
+                    value={selectedMicrophone}
+                    onChange={(e) => setSelectedMicrophone(e.target.value)}
+                    className="w-full mb-3 p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    data-testid="microphone-select"
+                  >
+                    {audioDevices.microphones.map((mic) => (
+                      <option key={mic.deviceId} value={mic.deviceId}>
+                        {mic.label || 'Microphone ' + mic.deviceId.slice(0, 8)}
+                      </option>
+                    ))}
+                  </select>
                   <Button
                     onClick={micPermission ? testMicrophone : requestMicPermission}
                     variant="outline"
                     size="sm"
                     disabled={testingMic}
-                    className="rounded-lg"
+                    className="rounded-lg w-full"
+                    data-testid="test-microphone-button"
                   >
-                    {testingMic ? 'Testing...' : micPermission ? 'Test mic' : 'Enable'}
+                    {testingMic ? 'Testing...' : micPermission ? 'Test Microphone' : 'Enable Microphone'}
                   </Button>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
+                {/* Speaker Selection */}
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3 mb-3">
                     <Volume2 className="w-5 h-5 text-gray-600" />
-                    <div>
-                      <p className="font-medium text-gray-900">Speakers</p>
-                      <p className="text-sm text-gray-600">Default Speakers</p>
-                    </div>
+                    <p className="font-medium text-gray-900">Speakers</p>
                   </div>
+                  <select
+                    value={selectedSpeaker}
+                    onChange={(e) => setSelectedSpeaker(e.target.value)}
+                    className="w-full mb-3 p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    data-testid="speaker-select"
+                  >
+                    {audioDevices.speakers.map((speaker) => (
+                      <option key={speaker.deviceId} value={speaker.deviceId}>
+                        {speaker.label || 'Speaker ' + speaker.deviceId.slice(0, 8)}
+                      </option>
+                    ))}
+                  </select>
                   <Button
                     onClick={testSpeakers}
                     variant="outline"
                     size="sm"
                     disabled={testingSpeaker}
-                    className="rounded-lg"
+                    className="rounded-lg w-full"
+                    data-testid="test-speaker-button"
                   >
-                    {testingSpeaker ? 'Playing...' : 'Play test sound'}
+                    {testingSpeaker ? 'Playing test tone...' : 'Play Test Sound'}
                   </Button>
+                  {testingSpeaker && (
+                    <p className="text-xs text-gray-600 mt-2 text-center">
+                      🔊 You should hear a tone through your selected speakers
+                    </p>
+                  )}
                 </div>
               </div>
             </Card>
