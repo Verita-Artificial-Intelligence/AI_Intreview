@@ -43,6 +43,12 @@ const InterviewPrep = () => {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        // Ensure video plays after stream is set
+        try {
+          await videoRef.current.play();
+        } catch (playError) {
+          console.log('Auto-play prevented, waiting for user interaction');
+        }
       }
       setCameraPermission(true);
     } catch (error) {
