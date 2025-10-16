@@ -219,11 +219,25 @@ const AudioInterviewPage = () => {
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
               </Button>
-              <div>
-                <h1 className="text-xl font-bold" style={{ color: '#2c3e50' }}>
-                  🎙️ Voice Interview with {interview.candidate_name}
-                </h1>
-                <p className="text-sm text-gray-600">{interview.position}</p>
+              <div className="flex items-center gap-4">
+                {persona && (
+                  <div className="flex items-center gap-3 pr-4 border-r border-gray-300">
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
+                      style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+                      {persona.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">{persona.name}</p>
+                      <p className="text-xs text-gray-600">{persona.title}</p>
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <h1 className="text-xl font-bold" style={{ color: '#2c3e50' }}>
+                    Voice Interview with {interview.candidate_name}
+                  </h1>
+                  <p className="text-sm text-gray-600">{interview.position}</p>
+                </div>
               </div>
             </div>
             {interview.status !== 'completed' && (
