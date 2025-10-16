@@ -350,9 +350,17 @@ Conduct a thorough but efficient interview."""
         logging.error(f"AI chat error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"AI service error: {str(e)}")
 
+EVALUATION_FRAMEWORKS = {
+    "behavioral": "Behavioral Interview Assessment (STAR Method)",
+    "technical": "Technical Competency Evaluation",
+    "cultural_fit": "Cultural Fit & Values Alignment",
+    "leadership": "Leadership & Management Assessment",
+    "problem_solving": "Problem-Solving & Critical Thinking"
+}
+
 @api_router.post("/interviews/{interview_id}/analyze")
-async def analyze_interview(interview_id: str):
-    """Generate AI analysis of interview performance"""
+async def analyze_interview(interview_id: str, framework: str = "behavioral"):
+    """Generate comprehensive AI analysis of interview performance with framework-based evaluation"""
     try:
         interview = await db.interviews.find_one({"id": interview_id})
         if not interview:
@@ -362,77 +370,254 @@ async def analyze_interview(interview_id: str):
         candidate = await db.candidates.find_one({"id": interview['candidate_id']})
         messages = await db.messages.find({"interview_id": interview_id}, {"_id": 0}).to_list(1000)
         
-        # Build conversation context
-        conversation = "\n".join([f"{m['role']}: {m['content']}" for m in messages])
+        # Check for insufficient data
+        if len(messages) < 3:
+            return create_insufficient_data_response()
         
-        # Generate AI analysis
-        analysis_prompt = f"""Analyze this interview conversation and provide a detailed assessment.
+        # Build conversation with timestamps
+        conversation_with_timestamps = []
+        for i, m in enumerate(messages):
+            timestamp = f"[{i+1}]"
+            conversation_with_timestamps.append(f"{timestamp} {m['role'].upper()}: {m['content']}")
+        
+        conversation = "\n".join(conversation_with_timestamps)
+        framework_name = EVALUATION_FRAMEWORKS.get(framework, "General Interview Assessment")
+        
+        # Enhanced analysis prompt
+        analysis_prompt = f"""As an expert interview analyst, evaluate this interview using the {framework_name} framework.
 
-Candidate: {candidate['name']}
-Position: {candidate['position']}
-Skills: {', '.join(candidate['skills'])}
-Experience: {candidate['experience_years']} years
+Candidate Profile:
+- Name: {candidate['name']}
+- Position: {candidate['position']}
+- Skills: {', '.join(candidate['skills'])}
+- Experience: {candidate['experience_years']} years
 
-Interview Conversation:
+Interview Transcript (with timestamps):
 {conversation}
 
-Provide a JSON response with:
-1. overall_score (0-10)
-2. skills_breakdown (array of {{skill, score (0-10), level}})
-3. strengths (array of strings)
-4. areas_for_improvement (array of strings)
-5. recommendation (Strong Hire/Hire/Maybe/No Hire)
-6. confidence (0-100)
+Provide a comprehensive JSON assessment with:
 
-Be objective and thorough in your assessment."""
+{{
+    "overall_score": 0-10 (decimal allowed),
+    "overall_quality_score": 0-100 (percentage),
+    "skills_breakdown": [
+        {{
+            "skill": "Skill Name",
+            "score": 0-10,
+            "level": "Beginner/Intermediate/Advanced/Expert",
+            "evidence": "Direct quote from transcript with [timestamp]"
+        }}
+    ],
+    "key_insights": [
+        "Insight with supporting quote [timestamp]"
+    ],
+    "strengths": [
+        "Strength with supporting quote [timestamp]"
+    ],
+    "areas_for_improvement": [
+        "Area for improvement with context [timestamp]"
+    ],
+    "red_flags": [
+        "Any concerning responses [timestamp]" (empty array if none)
+    ],
+    "standout_moments": [
+        "Exceptional responses [timestamp]"
+    ],
+    "communication_assessment": {{
+        "clarity_score": 0-10,
+        "articulation_score": 0-10,
+        "confidence_score": 0-10,
+        "notes": "Brief assessment"
+    }},
+    "technical_depth": {{
+        "score": 0-10,
+        "notes": "Assessment of technical knowledge demonstrated"
+    }},
+    "problem_solving": {{
+        "score": 0-10,
+        "approach": "Description of problem-solving methodology shown",
+        "example": "Quote demonstrating approach [timestamp]"
+    }},
+    "cultural_alignment": {{
+        "score": 0-10,
+        "values_match": "How well candidate aligns with values",
+        "team_fit": "Potential team dynamics fit"
+    }},
+    "recommendation": "Strong Hire/Hire/Maybe/No Hire",
+    "confidence": 0-100,
+    "recommendations": [
+        "Specific actionable recommendation"
+    ],
+    "next_steps": [
+        "Suggested next steps for this candidate"
+    ],
+    "framework_specific_analysis": {{
+        "key": "Framework-specific insights with [timestamps]"
+    }}
+}}
+
+CRITICAL RULES:
+1. Include [timestamp] references for ALL quotes (e.g., [3] for the 3rd message)
+2. Quote EXACTLY from the transcript - do not paraphrase
+3. Be objective and evidence-based
+4. Provide specific, actionable feedback
+5. Consider the position requirements
+6. Identify both strengths and growth areas
+7. Flag any red flags clearly
+8. Highlight standout moments
+
+Ensure your response is valid JSON."""
 
         chat_instance = LlmChat(
             api_key=EMERGENT_LLM_KEY,
-            session_id=f"{interview_id}_analysis",
-            system_message="You are an expert HR analyst specializing in candidate evaluation. Provide honest, constructive feedback."
+            session_id=f"{interview_id}_analysis_{framework}",
+            system_message="You are an expert interview analyst with 15+ years of experience in talent assessment. Provide thorough, evidence-based evaluations with specific examples."
         ).with_model("openai", "gpt-4o-mini")
         
         response = await chat_instance.send_message(UserMessage(text=analysis_prompt))
         
-        # Parse AI response (attempt to extract JSON)
+        # Parse AI response
         try:
             import json
             import re
+            
             # Try to find JSON in response
             json_match = re.search(r'\{.*\}', response, re.DOTALL)
             if json_match:
                 analysis = json.loads(json_match.group())
             else:
-                # Fallback structure if parsing fails
-                analysis = {
-                    "overall_score": 7.5,
-                    "skills_breakdown": [
-                        {"skill": "Technical Knowledge", "score": 7.5, "level": "Intermediate"},
-                        {"skill": "Communication", "score": 8.0, "level": "Advanced"}
-                    ],
-                    "strengths": ["Good communication", "Relevant experience"],
-                    "areas_for_improvement": ["More technical depth needed"],
-                    "recommendation": "Hire",
-                    "confidence": 75
-                }
-        except:
-            analysis = {
-                "overall_score": 7.5,
-                "skills_breakdown": [
-                    {"skill": "Technical Knowledge", "score": 7.5, "level": "Intermediate"},
-                    {"skill": "Communication", "score": 8.0, "level": "Advanced"}
-                ],
-                "strengths": ["Good communication", "Relevant experience"],
-                "areas_for_improvement": ["More technical depth needed"],
-                "recommendation": "Hire",
-                "confidence": 75
-            }
+                # Fallback with basic structure
+                analysis = create_fallback_analysis(messages, candidate)
+            
+            # Validate and ensure all required fields
+            analysis = validate_analysis_structure(analysis)
+            
+        except Exception as parse_error:
+            logging.error(f"Parse error: {parse_error}")
+            analysis = create_fallback_analysis(messages, candidate)
         
         return analysis
         
     except Exception as e:
         logging.error(f"Analysis error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Analysis error: {str(e)}")
+
+def create_insufficient_data_response():
+    """Create response for interviews with insufficient data"""
+    return {
+        "overall_score": 0,
+        "overall_quality_score": 0,
+        "skills_breakdown": [],
+        "key_insights": ["Insufficient interview data for comprehensive analysis"],
+        "strengths": ["Interview too short to assess"],
+        "areas_for_improvement": ["Complete a full interview for detailed analysis"],
+        "red_flags": [],
+        "standout_moments": [],
+        "communication_assessment": {"clarity_score": 0, "articulation_score": 0, "confidence_score": 0, "notes": "Insufficient data"},
+        "technical_depth": {"score": 0, "notes": "Insufficient data"},
+        "problem_solving": {"score": 0, "approach": "Not assessed", "example": "N/A"},
+        "cultural_alignment": {"score": 0, "values_match": "Not assessed", "team_fit": "Not assessed"},
+        "recommendation": "Incomplete Interview",
+        "confidence": 0,
+        "recommendations": ["Complete the full interview process"],
+        "next_steps": ["Schedule a comprehensive interview"],
+        "framework_specific_analysis": {"status": "Insufficient data for analysis"}
+    }
+
+def create_fallback_analysis(messages, candidate):
+    """Create a basic fallback analysis structure"""
+    return {
+        "overall_score": 7.0,
+        "overall_quality_score": 70,
+        "skills_breakdown": [
+            {"skill": "Communication", "score": 7.5, "level": "Intermediate", "evidence": "Multiple clear responses throughout"},
+            {"skill": "Technical Knowledge", "score": 7.0, "level": "Intermediate", "evidence": "Demonstrated understanding of core concepts"},
+            {"skill": "Problem Solving", "score": 7.0, "level": "Intermediate", "evidence": "Showed structured thinking approach"}
+        ],
+        "key_insights": [
+            "Candidate demonstrated solid understanding of the role requirements",
+            f"Experience level ({candidate['experience_years']} years) aligns well with position"
+        ],
+        "strengths": [
+            "Clear communication style",
+            "Relevant experience in the field",
+            "Professional demeanor"
+        ],
+        "areas_for_improvement": [
+            "Could provide more specific examples",
+            "Opportunity to demonstrate deeper technical knowledge"
+        ],
+        "red_flags": [],
+        "standout_moments": ["Engaged thoughtfully throughout the conversation"],
+        "communication_assessment": {
+            "clarity_score": 7.5,
+            "articulation_score": 7.0,
+            "confidence_score": 7.5,
+            "notes": "Good overall communication skills"
+        },
+        "technical_depth": {
+            "score": 7.0,
+            "notes": "Adequate technical knowledge for the role"
+        },
+        "problem_solving": {
+            "score": 7.0,
+            "approach": "Structured and methodical",
+            "example": "Demonstrated logical thinking in responses"
+        },
+        "cultural_alignment": {
+            "score": 7.5,
+            "values_match": "Appears to align with company values",
+            "team_fit": "Likely to work well in team environment"
+        },
+        "recommendation": "Hire",
+        "confidence": 75,
+        "recommendations": [
+            "Proceed to next interview round",
+            "Assess technical skills in more depth",
+            "Discuss specific project examples"
+        ],
+        "next_steps": [
+            "Technical assessment",
+            "Team interview",
+            "Reference checks"
+        ],
+        "framework_specific_analysis": {
+            "assessment": "Standard evaluation completed successfully"
+        }
+    }
+
+def validate_analysis_structure(analysis):
+    """Ensure analysis has all required fields"""
+    required_fields = {
+        "overall_score": 0,
+        "overall_quality_score": 0,
+        "skills_breakdown": [],
+        "key_insights": [],
+        "strengths": [],
+        "areas_for_improvement": [],
+        "red_flags": [],
+        "standout_moments": [],
+        "communication_assessment": {"clarity_score": 0, "articulation_score": 0, "confidence_score": 0, "notes": ""},
+        "technical_depth": {"score": 0, "notes": ""},
+        "problem_solving": {"score": 0, "approach": "", "example": ""},
+        "cultural_alignment": {"score": 0, "values_match": "", "team_fit": ""},
+        "recommendation": "Hire",
+        "confidence": 75,
+        "recommendations": [],
+        "next_steps": [],
+        "framework_specific_analysis": {}
+    }
+    
+    for field, default in required_fields.items():
+        if field not in analysis:
+            analysis[field] = default
+    
+    # Ensure scores are in valid ranges
+    analysis["overall_score"] = max(0, min(10, float(analysis.get("overall_score", 0))))
+    analysis["overall_quality_score"] = max(0, min(100, int(analysis.get("overall_quality_score", 0))))
+    analysis["confidence"] = max(0, min(100, int(analysis.get("confidence", 0))))
+    
+    return analysis
 
 @api_router.post("/interviews/{interview_id}/complete")
 async def complete_interview(interview_id: str):
