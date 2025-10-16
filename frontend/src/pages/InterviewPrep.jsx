@@ -28,6 +28,7 @@ const InterviewPrep = () => {
 
   useEffect(() => {
     fetchInterview();
+    loadAudioDevices();
     
     // Cleanup camera stream on unmount
     return () => {
@@ -37,6 +38,34 @@ const InterviewPrep = () => {
       }
     };
   }, [interviewId]);
+
+  const loadAudioDevices = async () => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const speakers = devices.filter(device => device.kind === 'audiooutput');
+      const microphones = devices.filter(device => device.kind === 'audioinput');
+      
+      setAudioDevices({
+        speakers: speakers.length > 0 ? speakers : [{ deviceId: 'default', label: 'Default Speakers' }],
+        microphones: microphones.length > 0 ? microphones : [{ deviceId: 'default', label: 'Default Microphone' }]
+      });
+      
+      // Set default selections
+      if (speakers.length > 0) {
+        setSelectedSpeaker(speakers[0].deviceId);
+      }
+      if (microphones.length > 0) {
+        setSelectedMicrophone(microphones[0].deviceId);
+      }
+    } catch (error) {
+      console.error('Error loading audio devices:', error);
+      // Fallback to default
+      setAudioDevices({
+        speakers: [{ deviceId: 'default', label: 'Default Speakers' }],
+        microphones: [{ deviceId: 'default', label: 'Default Microphone' }]
+      });
+    }
+  };
 
   const fetchInterview = async () => {
     try {
