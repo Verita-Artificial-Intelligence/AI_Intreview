@@ -674,65 +674,70 @@ async def complete_interview(interview_id: str):
 
 # ==================== Audio Routes ====================
 
-@api_router.post("/audio/tts", response_model=TTSResponse)
+@api_router.get("/audio/persona")
+async def get_interviewer_persona():
+    """Get AI interviewer persona details"""
+    return AI_INTERVIEWER_PERSONA
+
+@api_router.post("/audio/tts")
 async def generate_tts(request: TTSRequest):
-    """Generate text-to-speech audio using ElevenLabs"""
+    """Generate text-to-speech audio using OpenAI TTS"""
     try:
-        # Generate audio using ElevenLabs
-        audio_generator = eleven_client.text_to_speech.convert(
-            text=request.text,
-            voice_id=request.voice_id,
-            model_id="eleven_multilingual_v2",
-            voice_settings=VoiceSettings(
-                stability=request.stability,
-                similarity_boost=request.similarity_boost
-            )
+        # Generate audio using OpenAI TTS
+        response = await openai_client.audio.speech.create(
+            model="tts-1",
+            voice=AI_INTERVIEWER_PERSONA["voice"],  # nova voice
+            input=request.text,
+            response_format="mp3"
         )
         
-        # Collect audio data
+        # Get audio data
         audio_data = b""
-        for chunk in audio_generator:
+        async for chunk in response.iter_bytes():
             audio_data += chunk
         
         # Convert to base64 for transfer
         audio_b64 = base64.b64encode(audio_data).decode()
         
         # Create response
-        tts_response = TTSResponse(
-            audio_url=f"data:audio/mpeg;base64,{audio_b64}",
-            text=request.text,
-            voice_id=request.voice_id
-        )
-        
-        return tts_response
+        return {
+            "audio_url": f"data:audio/mpeg;base64,{audio_b64}",
+            "text": request.text,
+            "voice_id": AI_INTERVIEWER_PERSONA["voice"]
+        }
         
     except Exception as e:
         logging.error(f"Error generating TTS: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error generating TTS: {str(e)}")
 
-@api_router.post("/audio/stt", response_model=STTResponse)
+@api_router.post("/audio/stt")
 async def transcribe_audio(audio_file: UploadFile = File(...)):
-    """Transcribe audio file to text using ElevenLabs Speech-to-Text"""
+    """Transcribe audio file to text using OpenAI Whisper"""
     try:
         # Read uploaded audio file
         audio_content = await audio_file.read()
         
-        # Transcribe using ElevenLabs Speech-to-Text
-        transcription_response = eleven_client.speech_to_text.convert(
-            file=io.BytesIO(audio_content),
-            model_id="scribe_v1"
-        )
+        # Save temporarily
+        temp_file = f"/tmp/{audio_file.filename}"
+        with open(temp_file, "wb") as f:
+            f.write(audio_content)
         
-        # Extract text
-        transcribed_text = transcription_response.text if hasattr(transcription_response, 'text') else str(transcription_response)
+        # Transcribe using OpenAI Whisper
+        with open(temp_file, "rb") as audio:
+            transcription = await openai_client.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio,
+                response_format="text"
+            )
+        
+        # Clean up temp file
+        os.remove(temp_file)
         
         # Create response
-        stt_response = STTResponse(
-            transcribed_text=transcribed_text,
-            filename=audio_file.filename or "unknown.audio"
-        )
-        
-        return stt_response
+        return {
+            "transcribed_text": transcription,
+            "filename": audio_file.filename or "unknown.audio"
+        }
         
     except Exception as e:
         logging.error(f"Error transcribing audio: {str(e)}")
@@ -740,20 +745,17 @@ async def transcribe_audio(audio_file: UploadFile = File(...)):
 
 @api_router.get("/audio/voices")
 async def get_voices():
-    """Get available ElevenLabs voices"""
-    try:
-        voices_response = eleven_client.voices.get_all()
-        voices = []
-        for voice in voices_response.voices:
-            voices.append({
-                "voice_id": voice.voice_id,
-                "name": voice.name,
-                "category": voice.category if hasattr(voice, 'category') else 'general'
-            })
-        return {"voices": voices}
-    except Exception as e:
-        logging.error(f"Error fetching voices: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error fetching voices: {str(e)}")
+    """Get available OpenAI TTS voices"""
+    return {
+        "voices": [
+            {"voice_id": "alloy", "name": "Alloy", "category": "neutral"},
+            {"voice_id": "echo", "name": "Echo", "category": "male"},
+            {"voice_id": "fable", "name": "Fable", "category": "neutral"},
+            {"voice_id": "onyx", "name": "Onyx", "category": "male"},
+            {"voice_id": "nova", "name": "Nova (Dr. Chen)", "category": "female"},
+            {"voice_id": "shimmer", "name": "Shimmer", "category": "female"}
+        ]
+    }
 
 # ==================== Root Routes ====================
 
