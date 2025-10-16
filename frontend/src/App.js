@@ -16,7 +16,6 @@ function App() {
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/interview-prep/:interviewId" element={<InterviewPrep />} />
           <Route path="/interview/:interviewId" element={<InterviewPage />} />
-          <Route path="/audio-interview/:interviewId" element={<AudioInterviewPage />} />
           <Route path="/admin/review/:interviewId" element={<AdminInterviewReview />} />
         </Routes>
       </BrowserRouter>
