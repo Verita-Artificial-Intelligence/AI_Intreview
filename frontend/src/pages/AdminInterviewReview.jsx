@@ -389,7 +389,7 @@ const AdminInterviewReview = () => {
             {/* Recommendation */}
             <Card className="p-6 bg-white rounded-xl border-0 shadow-md">
               <h3 className="text-lg font-bold mb-4" style={{ color: '#2c3e50' }}>Hiring Recommendation</h3>
-              <div className="flex items-center justify-between p-4 rounded-lg"
+              <div className="flex items-center justify-between p-4 rounded-lg mb-4"
                 style={{ background: `${getRecommendationColor(analysis?.recommendation)}15` }}>
                 <div>
                   <p className="text-2xl font-bold mb-1" style={{ color: getRecommendationColor(analysis?.recommendation) }}>
@@ -402,6 +402,34 @@ const AdminInterviewReview = () => {
                   {analysis?.confidence}%
                 </div>
               </div>
+              
+              {analysis?.recommendations && analysis.recommendations.length > 0 && (
+                <div className="pt-4 border-t border-gray-200">
+                  <p className="font-semibold text-gray-900 mb-2">Recommendations:</p>
+                  <ul className="space-y-1">
+                    {analysis.recommendations.map((rec, index) => (
+                      <li key={index} className="text-sm text-gray-700 flex gap-2">
+                        <span className="text-blue-600">→</span>
+                        <span>{rec}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              {analysis?.next_steps && analysis.next_steps.length > 0 && (
+                <div className="pt-4 border-t border-gray-200 mt-4">
+                  <p className="font-semibold text-gray-900 mb-2">Next Steps:</p>
+                  <ul className="space-y-1">
+                    {analysis.next_steps.map((step, index) => (
+                      <li key={index} className="text-sm text-gray-700 flex gap-2">
+                        <span className="text-green-600">✓</span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </Card>
 
             {/* Interview Transcript */}
