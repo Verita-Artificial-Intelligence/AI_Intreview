@@ -160,32 +160,18 @@ const Marketplace = () => {
                   </div>
                 </div>
 
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => {
-                      setSelectedCandidate(candidate);
-                      setInterviewType('text');
-                      setShowDialog(true);
-                    }}
-                    data-testid={`start-text-interview-${candidate.id}`}
-                    className="flex-1 rounded-lg font-medium text-sm"
-                    style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
-                  >
-                    💬 Text
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setSelectedCandidate(candidate);
-                      setInterviewType('audio');
-                      setShowDialog(true);
-                    }}
-                    data-testid={`start-audio-interview-${candidate.id}`}
-                    className="flex-1 rounded-lg font-medium text-sm"
-                    style={{ background: 'linear-gradient(135deg, #48dbfb 0%, #0abde3 100%)' }}
-                  >
-                    🎙️ Voice
-                  </Button>
-                </div>
+                <Button
+                  onClick={() => {
+                    setSelectedCandidate(candidate);
+                    setInterviewType('text');
+                    setShowDialog(true);
+                  }}
+                  data-testid={`start-interview-${candidate.id}`}
+                  className="w-full rounded-lg font-medium"
+                  style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+                >
+                  Start AI Interview
+                </Button>
               </Card>
             ))}
           </div>
