@@ -30,10 +30,19 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 JWT_SECRET = os.environ.get('JWT_SECRET', 'default_secret_key')
 EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY')
-ELEVENLABS_API_KEY = os.environ.get('ELEVENLABS_API_KEY')
 
-# Initialize ElevenLabs client
-eleven_client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
+# Initialize OpenAI client for audio
+openai_client = AsyncOpenAI(api_key=EMERGENT_LLM_KEY)
+
+# AI Interviewer Persona
+AI_INTERVIEWER_PERSONA = {
+    "name": "Dr. Sarah Chen",
+    "title": "Senior Technical Recruiter",
+    "background": "15+ years in tech recruiting with a PhD in Organizational Psychology",
+    "style": "Professional yet warm, focuses on behavioral and technical competencies",
+    "voice": "nova",  # OpenAI TTS voice
+    "traits": ["Empathetic", "Detail-oriented", "Encouraging", "Insightful"]
+}
 
 # Create the main app without a prefix
 app = FastAPI()
