@@ -28,7 +28,17 @@ const AudioInterviewPage = () => {
   useEffect(() => {
     fetchInterview();
     fetchMessages();
+    fetchPersona();
   }, [interviewId]);
+
+  const fetchPersona = async () => {
+    try {
+      const response = await axios.get(`${API}/audio/persona`);
+      setPersona(response.data);
+    } catch (error) {
+      console.error('Error fetching persona:', error);
+    }
+  };
 
   useEffect(() => {
     scrollToBottom();
