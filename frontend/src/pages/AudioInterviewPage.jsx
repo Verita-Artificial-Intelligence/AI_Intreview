@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Mic, MicOff, Volume2, CheckCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Mic, MicOff, Volume2, CheckCircle, Loader2, User } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -12,6 +12,7 @@ const AudioInterviewPage = () => {
   const { interviewId } = useParams();
   const navigate = useNavigate();
   const [interview, setInterview] = useState(null);
+  const [persona, setPersona] = useState(null);
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
