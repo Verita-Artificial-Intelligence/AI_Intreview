@@ -46,32 +46,12 @@ const AdminInterviewReview = () => {
 
   const generateAnalysis = async (msgs, cand) => {
     try {
-      // Call AI to generate skills analysis
-      const response = await axios.post(`${API}/interviews/${interviewId}/analyze`);
+      // Call AI to generate comprehensive analysis
+      const response = await axios.post(`${API}/interviews/${interviewId}/analyze?framework=behavioral`);
       setAnalysis(response.data);
     } catch (error) {
       console.error('Error generating analysis:', error);
-      // Fallback to mock analysis
-      setAnalysis({
-        overall_score: 8.2,
-        skills_breakdown: [
-          { skill: 'Technical Knowledge', score: 8.5, level: 'Advanced' },
-          { skill: 'Problem Solving', score: 8.0, level: 'Advanced' },
-          { skill: 'Communication', score: 8.8, level: 'Expert' },
-          { skill: 'Experience Relevance', score: 7.5, level: 'Intermediate' }
-        ],
-        strengths: [
-          'Strong communication skills and ability to articulate complex concepts',
-          'Demonstrated solid technical knowledge in relevant areas',
-          'Good problem-solving approach with structured thinking'
-        ],
-        areas_for_improvement: [
-          'Could benefit from more hands-on experience with advanced frameworks',
-          'Additional exposure to large-scale system design would be valuable'
-        ],
-        recommendation: 'Strong Hire',
-        confidence: 85
-      });
+      setAnalysis(null);
     }
   };
 
