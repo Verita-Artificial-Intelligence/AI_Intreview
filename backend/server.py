@@ -12,7 +12,6 @@ import uuid
 from datetime import datetime, timezone, timedelta
 import jwt
 from passlib.context import CryptContext
-from emergentintegrations.llm.chat import LlmChat, UserMessage
 from openai import AsyncOpenAI
 import base64
 import io
@@ -29,10 +28,10 @@ db = client[os.environ['DB_NAME']]
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 JWT_SECRET = os.environ.get('JWT_SECRET', 'default_secret_key')
-EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY')
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY') or os.environ.get('EMERGENT_LLM_KEY')
 
 # Initialize OpenAI client for audio
-openai_client = AsyncOpenAI(api_key=EMERGENT_LLM_KEY)
+openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 # AI Interviewer Persona
 AI_INTERVIEWER_PERSONA = {
@@ -314,7 +313,7 @@ async def chat(chat_req: ChatRequest):
         {"_id": 0}
     ).sort("timestamp", 1).to_list(1000)
     
-    # Create AI response using emergentintegrations
+    # Create AI response using OpenAI
     try:
         system_message = f"""You are an experienced AI interviewer conducting an interview for the {candidate['position']} position.
         
@@ -333,16 +332,21 @@ Your role:
         
 Conduct a thorough but efficient interview."""
         
-        # Initialize chat with emergentintegrations
-        chat_instance = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
-            session_id=chat_req.interview_id,
-            system_message=system_message
-        ).with_model("openai", "gpt-4o-mini")
+        messages = [{"role": "system", "content": system_message}]
         
-        # Send message
-        user_message = UserMessage(text=chat_req.message)
-        ai_response = await chat_instance.send_message(user_message)
+        for msg in history:
+            if msg['role'] in ['user', 'assistant']:
+                messages.append({
+                    "role": msg['role'],
+                    "content": msg['content']
+                })
+        
+        completion = await openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages
+        )
+        
+        ai_response = completion.choices[0].message.content
         
         # Save AI response
         ai_msg = ChatMessage(
@@ -476,13 +480,15 @@ CRITICAL RULES:
 
 Ensure your response is valid JSON."""
 
-        chat_instance = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
-            session_id=f"{interview_id}_analysis_{framework}",
-            system_message="You are an expert interview analyst with 15+ years of experience in talent assessment. Provide thorough, evidence-based evaluations with specific examples."
-        ).with_model("openai", "gpt-4o-mini")
+        completion = await openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are an expert interview analyst with 15+ years of experience in talent assessment. Provide thorough, evidence-based evaluations with specific examples."},
+                {"role": "user", "content": analysis_prompt}
+            ]
+        )
         
-        response = await chat_instance.send_message(UserMessage(text=analysis_prompt))
+        response = completion.choices[0].message.content
         
         # Parse AI response
         try:
@@ -638,15 +644,18 @@ async def complete_interview(interview_id: str):
     
     # Generate summary using AI
     try:
-        summary_prompt = "Based on this interview conversation, provide a brief summary of the candidate's performance, strengths, and areas of concern. Keep it under 150 words."
+        conversation = "\n".join([f"{m['role']}: {m['content']}" for m in messages])
+        summary_prompt = f"Based on this interview conversation, provide a brief summary of the candidate's performance, strengths, and areas of concern. Keep it under 150 words.\n\nConversation:\n{conversation}"
         
-        chat_instance = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
-            session_id=f"{interview_id}_summary",
-            system_message="You are an HR assistant analyzing interview transcripts."
-        ).with_model("openai", "gpt-4o-mini")
+        completion = await openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are an HR assistant analyzing interview transcripts."},
+                {"role": "user", "content": summary_prompt}
+            ]
+        )
         
-        summary = await chat_instance.send_message(UserMessage(text=summary_prompt))
+        summary = completion.choices[0].message.content
         
         # Update interview
         await db.interviews.update_one(
@@ -691,10 +700,8 @@ async def generate_tts(request: TTSRequest):
             response_format="mp3"
         )
         
-        # Get audio data
-        audio_data = b""
-        async for chunk in response.iter_bytes():
-            audio_data += chunk
+        # Get audio data - use .read() to get bytes from the response
+        audio_data = response.read()
         
         # Convert to base64 for transfer
         audio_b64 = base64.b64encode(audio_data).decode()
