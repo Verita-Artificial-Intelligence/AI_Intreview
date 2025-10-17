@@ -31,6 +31,17 @@ const AudioInterviewPage = () => {
     fetchPersona();
   }, [interviewId]);
 
+  useEffect(() => {
+    const audio = audioRef.current;
+    
+    return () => {
+      if (audio) {
+        audio.pause();
+        audio.src = '';
+      }
+    };
+  }, []);
+
   const fetchPersona = async () => {
     try {
       const response = await axios.get(`${API}/audio/persona`);
@@ -78,17 +89,31 @@ const AudioInterviewPage = () => {
       setIsPlaying(true);
       const response = await axios.post(`${API}/audio/tts`, {
         text: text,
-        voice_id: '21m00Tcm4TlvDq8ikWAM', // Default professional voice
+        voice_id: '21m00Tcm4TlvDq8ikWAM',
         stability: 0.5,
         similarity_boost: 0.75
       });
 
       audioRef.current.src = response.data.audio_url;
       audioRef.current.onended = () => setIsPlaying(false);
-      await audioRef.current.play();
+      audioRef.current.onerror = (e) => {
+        console.error('Audio playback error:', e);
+        setIsPlaying(false);
+      };
+      
+      try {
+        await audioRef.current.play();
+      } catch (playError) {
+        console.error('Error starting audio playback:', playError);
+        setIsPlaying(false);
+      }
     } catch (error) {
-      console.error('Error playing audio:', error);
+      console.error('Error generating audio:', error);
       setIsPlaying(false);
+      
+      if (error.response?.status === 500) {
+        console.warn('TTS service unavailable, continuing without audio');
+      }
     }
   };
 
