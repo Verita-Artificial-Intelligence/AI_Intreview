@@ -5,6 +5,7 @@ import InterviewPage from './pages/InterviewPage';
 import AudioInterviewPage from './pages/AudioInterviewPage';
 import InterviewPrep from './pages/InterviewPrep';
 import AdminInterviewReview from './pages/AdminInterviewReview';
+import WatercolorMarketplace from './pages/WatercolorMarketplace';
 import '@/App.css';
 
 function App() {
@@ -12,7 +13,8 @@ function App() {
     <div className="App">
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<WatercolorMarketplace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/interview-prep/:interviewId" element={<InterviewPrep />} />
           <Route path="/interview/:interviewId" element={<InterviewPage />} />
