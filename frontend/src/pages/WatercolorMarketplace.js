@@ -165,7 +165,7 @@ export default function WatercolorMarketplaceLanding() {
       const response = await axios.post('http://localhost:8000/api/interviews', {
         candidate_id: candidateId
       });
-      navigate(`/audio-interview/${response.data.id}`);
+      navigate(`/interview-prep/${response.data.id}`);
     } catch (error) {
       console.error('Error starting interview:', error);
     }

@@ -4,6 +4,7 @@ import Marketplace from './pages/Marketplace';
 import InterviewPage from './pages/InterviewPage';
 import AudioInterviewPage from './pages/AudioInterviewPage';
 import InterviewPrep from './pages/InterviewPrep';
+import EnhancedInterviewPrep from './pages/EnhancedInterviewPrep';
 import AdminInterviewReview from './pages/AdminInterviewReview';
 import WatercolorMarketplace from './pages/WatercolorMarketplace';
 import '@/App.css';
@@ -16,7 +17,7 @@ function App() {
           <Route path="/" element={<WatercolorMarketplace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/interview-prep/:interviewId" element={<InterviewPrep />} />
+          <Route path="/interview-prep/:interviewId" element={<EnhancedInterviewPrep />} />
           <Route path="/interview/:interviewId" element={<InterviewPage />} />
           <Route path="/audio-interview/:interviewId" element={<AudioInterviewPage />} />
           <Route path="/admin/review/:interviewId" element={<AdminInterviewReview />} />
