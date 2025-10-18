@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Search, SlidersHorizontal, Sparkles } from "lucide-react";
+import { Search, SlidersHorizontal, Sparkles, Mic, PlayCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 /**
  * Watercolor Marketplace Landing
@@ -122,6 +124,7 @@ const defaultPalettes = {
 export default function WatercolorMarketplaceLanding() {
   const canvasRef = useRef(null);
   const { w, h } = useWindowSize();
+  const navigate = useNavigate();
 
   // Controls
   const [showControls, setShowControls] = useState(false);
@@ -132,11 +135,41 @@ export default function WatercolorMarketplaceLanding() {
   const [paletteName, setPaletteName] = useState("sherbet");
   const [animate, setAnimate] = useState(false);
 
+  // API data
+  const [candidates, setCandidates] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const seed = useMemo(() => {
     // Stable seed from URL hash if present, else random
     const fromHash = typeof window !== "undefined" && window.location.hash.slice(1);
     return fromHash ? parseInt(fromHash, 36) || Math.random() * 1e9 : Math.random() * 1e9;
   }, []);
+
+  // Fetch candidates from backend
+  useEffect(() => {
+    const fetchCandidates = async () => {
+      try {
+        const response = await axios.get('http://localhost:8000/api/candidates');
+        setCandidates(response.data);
+      } catch (error) {
+        console.error('Error fetching candidates:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCandidates();
+  }, []);
+
+  const startInterview = async (candidateId) => {
+    try {
+      const response = await axios.post('http://localhost:8000/api/interviews', {
+        candidate_id: candidateId
+      });
+      navigate(`/audio-interview/${response.data.id}`);
+    } catch (error) {
+      console.error('Error starting interview:', error);
+    }
+  };
 
   // Draw / Re-draw
   useEffect(() => {
@@ -190,13 +223,21 @@ export default function WatercolorMarketplaceLanding() {
 
       {/* Top Bar */}
       <div className="pointer-events-none fixed left-0 right-0 top-0 z-20 flex items-center justify-between px-6 py-4">
-        <div className="pointer-events-auto text-sm italic text-neutral-600 select-none">colors</div>
-        <button
-          onClick={() => setShowControls((s) => !s)}
-          className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-sm text-neutral-700 shadow-sm ring-1 ring-black/5 backdrop-blur hover:bg-white"
-        >
-          <SlidersHorizontal size={16} /> {showControls ? "Hide" : "Show"} Controls
-        </button>
+        <div className="pointer-events-auto text-sm italic text-neutral-600 select-none">creative talent interviews</div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-sm text-neutral-700 shadow-sm ring-1 ring-black/5 backdrop-blur hover:bg-white"
+          >
+            <PlayCircle size={16} /> Dashboard
+          </button>
+          <button
+            onClick={() => setShowControls((s) => !s)}
+            className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-sm text-neutral-700 shadow-sm ring-1 ring-black/5 backdrop-blur hover:bg-white"
+          >
+            <SlidersHorizontal size={16} /> {showControls ? "Hide" : "Show"} Controls
+          </button>
+        </div>
       </div>
 
       {/* Controls Panel */}
@@ -267,10 +308,10 @@ export default function WatercolorMarketplaceLanding() {
           className="mx-auto max-w-3xl text-center"
         >
           <h1 className="text-4xl font-semibold tracking-tight text-neutral-800 md:text-6xl">
-            Find tasteful datasets & talent
+            Discover Creative Talent
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-neutral-700 md:text-lg">
-            A curated marketplace for aesthetic, high-fidelity data and expert annotators. Designed with a soft watercolor vibe to put craft front and center.
+            AI-powered interviews with Elena Rivers, Creative Talent Director. Evaluate artists, designers, and creative professionals through thoughtful, insightful conversations.
           </p>
 
           {/* Search */}
@@ -286,8 +327,8 @@ export default function WatercolorMarketplaceLanding() {
           {/* Category chips */}
           <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
             {[
-              "Music Stems", "Video QA", "Financial Ops", "Compliance AOPs",
-              "UX Studies", "Data Labelers", "Agent Evals", "Customer Support"
+              "Visual Artists", "Designers", "Musicians", "Filmmakers",
+              "Writers", "Animators", "Photographers", "Creative Directors"
             ].map((c) => (
               <span key={c} className="rounded-full bg-white/70 px-3 py-1 text-xs text-neutral-700 shadow-sm ring-1 ring-black/5 backdrop-blur">
                 {c}
@@ -296,43 +337,66 @@ export default function WatercolorMarketplaceLanding() {
           </div>
         </motion.div>
 
-        {/* Featured Grid */}
-        <section className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 8 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.35, delay: i * 0.05 }}
-              className="group rounded-3xl border border-black/5 bg-white/60 p-4 shadow-sm backdrop-blur-md"
+        {/* Featured Candidates */}
+        <section className="mt-12">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-semibold text-neutral-800">Featured Creative Talent</h2>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="text-sm text-neutral-700 hover:text-neutral-900 font-medium"
             >
-              <div className="aspect-[16/10] w-full overflow-hidden rounded-2xl bg-white/60 ring-1 ring-black/5">
-                {/* Faux preview block with watercolor-esque overlay */}
-                <div className="relative h-full w-full">
-                  <div className="absolute inset-0 opacity-70" style={{
-                    background: "radial-gradient(120px 120px at 30% 40%, rgba(255,170,170,.4), rgba(255,255,255,0) 70%),"+
-                                "radial-gradient(160px 160px at 70% 60%, rgba(210,180,255,.35), rgba(255,255,255,0) 70%),"+
-                                "radial-gradient(140px 140px at 45% 75%, rgba(255,230,180,.35), rgba(255,255,255,0) 70%)"}}/>
-                </div>
-              </div>
-              <div className="mt-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-neutral-800">Featured Offer #{i+1}</h3>
-                  <span className="rounded-full bg-black/80 px-2 py-0.5 text-[10px] text-white">NEW</span>
-                </div>
-                <p className="mt-1 line-clamp-2 text-sm text-neutral-600">
-                  High-quality, taste-forward deliverable with expert reviewers and evaluation harnesses.
-                </p>
-                <div className="mt-3 flex items-center justify-between">
-                  <span className="text-sm font-semibold text-neutral-800">$2,400</span>
-                  <button className="rounded-xl bg-neutral-900 px-3 py-1.5 text-xs text-white transition group-hover:bg-neutral-800">
-                    View details
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+              View All Interviews →
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-12 text-neutral-600">Loading talent...</div>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {candidates.slice(0, 6).map((candidate, i) => (
+                <motion.div
+                  key={candidate.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ duration: 0.35, delay: i * 0.05 }}
+                  className="group rounded-3xl border border-black/5 bg-white/60 p-4 shadow-sm backdrop-blur-md hover:shadow-md transition"
+                >
+                  <div className="aspect-[16/10] w-full overflow-hidden rounded-2xl bg-white/60 ring-1 ring-black/5 flex items-center justify-center">
+                    {/* Creative talent preview with initials */}
+                    <div className="text-6xl font-light text-neutral-300">
+                      {candidate.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-medium text-neutral-800">{candidate.name}</h3>
+                      <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] text-neutral-700">{candidate.experience_years}y exp</span>
+                    </div>
+                    <p className="mt-1 text-xs text-neutral-600 font-medium">{candidate.position}</p>
+                    <p className="mt-1 line-clamp-2 text-sm text-neutral-600">
+                      {candidate.bio}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {candidate.skills.slice(0, 3).map((skill, idx) => (
+                        <span key={idx} className="px-2 py-0.5 bg-white/60 text-[10px] text-neutral-600 rounded-md">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="mt-3 flex items-center gap-2">
+                      <button
+                        onClick={() => startInterview(candidate.id)}
+                        className="flex-1 rounded-xl bg-neutral-900 px-3 py-1.5 text-xs text-white transition group-hover:bg-neutral-800 inline-flex items-center justify-center gap-1"
+                      >
+                        <Mic size={12} /> Start Interview
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* CTA */}
@@ -343,20 +407,30 @@ export default function WatercolorMarketplaceLanding() {
           transition={{ duration: 0.45 }}
           className="mx-auto mt-14 max-w-3xl rounded-3xl border border-black/5 bg-white/70 p-6 text-center shadow-sm backdrop-blur"
         >
-          <h2 className="text-2xl font-semibold text-neutral-900">Launch your tasteful brief</h2>
+          <h2 className="text-2xl font-semibold text-neutral-900">Start Evaluating Creative Talent</h2>
           <p className="mt-2 text-neutral-700">
-            Tell us what you need—data, talent, or ready-made workflows—and we'll match you with curated options.
+            Experience AI-powered interviews with Elena Rivers. Discover artistic vision, creative process, and portfolio depth through thoughtful conversations.
           </p>
           <div className="mt-4 flex items-center justify-center gap-3">
-            <button className="rounded-xl bg-black px-4 py-2 text-sm text-white">Create brief</button>
-            <button className="rounded-xl bg-white px-4 py-2 text-sm text-neutral-800 ring-1 ring-black/10">Talk to us</button>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="rounded-xl bg-black px-4 py-2 text-sm text-white inline-flex items-center gap-2"
+            >
+              <PlayCircle size={16} /> View Dashboard
+            </button>
+            <button
+              onClick={() => setShowControls(true)}
+              className="rounded-xl bg-white px-4 py-2 text-sm text-neutral-800 ring-1 ring-black/10"
+            >
+              Customize Background
+            </button>
           </div>
         </motion.div>
       </main>
 
       {/* Footer */}
       <footer className="mx-auto max-w-7xl px-6 pb-10 text-xs text-neutral-600">
-        <div className="mt-10 text-center">© {new Date().getFullYear()} Your Marketplace. Crafted with watercolor vibes.</div>
+        <div className="mt-10 text-center">© {new Date().getFullYear()} Creative Talent AI. Powered by Elena Rivers, Creative Talent Director.</div>
       </footer>
     </div>
   );
