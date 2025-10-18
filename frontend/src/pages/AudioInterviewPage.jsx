@@ -189,24 +189,35 @@ const AudioInterviewPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Loading interview...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-pink-200 border-t-purple-400 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading interview...</p>
+        </div>
       </div>
     );
   }
 
   if (!interview) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Interview not found</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
+        <div className="text-center">
+          <p className="text-gray-600 text-lg">Interview not found</p>
+          <button
+            onClick={() => navigate('/')}
+            className="mt-4 px-6 py-2 bg-white/80 backdrop-blur-sm text-gray-700 rounded-full shadow-sm hover:shadow-md transition"
+          >
+            Return Home
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#fafafa' }}>
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
+      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 shadow-sm">
         <div className="max-w-5xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -223,7 +234,7 @@ const AudioInterviewPage = () => {
                 {persona && (
                   <div className="flex items-center gap-3 pr-4 border-r border-gray-300">
                     <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
-                      style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+                      style={{ background: 'linear-gradient(135deg, #f9a8d4 0%, #c4b5fd 100%)' }}>
                       {persona.name.split(' ').map(n => n[0]).join('')}
                     </div>
                     <div>
@@ -246,7 +257,7 @@ const AudioInterviewPage = () => {
                 data-testid="complete-interview-button"
                 disabled={completing}
                 className="rounded-lg font-medium"
-                style={{ background: 'linear-gradient(135deg, #48dbfb 0%, #0abde3 100%)' }}
+                style={{ background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)' }}
               >
                 <CheckCircle className="w-4 h-4 mr-2" />
                 {completing ? 'Completing...' : 'Complete Interview'}
@@ -267,14 +278,14 @@ const AudioInterviewPage = () => {
               <div
                 className={`max-w-[70%] rounded-2xl px-5 py-3 ${
                   message.role === 'user'
-                    ? 'bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white'
-                    : 'bg-white text-gray-800 shadow-md border border-gray-100'
+                    ? 'bg-gradient-to-r from-[#fbbf24] to-[#fb923c] text-white shadow-md'
+                    : 'bg-white/90 backdrop-blur-sm text-gray-800 shadow-md border border-pink-100'
                 }`}
               >
                 {message.role === 'assistant' && (
                   <div className="flex items-center gap-2 mb-1">
-                    <Volume2 className="w-4 h-4" style={{ color: '#667eea' }} />
-                    <p className="text-xs font-medium" style={{ color: '#667eea' }}>AI Interviewer</p>
+                    <Volume2 className="w-4 h-4" style={{ color: '#ec4899' }} />
+                    <p className="text-xs font-medium" style={{ color: '#ec4899' }}>AI Interviewer</p>
                   </div>
                 )}
                 {message.role === 'user' && (
@@ -296,20 +307,20 @@ const AudioInterviewPage = () => {
 
       {/* Recording Controls */}
       {interview.status !== 'completed' && (
-        <div className="bg-white border-t border-gray-200 shadow-lg">
+        <div className="bg-white/80 backdrop-blur-sm border-t border-gray-200/50 shadow-lg">
           <div className="max-w-5xl mx-auto px-6 py-6">
-            <Card className="p-6 bg-gradient-to-br from-gray-50 to-white border-0 shadow-lg">
+            <Card className="p-6 bg-gradient-to-br from-pink-50/50 via-purple-50/50 to-blue-50/50 border-0 shadow-lg backdrop-blur-sm">
               <div className="flex flex-col items-center gap-4">
                 {isProcessing ? (
                   <div className="text-center">
-                    <Loader2 className="w-12 h-12 mx-auto mb-3 animate-spin" style={{ color: '#667eea' }} />
+                    <Loader2 className="w-12 h-12 mx-auto mb-3 animate-spin" style={{ color: '#c084fc' }} />
                     <p className="text-lg font-medium" style={{ color: '#2c3e50' }}>Processing your response...</p>
                     <p className="text-sm text-gray-600">Transcribing and generating AI response</p>
                   </div>
                 ) : isPlaying ? (
                   <div className="text-center">
-                    <Volume2 className="w-12 h-12 mx-auto mb-3 animate-pulse" style={{ color: '#667eea' }} />
-                    <p className="text-lg font-medium" style={{ color: '#2c3e50' }}>AI is speaking...</p>
+                    <Volume2 className="w-12 h-12 mx-auto mb-3 animate-pulse" style={{ color: '#ec4899' }} />
+                    <p className="text-lg font-medium" style={{ color: '#2c3e50' }}>Elena is speaking...</p>
                     <p className="text-sm text-gray-600">Please listen carefully</p>
                   </div>
                 ) : (
@@ -321,9 +332,9 @@ const AudioInterviewPage = () => {
                         isRecording ? 'animate-pulse' : ''
                       }`}
                       style={{
-                        background: isRecording 
-                          ? 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)'
-                          : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                        background: isRecording
+                          ? 'linear-gradient(135deg, #fb7185 0%, #f472b6 100%)'
+                          : 'linear-gradient(135deg, #c084fc 0%, #e879f9 100%)'
                       }}
                     >
                       {isRecording ? (
@@ -351,9 +362,9 @@ const AudioInterviewPage = () => {
       )}
 
       {interview.status === 'completed' && (
-        <div className="bg-white border-t border-gray-200 shadow-lg">
+        <div className="bg-white/80 backdrop-blur-sm border-t border-gray-200/50 shadow-lg">
           <div className="max-w-5xl mx-auto px-6 py-6 text-center">
-            <CheckCircle className="w-12 h-12 mx-auto mb-3" style={{ color: '#48dbfb' }} />
+            <CheckCircle className="w-12 h-12 mx-auto mb-3" style={{ color: '#10b981' }} />
             <p className="text-lg font-semibold mb-2" style={{ color: '#2c3e50' }}>Interview Completed</p>
             <p className="text-gray-600">This voice interview has been completed.</p>
           </div>
