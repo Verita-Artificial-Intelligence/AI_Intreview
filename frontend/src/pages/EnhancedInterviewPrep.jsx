@@ -250,7 +250,7 @@ const EnhancedInterviewPrep = () => {
                         }}
                       >
                         <div className="w-32 h-32 rounded-full bg-white flex items-center justify-center">
-                          <span className="text-4xl font-bold text-gray-800">m.</span>
+                          <span className="text-xl font-bold text-gray-800">Verita</span>
                         </div>
                       </div>
                     </div>
@@ -378,7 +378,7 @@ const EnhancedInterviewPrep = () => {
                   <div className="w-32 h-32 rounded-full bg-gradient-to-br from-purple-500 via-purple-600 to-blue-500 flex items-center justify-center mx-auto mb-6 relative">
                     <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-400 to-blue-400 animate-ping opacity-20"></div>
                     <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center relative z-10">
-                      <span className="text-5xl font-bold text-gray-800">m.</span>
+                      <span className="text-2xl font-bold text-gray-800">Verita</span>
                     </div>
                   </div>
                   <h2 className="text-3xl font-bold text-gray-900 mb-4">Before starting the interview,</h2>
