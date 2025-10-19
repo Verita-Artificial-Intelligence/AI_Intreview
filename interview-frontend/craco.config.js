@@ -35,6 +35,22 @@ const webpackConfig = {
       '@': path.resolve(__dirname, 'src'),
     },
     configure: (webpackConfig) => {
+      // Disable source-map-loader warnings for node_modules
+      webpackConfig.module.rules.forEach(rule => {
+        if (rule.oneOf) {
+          rule.oneOf.forEach(oneOfRule => {
+            if (oneOfRule.loader && oneOfRule.loader.includes('source-map-loader')) {
+              oneOfRule.exclude = /node_modules/;
+            }
+          });
+        }
+      });
+
+      // Ignore source map warnings
+      webpackConfig.ignoreWarnings = [
+        /Failed to parse source map/,
+        /source map.*node_modules/i,
+      ];
 
       // Disable hot reload completely if environment variable is set
       if (config.disableHotReload) {

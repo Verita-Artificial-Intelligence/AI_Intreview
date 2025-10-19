@@ -36,34 +36,30 @@ EVALUATION_FRAMEWORKS = {
 }
 
 # Realtime API Configuration
-ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY")
 OPENAI_REALTIME_MODEL = os.environ.get(
     "OPENAI_REALTIME_MODEL", "gpt-realtime"
 )
 OPENAI_REALTIME_VOICE = os.environ.get("OPENAI_REALTIME_VOICE", "alloy")
+OPENAI_REALTIME_AUTO_GREET = (
+    os.environ.get("OPENAI_REALTIME_AUTO_GREET", "true").lower() == "true"
+)
 
 # WebSocket Configuration
 WS_HEARTBEAT_INTERVAL = 30  # seconds
 WS_MAX_MESSAGE_SIZE = 1024 * 1024 * 10  # 10MB for audio chunks
 
 # Audio Configuration
-AUDIO_SAMPLE_RATE = 24000  # OpenAI Realtime API output
+AUDIO_SAMPLE_RATE = 24000  # OpenAI Realtime API input/output
 AUDIO_CHUNK_MS = 100  # Fixed chunk size
-ELEVENLABS_MODEL = "eleven_flash_v2_5"  # Low latency model with viseme support
-ELEVENLABS_VOICE_ID = os.environ.get(
-    "ELEVENLABS_VOICE_ID", "21m00Tcm4TlvDq8ikWAM"
-)  # Rachel
-
-# Avatar Configuration
-AVATAR_GLB_URL = os.environ.get(
-    "AVATAR_GLB_URL",
-    "https://models.readyplayer.me/64f1b2c3d4e5f6a7b8c9d0e1.glb",
-)
 
 # Latency Tracking
 ENABLE_LATENCY_LOGGING = (
     os.environ.get("ENABLE_LATENCY_LOGGING", "true").lower() == "true"
 )
+
+# Mock Services Configuration (for development/testing without API costs)
+USE_MOCK_SERVICES = os.environ.get("USE_MOCK_SERVICES", "false").lower() == "true"
+MOCK_OPENAI_REALTIME = os.environ.get("MOCK_OPENAI_REALTIME", str(USE_MOCK_SERVICES)).lower() == "true"
 
 
 # Settings class for easy access
@@ -90,14 +86,22 @@ Interview Style: {AI_INTERVIEWER_PERSONA['style']}
 
 Key Traits: {', '.join(AI_INTERVIEWER_PERSONA['traits'])}
 
-Your role is to conduct professional interviews, asking thoughtful questions that assess candidates' skills, experience, and cultural fit. Be warm and encouraging while maintaining professionalism. Use the STAR method for behavioral questions."""
+Your role is to lead a natural, conversational interview that progresses toward a decision. Follow these rules strictly (you are the INTERVIEWER, not a helper or assistant):
+
+1) Start the interview promptly: if the candidate greets or engages in small talk (e.g., "hi", "hello"), respond briefly and immediately ask the first interview question relevant to the role.
+2) Ask ONE question at a time and WAIT for the complete response before asking the next question.
+3) Maintain context and continuity: reference prior answers, do not repeat questions, and build on what the candidate already said.
+4) Avoid helper/assistant phrasing (e.g., "I'm here to help", "How can I assist?") and avoid generic prompts like "What would you like to talk about?". You lead the interview.
+5) Use concise, professional language and be warm and encouraging.
+6) Use the STAR method for behavioral questions when appropriate.
+7) After 5–7 exchanges, summarize key strengths/concerns and conclude.
+
+If the candidate only greets or gives a very short answer, acknowledge briefly and continue with the next focused interview question. Never ask the candidate to choose a topic; you decide the next question based on the interview plan and their answers. Do not offer help or assistance; conduct the interview."""
 
     # Realtime API
     OPENAI_REALTIME_MODEL = OPENAI_REALTIME_MODEL
     OPENAI_REALTIME_VOICE = OPENAI_REALTIME_VOICE
-    ELEVENLABS_API_KEY = ELEVENLABS_API_KEY
-    ELEVENLABS_MODEL = ELEVENLABS_MODEL
-    ELEVENLABS_VOICE_ID = ELEVENLABS_VOICE_ID
+    OPENAI_REALTIME_AUTO_GREET = OPENAI_REALTIME_AUTO_GREET
 
     # WebSocket
     WS_HEARTBEAT_INTERVAL = WS_HEARTBEAT_INTERVAL
@@ -107,11 +111,12 @@ Your role is to conduct professional interviews, asking thoughtful questions tha
     AUDIO_SAMPLE_RATE = AUDIO_SAMPLE_RATE
     AUDIO_CHUNK_MS = AUDIO_CHUNK_MS
 
-    # Avatar
-    AVATAR_GLB_URL = AVATAR_GLB_URL
-
     # Latency
     ENABLE_LATENCY_LOGGING = ENABLE_LATENCY_LOGGING
+
+    # Mock Services
+    USE_MOCK_SERVICES = USE_MOCK_SERVICES
+    MOCK_OPENAI_REALTIME = MOCK_OPENAI_REALTIME
 
 
 settings = Settings()

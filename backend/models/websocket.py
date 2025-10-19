@@ -60,22 +60,12 @@ class TranscriptMessage(BaseModel):
     timestamp: Optional[float] = None
 
 
-class AlignmentUnit(BaseModel):
-    """Viseme alignment data for lip sync."""
-
-    t: float  # Start time in seconds
-    d: float  # Duration in seconds
-    unit: Literal["char", "word", "phoneme"]
-    val: str  # Character, word, or phoneme value
-
-
 class TTSChunkMessage(BaseModel):
-    """TTS audio chunk with alignment data."""
+    """TTS audio chunk."""
 
     event: Literal["tts_chunk"]
     seq: int
     audio_b64: str
-    align: Optional[List[AlignmentUnit]] = None
     is_final: bool = False
 
 

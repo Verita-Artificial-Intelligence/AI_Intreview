@@ -4,14 +4,8 @@
 
 // ===== WebSocket Message Types =====
 
-export interface AlignmentUnit {
-  t: number; // Start time in seconds
-  d: number; // Duration in seconds
-  unit: 'char' | 'word' | 'phoneme';
-  val: string; // Character, word, or phoneme value
-}
 
-// Client ’ Server Messages
+// Client ï¿½ Server Messages
 
 export interface StartSessionMessage {
   event: 'start';
@@ -49,12 +43,11 @@ export type ClientMessage =
   | BargeInMessage
   | EndSessionMessage;
 
-// Server ’ Client Messages
+// Server ï¿½ Client Messages
 
 export interface SessionReadyMessage {
   event: 'session_ready';
   session_id: string;
-  avatar_url?: string;
 }
 
 export interface TranscriptMessage {
@@ -69,7 +62,6 @@ export interface TTSChunkMessage {
   event: 'tts_chunk';
   seq: number;
   audio_b64: string;
-  align?: AlignmentUnit[];
   is_final: boolean;
 }
 
@@ -145,42 +137,6 @@ export interface AudioChunk {
   timestamp: number;
 }
 
-export interface VisemeEvent {
-  viseme: string;
-  startTime: number;
-  endTime: number;
-  character: string;
-}
-
-// ===== Avatar Types =====
-
-export type VisemeName =
-  | 'sil' // Silence
-  | 'PP' // Labials: M, B, P
-  | 'FF' // F, V
-  | 'TH' // TH
-  | 'DD' // D, T, L, N
-  | 'kk' // K, G
-  | 'CH' // CH, J, SH
-  | 'SS' // S, Z
-  | 'nn' // N
-  | 'RR' // R
-  | 'aa' // A
-  | 'E' // E
-  | 'I' // I (ih)
-  | 'O' // O
-  | 'U'; // U (oo)
-
-export interface VisemeWeight {
-  viseme: VisemeName;
-  weight: number; // 0-1
-}
-
-export interface VisemeTimeline {
-  time: number;
-  viseme: VisemeName;
-  duration: number;
-}
 
 // ===== Store State Types =====
 
@@ -199,10 +155,6 @@ export interface InterviewState {
   isMicActive: boolean;
   isAIPlaying: boolean;
 
-  // Avatar
-  visemeTimeline: VisemeTimeline[];
-  currentVisemes: VisemeWeight[];
-
   // Metrics
   latencyMetrics: LatencyMetrics | null;
 }
@@ -214,5 +166,4 @@ export interface RealtimeInterviewConfig {
   sessionId: string;
   interviewId?: string;
   candidateId?: string;
-  avatarUrl?: string;
 }

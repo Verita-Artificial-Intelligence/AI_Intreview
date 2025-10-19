@@ -1,89 +1,80 @@
 /**
- * Interview controls component - UI for controlling the realtime interview.
+ * Interview controls component - Video call style controls.
  */
 
 import React from 'react';
-import { Mic, MicOff, Hand, XCircle } from 'lucide-react';
-import { useInterviewStore } from '../../store/interviewStore';
-import { Button } from '../ui/button';
+import { Mic, MicOff, PhoneOff } from 'lucide-react';
+import { useInterviewStore } from '../../store/interviewStore.ts';
 
 interface InterviewControlsProps {
-  onStartInterview: () => void;
   onEndInterview: () => void;
   onInterrupt: () => void;
   onToggleMic: () => void;
 }
 
 export const InterviewControls: React.FC<InterviewControlsProps> = ({
-  onStartInterview,
   onEndInterview,
-  onInterrupt,
   onToggleMic,
 }) => {
   const status = useInterviewStore((state) => state.status);
   const isMicActive = useInterviewStore((state) => state.isMicActive);
-  const isAIPlaying = useInterviewStore((state) => state.isAIPlaying);
 
   return (
-    <div className="flex items-center justify-center gap-4 p-6 bg-white border-t">
-      {/* Start/End Interview */}
-      {status === 'idle' || status === 'error' ? (
-        <Button
-          onClick={onStartInterview}
-          size="lg"
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          Start Interview
-        </Button>
-      ) : status === 'connecting' || status === 'ready' ? (
-        <div className="text-gray-600">Connecting...</div>
-      ) : (
-        <>
-          {/* Microphone Toggle */}
-          <Button
-            onClick={onToggleMic}
-            variant={isMicActive ? 'default' : 'outline'}
-            size="lg"
-            className={isMicActive ? 'bg-red-600 hover:bg-red-700' : ''}
-          >
-            {isMicActive ? (
-              <>
-                <Mic className="w-5 h-5 mr-2" />
-                Listening
-              </>
-            ) : (
-              <>
-                <MicOff className="w-5 h-5 mr-2" />
-                Muted
-              </>
-            )}
-          </Button>
+    <div className="flex items-center justify-center gap-8 px-6 py-5 bg-white/80 backdrop-blur-md border-t border-gray-200">
+      {/* Microphone Toggle */}
+      <button
+        onClick={onToggleMic}
+        className={`
+          flex items-center justify-center
+          w-14 h-14 rounded-full
+          transition-all duration-300 ease-out
+          shadow-lg hover:shadow-xl
+          ${
+            isMicActive
+              ? 'bg-white hover:bg-gray-50 text-gray-700'
+              : 'bg-gradient-to-br from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white'
+          }
+        `}
+        title={isMicActive ? 'Mute' : 'Unmute'}
+        aria-label={isMicActive ? 'Mute microphone' : 'Unmute microphone'}
+      >
+        {isMicActive ? (
+          <Mic className="w-6 h-6" />
+        ) : (
+          <MicOff className="w-6 h-6" />
+        )}
+      </button>
 
-          {/* Interrupt AI */}
-          {isAIPlaying && (
-            <Button onClick={onInterrupt} variant="outline" size="lg">
-              <Hand className="w-5 h-5 mr-2" />
-              Interrupt
-            </Button>
-          )}
+      {/* End Call - Destructive action */}
+      <button
+        onClick={onEndInterview}
+        className="
+          flex items-center justify-center
+          w-14 h-14 rounded-full
+          bg-gradient-to-br from-red-600 to-red-700 hover:from-red-500 hover:to-red-600
+          text-white
+          transition-all duration-300 ease-out
+          shadow-lg hover:shadow-xl
+        "
+        title="End Interview"
+        aria-label="End interview"
+      >
+        <PhoneOff className="w-6 h-6" />
+      </button>
 
-          {/* End Interview */}
-          <Button
-            onClick={onEndInterview}
-            variant="destructive"
-            size="lg"
-          >
-            <XCircle className="w-5 h-5 mr-2" />
-            End Interview
-          </Button>
-        </>
+      {/* Status Text */}
+      {status === 'connecting' && (
+        <div className="absolute left-6 text-gray-600 text-sm font-medium animate-pulse">
+          Connecting...
+        </div>
       )}
     </div>
   );
 };
 
 /**
- * Status indicator component.
+ * Status indicator component - Centered beneath AI presence.
+ * Provides real-time feedback on interview state with smooth transitions.
  */
 export const StatusIndicator: React.FC = () => {
   const status = useInterviewStore((state) => state.status);
@@ -93,33 +84,25 @@ export const StatusIndicator: React.FC = () => {
   const getStatusInfo = () => {
     if (status === 'listening' && isMicActive) {
       return {
-        label: 'Listening...',
-        color: 'bg-green-500',
+        label: 'Listening',
+        color: 'bg-emerald-500',
         pulse: true,
       };
     }
 
     if (status === 'processing') {
       return {
-        label: 'Processing...',
-        color: 'bg-yellow-500',
+        label: 'Thinking',
+        color: 'bg-amber-500',
         pulse: true,
       };
     }
 
     if (status === 'speaking' || isAIPlaying) {
       return {
-        label: 'AI Speaking...',
-        color: 'bg-blue-500',
+        label: 'Speaking',
+        color: 'bg-orange-500',
         pulse: true,
-      };
-    }
-
-    if (status === 'ready') {
-      return {
-        label: 'Ready',
-        color: 'bg-gray-400',
-        pulse: false,
       };
     }
 
@@ -131,23 +114,21 @@ export const StatusIndicator: React.FC = () => {
       };
     }
 
-    return {
-      label: 'Idle',
-      color: 'bg-gray-300',
-      pulse: false,
-    };
+    return null;
   };
 
   const statusInfo = getStatusInfo();
 
+  if (!statusInfo) return null;
+
   return (
-    <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full">
+    <div className="flex items-center gap-2.5 px-4 py-2.5 bg-white/60 backdrop-blur-md rounded-full border border-gray-300/50 shadow-lg transition-all duration-300 ease-out">
       <div
-        className={`w-3 h-3 rounded-full ${statusInfo.color} ${
+        className={`w-2.5 h-2.5 rounded-full ${statusInfo.color} ${
           statusInfo.pulse ? 'animate-pulse' : ''
-        }`}
+        } transition-colors duration-300`}
       />
-      <span className="text-sm font-medium text-gray-700">{statusInfo.label}</span>
+      <span className="text-xs font-medium text-gray-700 tracking-wide">{statusInfo.label}</span>
     </div>
   );
 };

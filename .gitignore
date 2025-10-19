@@ -131,3 +131,7 @@ android-sdk/
 coverage/
 reports/
 .claude/
+
+# Ignore uploaded videos
+backend/uploads/
+
