@@ -4,7 +4,7 @@
 
 - Python 3.9+
 - Node.js 16+
-- MongoDB (local or cloud instance)
+- **MongoDB (local or cloud instance)** - REQUIRED: The application requires a running MongoDB instance. There is no fallback mechanism.
 - OpenAI API Key
 
 ## Backend Setup
@@ -48,9 +48,13 @@ The backend will be available at `http://localhost:8000`
 
 ## Frontend Setup
 
-1. Navigate to the frontend directory:
+This project includes two separate frontend applications:
+
+### Dashboard Frontend (for Interviewers/Administrators)
+
+1. Navigate to the dashboard frontend directory:
 ```bash
-cd frontend
+cd dashboard-frontend
 ```
 
 2. Install dependencies:
@@ -60,9 +64,9 @@ yarn install
 npm install
 ```
 
-3. Create a `.env` file based on `.env.example`:
+3. Create a `.env` file:
 ```bash
-cp .env.example .env
+cp .env.example .env  # if .env.example exists
 ```
 
 4. Edit `.env` to point to your backend:
@@ -70,14 +74,49 @@ cp .env.example .env
 REACT_APP_BACKEND_URL=http://localhost:8000
 ```
 
-5. Start the frontend development server:
+5. Start the development server:
 ```bash
 yarn start
 # or
 npm start
 ```
 
-The frontend will be available at `http://localhost:3000`
+The dashboard frontend will be available at `http://localhost:3000`
+
+### Interview Frontend (for Candidates)
+
+1. Navigate to the interview frontend directory:
+```bash
+cd interview-frontend
+```
+
+2. Install dependencies:
+```bash
+yarn install
+# or
+npm install
+```
+
+3. Create a `.env` file:
+```bash
+cp .env.example .env  # if .env.example exists
+```
+
+4. Edit `.env` to point to your backend:
+```env
+REACT_APP_BACKEND_URL=http://localhost:8000
+```
+
+5. Start the development server (typically on a different port):
+```bash
+yarn start --port 3001
+# or
+npm start -- --port 3001
+```
+
+The interview frontend will be available at `http://localhost:3001`
+
+**Note**: Both frontends can run simultaneously on different ports during development.
 
 ## Key Changes Made
 
@@ -128,6 +167,14 @@ The frontend will be available at `http://localhost:3000`
 - `GET /api/interviews/{id}/messages` - Get all messages for an interview
 
 ## Troubleshooting
+
+### MongoDB Connection Issues
+- **Error: `Connection refused` or `ServerSelectionTimeoutError`**
+  - Ensure MongoDB is running on your system
+  - For local MongoDB: Start MongoDB with `mongod` or `brew services start mongodb-community` (macOS)
+  - For cloud MongoDB (Atlas): Verify your connection string in `.env` and check network access settings
+  - Verify the `MONGO_URL` in your `.env` file is correct
+  - **Important**: The application has no fallback mechanism and requires MongoDB to be running
 
 ### Audio Not Playing
 - Check that your browser has audio permissions enabled
