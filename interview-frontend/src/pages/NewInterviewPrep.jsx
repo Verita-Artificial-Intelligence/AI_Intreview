@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { CheckCircle, Mic, Video, AlertCircle, Loader2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { v4 as uuidv4 } from 'uuid'
 
 const NewInterviewPrep = () => {
   const navigate = useNavigate()
@@ -56,7 +57,9 @@ const NewInterviewPrep = () => {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop())
     }
-    navigate('/interview')
+    // Generate interview ID and navigate to realtime interview page
+    const interviewId = user?.interview_id || uuidv4()
+    navigate(`/realtime-interview/${interviewId}`)
   }
 
   return (

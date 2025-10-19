@@ -3,8 +3,7 @@ Session broker orchestrating realtime interview conversation flow.
 
 Coordinates between:
 - Client WebSocket (audio input, control messages)
-- OpenAI Realtime API (transcription, conversation)
-- ElevenLabs TTS (audio output, visemes)
+- OpenAI Realtime API (transcription, conversation, TTS audio output)
 - Latency tracking
 """
 
@@ -14,8 +13,7 @@ from typing import Optional, Callable, Dict, Any
 from dataclasses import dataclass
 import time
 
-from services.realtime_service import RealtimeService
-from services.tts_service import TTSService
+from services.factory import get_realtime_service
 from utils.time import TimingTracker, LatencyMetrics
 from models.websocket import (
     TranscriptMessage,
@@ -24,7 +22,6 @@ from models.websocket import (
     NoticeMessage,
     ErrorMessage,
     MetricsMessage,
-    AlignmentUnit,
 )
 
 logger = logging.getLogger(__name__)
@@ -38,10 +35,8 @@ class SessionConfig:
     openai_model: str
     openai_voice: str
     openai_instructions: str
-    elevenlabs_api_key: str
-    elevenlabs_voice_id: str
-    elevenlabs_model: str
     enable_latency_logging: bool = True
+    auto_greet: bool = True
 
 
 class SessionBroker:
@@ -49,8 +44,7 @@ class SessionBroker:
     Orchestrates realtime interview conversation flow.
 
     Manages:
-    - OpenAI Realtime API connection
-    - ElevenLabs TTS connection
+    - OpenAI Realtime API connection (STT, conversation, TTS)
     - Conversation state
     - Latency tracking
     - Message flow coordination
@@ -76,7 +70,6 @@ class SessionBroker:
 
         # Services
         self.realtime: Optional[RealtimeService] = None
-        self.tts: Optional[TTSService] = None
 
         # State
         self.is_running = False
@@ -86,21 +79,25 @@ class SessionBroker:
         # Timing
         self.timing_tracker = TimingTracker()
 
-        # Text accumulation for TTS
-        self.text_buffer = ""
-        self.response_text = ""
+        # Audio sequence tracking
+        self.audio_seq = 0
+
+        # Silence detection and backoff
+        self.silence_check_delays = [2, 4, 8, 16, 32]  # seconds
+        self.current_silence_check_index = 0
+        self.silence_timer_task: Optional[asyncio.Task] = None
+        self.last_user_speech_time: Optional[float] = None
 
         # Tasks
         self._openai_task: Optional[asyncio.Task] = None
-        self._tts_task: Optional[asyncio.Task] = None
 
     async def start(self) -> None:
         """Initialize and start the session."""
         try:
             logger.info(f"Starting session broker: {self.session_id}")
 
-            # Initialize OpenAI Realtime
-            self.realtime = RealtimeService(
+            # Initialize OpenAI Realtime (real or mock based on config)
+            self.realtime = get_realtime_service(
                 api_key=self.config.openai_api_key,
                 model=self.config.openai_model,
                 voice=self.config.openai_voice,
@@ -108,18 +105,20 @@ class SessionBroker:
             )
             await self.realtime.connect()
 
-            # Initialize ElevenLabs TTS
-            self.tts = TTSService(
-                api_key=self.config.elevenlabs_api_key,
-                voice_id=self.config.elevenlabs_voice_id,
-                model_id=self.config.elevenlabs_model,
-            )
-            await self.tts.connect()
-
             self.is_running = True
 
             # Start processing OpenAI events
             self._openai_task = asyncio.create_task(self._process_openai_events())
+
+            # Optionally auto-start the conversation with a short greeting
+            if self.config.auto_greet:
+                await asyncio.sleep(0.5)  # Ensure session is fully ready
+                # Force a focused first question rather than a generic greeting
+                first_turn_instructions = (
+                    "Start the interview with a concise, role-relevant first question. "
+                    "Avoid generic acknowledgements or offering broad help."
+                )
+                await self.realtime.create_response(instructions=first_turn_instructions)
 
             logger.info(f"Session broker started: {self.session_id}")
 
@@ -162,8 +161,10 @@ class SessionBroker:
             # Commit audio buffer
             await self.realtime.commit_audio()
 
-            # Request AI response
-            await self.realtime.create_response()
+            # Note: With server_vad enabled, the server automatically creates responses
+            # when it detects the user has stopped speaking. No need to manually trigger.
+            # Only uncomment below if turn_detection is disabled:
+            # await self.realtime.create_response()
 
         except Exception as e:
             logger.error(f"Error handling user turn end: {e}")
@@ -176,19 +177,11 @@ class SessionBroker:
         try:
             logger.debug("User barged in")
 
-            # Cancel ongoing TTS
-            if self.tts and self.is_speaking:
-                await self.tts.clear_queue()
-                if self._tts_task:
-                    self._tts_task.cancel()
-
-            # Cancel OpenAI response
+            # Cancel OpenAI response (this also stops audio generation)
             if self.realtime:
                 await self.realtime.cancel_response()
 
             self.is_speaking = False
-            self.text_buffer = ""
-            self.response_text = ""
 
             await self.send_to_client(
                 NoticeMessage(event="notice", msg="Response cancelled").model_dump()
@@ -228,34 +221,57 @@ class SessionBroker:
             elif event_type == "input_audio_buffer.speech_started":
                 self.is_listening = True
                 self.timing_tracker.mark_user_speech_start()
+                self.last_user_speech_time = time.time()
                 logger.debug("User speech started (VAD)")
+
+                # Cancel any pending silence check
+                self._cancel_silence_timer()
+                self.current_silence_check_index = 0
+
+                # If AI is currently speaking and the user starts speaking,
+                # treat this as a barge-in and cancel the ongoing response.
+                if self.is_speaking and self.realtime:
+                    try:
+                        await self.realtime.cancel_response()
+                        self.is_speaking = False
+                        await self.send_to_client(
+                            NoticeMessage(event="notice", msg="Response cancelled (barge-in)").model_dump()
+                        )
+                    except Exception as e:
+                        logger.error(f"Error cancelling response on barge-in: {e}")
 
             elif event_type == "input_audio_buffer.speech_stopped":
                 self.is_listening = False
                 logger.debug("User speech stopped (VAD)")
+                # User has stopped talking, start a timer to check if they've gone silent.
+                # This will be cancelled if the AI starts generating a response.
+                self._start_silence_timer()
 
             elif event_type == "input_audio_buffer.committed":
                 logger.debug("Audio buffer committed")
 
             elif event_type == "response.created":
                 logger.debug("AI response creation started")
-                self.response_text = ""
-                self.text_buffer = ""
+                self.audio_seq = 0
+                # AI is about to speak, cancel any pending silence check.
+                self._cancel_silence_timer()
 
-            elif event_type == "response.text.delta":
-                # Streaming text from AI
-                delta = event.get("delta", "")
-                await self._handle_text_delta(delta)
+            elif event_type == "response.output_audio.delta":
+                # Streaming audio from OpenAI
+                audio_b64 = event.get("delta", "")
+                if audio_b64:
+                    await self._handle_audio_delta(audio_b64)
 
-            elif event_type == "response.text.done":
-                # Complete text response received
-                text = event.get("text", "")
-                if text:
-                    self.response_text += text
-                    await self._send_text_to_tts(flush=True)
+            elif event_type == "response.output_audio.done":
+                # Audio generation complete
+                logger.debug("Audio generation complete")
+                await self._handle_audio_done()
 
             elif event_type == "response.done":
                 logger.debug("AI response complete")
+                
+                # Start silence detection timer after AI finishes speaking
+                self._start_silence_timer()
 
             elif event_type == "conversation.item.input_audio_transcription.completed":
                 # User transcript
@@ -285,137 +301,59 @@ class SessionBroker:
         except Exception as e:
             logger.error(f"Error handling OpenAI event {event_type}: {e}")
 
-    async def _handle_text_delta(self, delta: str) -> None:
+    async def _handle_audio_delta(self, audio_b64: str) -> None:
         """
-        Handle streaming text chunk from OpenAI.
-
-        Accumulates text and sends complete sentences to TTS.
+        Handle streaming audio chunk from OpenAI.
 
         Args:
-            delta: Text chunk from OpenAI
+            audio_b64: Base64-encoded PCM16 audio chunk
         """
-        self.text_buffer += delta
-        self.response_text += delta
-
-        # Extract complete sentences
-        sentences = self._extract_sentences(self.text_buffer)
-
-        for sentence in sentences:
-            # Remove sentence from buffer
-            self.text_buffer = self.text_buffer[len(sentence):].lstrip()
-
-            # Send to TTS
-            await self._send_text_to_tts(sentence, flush=False)
-
-    def _extract_sentences(self, text: str) -> list:
-        """
-        Extract complete sentences from text buffer.
-
-        Args:
-            text: Text buffer
-
-        Returns:
-            List of complete sentences
-        """
-        import re
-
-        sentences = []
-        # Split on sentence endings
-        parts = re.split(r'([.!?]+\s+)', text)
-
-        i = 0
-        while i < len(parts) - 1:
-            sentence = parts[i] + parts[i + 1]
-            if sentence.strip():
-                sentences.append(sentence)
-            i += 2
-
-        return sentences
-
-    async def _send_text_to_tts(
-        self, text: str = "", flush: bool = False
-    ) -> None:
-        """
-        Send text to ElevenLabs TTS and stream audio to client.
-
-        Args:
-            text: Text to convert to speech
-            flush: If True, signals end of text
-        """
-        if not self.tts:
-            return
-
         try:
-            # Mark timing on first TTS
+            # Mark timing on first audio chunk
             if not self.is_speaking:
                 self.timing_tracker.mark_tts_request_sent()
+                self.timing_tracker.mark_tts_first_chunk()
+                self.timing_tracker.mark_playback_start()
                 self.is_speaking = True
 
-            # Send text to TTS
-            await self.tts.send_text(text, flush=flush)
+            # Send audio chunk to client
+            tts_msg = TTSChunkMessage(
+                event="tts_chunk",
+                seq=self.audio_seq,
+                audio_b64=audio_b64,
+                is_final=False,
+            ).model_dump()
 
-            # Stream audio chunks to client
-            if not self._tts_task or self._tts_task.done():
-                self._tts_task = asyncio.create_task(self._stream_tts_audio())
+            await self.send_to_client(tts_msg)
+            self.audio_seq += 1
 
         except Exception as e:
-            logger.error(f"Error sending text to TTS: {e}")
+            logger.error(f"Error handling audio delta: {e}")
 
-    async def _stream_tts_audio(self) -> None:
-        """Stream TTS audio chunks to client with alignment data."""
-        if not self.tts:
-            return
-
+    async def _handle_audio_done(self) -> None:
+        """Handle completion of audio generation."""
         try:
-            first_chunk = True
+            self.is_speaking = False
 
-            async for chunk in self.tts.aiter_audio():
-                if not self.is_running:
-                    break
+            # Send final empty chunk to signal end
+            tts_msg = TTSChunkMessage(
+                event="tts_chunk",
+                seq=self.audio_seq,
+                audio_b64="",
+                is_final=True,
+            ).model_dump()
+            await self.send_to_client(tts_msg)
 
-                # Mark timing on first chunk
-                if first_chunk:
-                    self.timing_tracker.mark_tts_first_chunk()
-                    self.timing_tracker.mark_playback_start()
-                    first_chunk = False
+            # Send answer_end message
+            await self.send_to_client(
+                AnswerEndMessage(event="answer_end").model_dump()
+            )
 
-                # Convert alignment format
-                align_units = []
-                for align in chunk.get("align", []):
-                    align_units.append(
-                        AlignmentUnit(
-                            t=align["t"],
-                            d=align["d"],
-                            unit=align["unit"],
-                            val=align["val"],
-                        )
-                    )
+            # Send latency metrics
+            await self._send_metrics()
 
-                # Send to client
-                await self.send_to_client(
-                    TTSChunkMessage(
-                        event="tts_chunk",
-                        seq=chunk["seq"],
-                        audio_b64=chunk["audio_b64"],
-                        align=align_units,
-                        is_final=chunk["is_final"],
-                    ).model_dump()
-                )
-
-                # If final chunk, send answer_end and metrics
-                if chunk["is_final"]:
-                    self.is_speaking = False
-                    await self.send_to_client(
-                        AnswerEndMessage(event="answer_end").model_dump()
-                    )
-
-                    # Send latency metrics
-                    await self._send_metrics()
-
-        except asyncio.CancelledError:
-            logger.debug("TTS streaming cancelled")
         except Exception as e:
-            logger.error(f"Error streaming TTS audio: {e}")
+            logger.error(f"Error handling audio done: {e}")
 
     async def _send_metrics(self) -> None:
         """Calculate and send latency metrics to client."""
@@ -447,21 +385,97 @@ class SessionBroker:
         except Exception as e:
             logger.error(f"Error sending metrics: {e}")
 
+    def _start_silence_timer(self) -> None:
+        """Start or restart the silence detection timer."""
+        self._cancel_silence_timer()
+        
+        if self.current_silence_check_index < len(self.silence_check_delays):
+            delay = self.silence_check_delays[self.current_silence_check_index]
+            self.silence_timer_task = asyncio.create_task(self._silence_check(delay))
+            logger.debug(f"Started silence timer: {delay}s (check #{self.current_silence_check_index + 1})")
+
+    def _cancel_silence_timer(self) -> None:
+        """Cancel any pending silence timer."""
+        if self.silence_timer_task and not self.silence_timer_task.done():
+            self.silence_timer_task.cancel()
+            self.silence_timer_task = None
+
+    async def _silence_check(self, delay: float) -> None:
+        """Check for user silence after a delay and prompt if needed."""
+        try:
+            await asyncio.sleep(delay)
+            
+            if not self.is_running or self.is_speaking or self.is_listening:
+                return
+
+            # User hasn't spoken for the delay period
+            check_num = self.current_silence_check_index + 1
+            total_checks = len(self.silence_check_delays)
+            
+            logger.info(f"Silence detected after {delay}s (check {check_num}/{total_checks})")
+
+            if self.current_silence_check_index >= len(self.silence_check_delays) - 1:
+                # Final check - end the interview
+                logger.info("Max silence reached, ending interview")
+                await self.send_to_client(
+                    NoticeMessage(
+                        event="notice",
+                        msg="Interview ended due to inactivity",
+                        level="info"
+                    ).model_dump()
+                )
+                await self.stop()
+            else:
+                # Send a check-in prompt
+                check_in_instructions = self._get_checkin_instruction(check_num, total_checks)
+                if self.realtime:
+                    await self.realtime.create_response(instructions=check_in_instructions)
+                
+                # Move to next backoff level
+                self.current_silence_check_index += 1
+
+        except asyncio.CancelledError:
+            logger.debug("Silence timer cancelled")
+        except Exception as e:
+            logger.error(f"Error in silence check: {e}")
+
+    def _get_checkin_instruction(self, check_num: int, total_checks: int) -> str:
+        """Get appropriate check-in instruction based on silence duration."""
+        if check_num == 1:
+            return (
+                "The candidate hasn't responded. Check in briefly: "
+                "'Are you still there?' or 'Can you hear me?' Keep it very short."
+            )
+        elif check_num == 2:
+            return (
+                "Still no response. Ask if they need a moment or if there are technical issues. "
+                "Be understanding and brief."
+            )
+        elif check_num == 3:
+            return (
+                "Extended silence. Ask if they'd like to continue the interview or if "
+                "they need to reschedule. Keep it professional and brief."
+            )
+        else:
+            return (
+                "Very long silence. Make a final check: 'I haven't heard from you. "
+                "Should we end the interview for now?' Be brief and direct."
+            )
+
     async def stop(self) -> None:
         """Stop the session and cleanup resources."""
         logger.info(f"Stopping session broker: {self.session_id}")
         self.is_running = False
 
+        # Cancel timers
+        self._cancel_silence_timer()
+
         # Cancel tasks
         if self._openai_task:
             self._openai_task.cancel()
-        if self._tts_task:
-            self._tts_task.cancel()
 
         # Close connections
         if self.realtime:
             await self.realtime.close()
-        if self.tts:
-            await self.tts.close()
 
         logger.info(f"Session broker stopped: {self.session_id}")

@@ -10,7 +10,7 @@ import { useInterviewStore } from '../store/interviewStore.ts';
 import { WebSocketClient } from '../services/wsClient.ts';
 import { AudioCapture } from '../services/audioCapture.ts';
 import { AudioPlayer } from '../services/audioPlayer.ts';
-import { LipSyncController } from '../components/avatar/lipSync.ts';
+import { VideoRecorder } from '../services/videoRecorder.ts';
 import { v4 as uuidv4 } from 'uuid';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
@@ -29,7 +29,6 @@ export default function RealtimeInterview() {
     addTranscript,
     setMicActive,
     setAIPlaying,
-    setCurrentVisemes,
     setLatencyMetrics,
     reset,
   } = useInterviewStore();
@@ -38,11 +37,10 @@ export default function RealtimeInterview() {
   const wsClientRef = useRef(null);
   const audioCaptureRef = useRef(null);
   const audioPlayerRef = useRef(null);
-  const lipSyncRef = useRef(new LipSyncController());
 
   // State
-  const [avatarUrl, setAvatarUrl] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [shouldForwardAudio, setShouldForwardAudio] = useState(true);
 
   // Initialize services on mount
   useEffect(() => {
@@ -52,6 +50,13 @@ export default function RealtimeInterview() {
       cleanup();
     };
   }, []);
+
+  // Auto-start interview once services are initialized
+  useEffect(() => {
+    if (isInitialized && status === 'idle') {
+      handleStartInterview();
+    }
+  }, [isInitialized]);
 
   /**
    * Initialize all services.
@@ -69,11 +74,17 @@ export default function RealtimeInterview() {
       audioPlayerRef.current.onPlaybackStart(() => {
         setAIPlaying(true);
         setStatus('speaking');
+
+        // Stop forwarding audio chunks while AI is speaking to avoid echo
+        setShouldForwardAudio(false);
       });
 
       audioPlayerRef.current.onPlaybackEnd(() => {
         setAIPlaying(false);
         setStatus('listening');
+
+        // Resume forwarding audio chunks after AI finishes speaking
+        setShouldForwardAudio(true);
       });
 
       setIsInitialized(true);
@@ -128,10 +139,6 @@ export default function RealtimeInterview() {
       console.log('Session ready:', message);
       setStatus('ready');
 
-      if (message.avatar_url) {
-        setAvatarUrl(message.avatar_url);
-      }
-
       // Start capturing audio
       startMicrophone();
     });
@@ -157,12 +164,6 @@ export default function RealtimeInterview() {
       // Play audio chunk
       if (message.audio_b64) {
         await audioPlayerRef.current.playChunk(message.audio_b64);
-      }
-
-      // Add viseme alignment data
-      if (message.align && message.align.length > 0) {
-        const baseTime = audioPlayerRef.current.getCurrentPlaybackTime();
-        lipSyncRef.current.addAlignmentData(message.align, baseTime);
       }
     });
 
@@ -201,8 +202,8 @@ export default function RealtimeInterview() {
     setStatus('listening');
 
     audioCaptureRef.current.start((seq, audioB64) => {
-      // Send audio chunk to server
-      if (wsClientRef.current && wsClientRef.current.isConnected()) {
+      // Send audio chunk to server only if we should forward audio
+      if (wsClientRef.current && wsClientRef.current.isConnected() && shouldForwardAudio) {
         wsClientRef.current.send({
           event: 'mic_chunk',
           seq,
@@ -262,9 +263,6 @@ export default function RealtimeInterview() {
     if (audioPlayerRef.current) {
       audioPlayerRef.current.stop();
     }
-
-    // Clear lip sync timeline
-    lipSyncRef.current.clear();
   };
 
   /**
@@ -300,60 +298,26 @@ export default function RealtimeInterview() {
       wsClientRef.current.close();
       wsClientRef.current = null;
     }
-
-    lipSyncRef.current.clear();
   };
 
-  // Update viseme weights every frame
-  useEffect(() => {
-    if (!audioPlayerRef.current) return;
-
-    const interval = setInterval(() => {
-      if (audioPlayerRef.current?.isCurrentlyPlaying()) {
-        const currentTime = audioPlayerRef.current.getCurrentPlaybackTime();
-        const visemes = lipSyncRef.current.getCurrentVisemes(currentTime);
-        setCurrentVisemes(visemes);
-      } else {
-        setCurrentVisemes([{ viseme: 'sil', weight: 1.0 }]);
-      }
-    }, 1000 / 60); // 60 FPS
-
-    return () => clearInterval(interval);
-  }, [setCurrentVisemes]);
-
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">AI Interview</h1>
-        <StatusIndicator />
-      </div>
+    <div className="h-screen flex flex-col relative overflow-hidden bg-gradient-to-b from-neutral-50 via-white to-neutral-100">
 
-      {/* Main Content */}
-      <div className="flex-1 flex">
-        {/* Avatar Section */}
-        <div className="w-1/2 bg-gray-900">
-          {avatarUrl ? (
-            <AvatarCanvas avatarUrl={avatarUrl} />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
-              <div className="text-center">
-                <div className="text-6xl mb-4">=d</div>
-                <div>Avatar Loading...</div>
-              </div>
-            </div>
-          )}
+      {/* Main Video Area */}
+      <div className="flex-1 relative flex items-center justify-center">
+        {/* AI Avatar - Centered presentation zone */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <AvatarCanvas />
         </div>
 
-        {/* Transcript Section */}
-        <div className="w-1/2 flex flex-col">
-          <TranscriptView />
+        {/* User Camera - Bottom Right, refined styling */}
+        <div className="absolute bottom-8 right-8 w-64 h-48 rounded-xl overflow-hidden shadow-xl border border-gray-300/50 backdrop-blur-sm bg-white/20">
+          <UserVideoFeed sessionId={useInterviewStore((state) => state.sessionId)} interviewId={interviewId} />
         </div>
       </div>
 
-      {/* Controls */}
+      {/* Bottom Controls Bar - refined styling */}
       <InterviewControls
-        onStartInterview={handleStartInterview}
         onEndInterview={handleEndInterview}
         onInterrupt={handleInterrupt}
         onToggleMic={handleToggleMic}
@@ -363,56 +327,83 @@ export default function RealtimeInterview() {
 }
 
 /**
- * Transcript view component.
+ * User video feed component with recording.
  */
-function TranscriptView() {
-  const transcripts = useInterviewStore((state) => state.transcripts);
-  const transcriptRef = useRef(null);
+function UserVideoFeed({ sessionId, interviewId }) {
+  const videoRef = useRef(null);
+  const videoRecorderRef = useRef(new VideoRecorder());
+  const [stream, setStream] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
 
-  // Auto-scroll to bottom
   useEffect(() => {
-    if (transcriptRef.current) {
-      transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
+    let videoStream = null;
+
+    const startCamera = async () => {
+      try {
+        videoStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: 'user',
+          },
+          audio: true,
+        });
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = videoStream;
+        }
+
+        setStream(videoStream);
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+      }
+    };
+
+    startCamera();
+
+    return () => {
+      // Stop camera when component unmounts
+      if (videoStream) {
+        videoStream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, []);
+
+  // Start recording when session is ready
+  useEffect(() => {
+    if (stream && sessionId && !isRecording) {
+      videoRecorderRef.current
+        .startRecording(stream, sessionId, interviewId)
+        .then(() => {
+          setIsRecording(true);
+        })
+        .catch((error) => {
+          console.error('Failed to start recording:', error);
+        });
     }
-  }, [transcripts]);
+
+    return () => {
+      if (isRecording) {
+        videoRecorderRef.current.stopRecording();
+      }
+    };
+  }, [stream, sessionId, interviewId]);
 
   return (
-    <div className="flex-1 flex flex-col bg-white">
-      <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold text-gray-800">Conversation</h2>
-      </div>
-      <div
-        ref={transcriptRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4"
-      >
-        {transcripts.length === 0 ? (
-          <div className="text-center text-gray-400 mt-8">
-            No messages yet. Start the interview to begin.
-          </div>
-        ) : (
-          transcripts.map((transcript) => (
-            <div
-              key={transcript.id}
-              className={`flex ${
-                transcript.speaker === 'user' ? 'justify-end' : 'justify-start'
-              }`}
-            >
-              <div
-                className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                  transcript.speaker === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-800'
-                }`}
-              >
-                <div className="text-xs font-semibold mb-1">
-                  {transcript.speaker === 'user' ? 'You' : 'AI Interviewer'}
-                </div>
-                <div>{transcript.text}</div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+    <div className="relative w-full h-full bg-black/80">
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        className="w-full h-full object-cover"
+      />
+      {isRecording && (
+        <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-red-600/90 text-white px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
+          <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+          <span>Recording</span>
+        </div>
+      )}
     </div>
   );
 }

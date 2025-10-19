@@ -40,7 +40,7 @@ class RealtimeService:
         Args:
             api_key: OpenAI API key
             model: Model name (gpt-realtime or gpt-realtime-mini)
-            voice: Voice for TTS (not used since we use ElevenLabs)
+            voice: Voice for TTS (alloy, echo, fable, onyx, nova, shimmer)
             instructions: System instructions for the conversation
         """
         self.api_key = api_key
@@ -65,7 +65,7 @@ class RealtimeService:
             logger.info(f"Connecting to OpenAI Realtime API with model {self.model}")
             self.ws = await websockets.connect(
                 url,
-                extra_headers=headers,
+                additional_headers=headers,
                 ping_interval=20,
                 ping_timeout=10,
             )
@@ -84,10 +84,11 @@ class RealtimeService:
             raise
 
     async def _configure_session(self) -> None:
-        """Configure the realtime session with VAD and modalities."""
+        """Configure the realtime session with VAD for turn-taking."""
         config = {
             "type": "session.update",
             "session": {
+                "type": "session",
                 "modalities": ["text", "audio"],
                 "instructions": self.instructions,
                 "voice": self.voice,
@@ -100,13 +101,13 @@ class RealtimeService:
                     "type": "server_vad",
                     "threshold": 0.5,
                     "prefix_padding_ms": 300,
-                    "silence_duration_ms": 200,
+                    "silence_duration_ms": 1200
                 }
             }
         }
 
         await self._send_event(config)
-        logger.info("Session configured with VAD silence_duration_ms=200")
+        logger.info("Session configured with server VAD (threshold=0.5, silence=1200ms)")
 
     async def _send_event(self, event: Dict[str, Any]) -> None:
         """Send event to OpenAI Realtime API."""
@@ -167,9 +168,15 @@ class RealtimeService:
         event = {"type": "input_audio_buffer.commit"}
         await self._send_event(event)
 
-    async def create_response(self) -> None:
-        """Request AI to generate a response."""
-        event = {"type": "response.create"}
+    async def create_response(self, instructions: Optional[str] = None) -> None:
+        """Request AI to generate a response.
+
+        Args:
+            instructions: Optional override instructions for this response only.
+        """
+        event: Dict[str, Any] = {"type": "response.create"}
+        if instructions:
+            event["response"] = {"instructions": instructions}
         await self._send_event(event)
 
     async def cancel_response(self) -> None:
@@ -189,9 +196,10 @@ class RealtimeService:
             - input_audio_buffer.speech_stopped: User stopped speaking (VAD)
             - conversation.item.created: New conversation item
             - response.created: Response generation started
-            - response.text.delta: Streaming text chunk
-            - response.text.done: Text generation complete
-            - response.audio.delta: Audio chunk (not used, using ElevenLabs)
+            - response.output_text.delta: Streaming text chunk
+            - response.output_text.done: Text generation complete
+            - response.output_audio.delta: Streaming audio chunk (PCM16)
+            - response.output_audio.done: Audio generation complete
             - response.done: Response fully complete
             - error: Error occurred
         """
@@ -219,10 +227,10 @@ class RealtimeService:
         """
         event_type = event.get("type", "")
 
-        if event_type == "response.text.delta":
+        if event_type == "response.output_text.delta":
             return event.get("delta", "")
 
-        if event_type == "response.text.done":
+        if event_type == "response.output_text.done":
             return event.get("text", "")
 
         if event_type == "conversation.item.input_audio_transcription.completed":
@@ -244,15 +252,23 @@ class RealtimeService:
 
     def is_response_text_delta(self, event: Dict[str, Any]) -> bool:
         """Check if event contains streaming text."""
-        return event.get("type") == "response.text.delta"
+        return event.get("type") == "response.output_text.delta"
 
     def is_response_text_done(self, event: Dict[str, Any]) -> bool:
         """Check if event signals text generation complete."""
-        return event.get("type") == "response.text.done"
+        return event.get("type") == "response.output_text.done"
 
     def is_response_done(self, event: Dict[str, Any]) -> bool:
         """Check if event signals response fully complete."""
         return event.get("type") == "response.done"
+
+    def is_response_audio_delta(self, event: Dict[str, Any]) -> bool:
+        """Check if event contains streaming audio."""
+        return event.get("type") == "response.output_audio.delta"
+
+    def is_response_audio_done(self, event: Dict[str, Any]) -> bool:
+        """Check if event signals audio generation complete."""
+        return event.get("type") == "response.output_audio.done"
 
     def is_error(self, event: Dict[str, Any]) -> bool:
         """Check if event is an error."""

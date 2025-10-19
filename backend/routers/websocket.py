@@ -16,6 +16,8 @@ from pydantic import ValidationError
 
 from config import settings
 from services.session_broker import SessionBroker, SessionConfig
+from database import get_interviews_collection
+from prompts.chat import get_interviewer_system_prompt
 from models.websocket import (
     StartSessionMessage,
     MicChunkMessage,
@@ -42,10 +44,8 @@ async def get_session_config() -> SessionConfig:
         openai_model=settings.OPENAI_REALTIME_MODEL,
         openai_voice=settings.OPENAI_REALTIME_VOICE,
         openai_instructions=settings.AI_INTERVIEWER_PERSONA,
-        elevenlabs_api_key=settings.ELEVENLABS_API_KEY,
-        elevenlabs_voice_id=settings.ELEVENLABS_VOICE_ID,
-        elevenlabs_model=settings.ELEVENLABS_MODEL,
         enable_latency_logging=settings.ENABLE_LATENCY_LOGGING,
+        auto_greet=settings.OPENAI_REALTIME_AUTO_GREET,
     )
 
 
@@ -87,13 +87,60 @@ async def websocket_endpoint(
                     # Initialize session
                     msg = StartSessionMessage(**data)
                     session_id = msg.session_id
+                    interview_id = msg.interview_id
 
                     logger.info(f"Starting session: {session_id}")
+
+                    # Build interview-specific instructions if interview_id provided
+                    interview_instructions = config.openai_instructions
+                    if interview_id:
+                        try:
+                            # Fetch interview from database
+                            interviews_collection = get_interviews_collection()
+                            interview = await interviews_collection.find_one({"_id": interview_id})
+
+                            if interview:
+                                # Build custom instructions from interview and role data
+                                candidate = interview.get("candidate", {})
+                                role = interview.get("role", {})
+                                role_description = (
+                                    interview.get("role_description")
+                                    or role.get("description", "")
+                                )
+                                role_requirements = (
+                                    interview.get("role_requirements")
+                                    or role.get("requirements", [])
+                                )
+
+                                interview_instructions = get_interviewer_system_prompt(
+                                    position=interview.get("position", "Software Engineer"),
+                                    candidate_name=candidate.get("name", "Candidate"),
+                                    candidate_skills=candidate.get("skills", []),
+                                    candidate_experience_years=candidate.get("experience_years", 0),
+                                    candidate_bio=candidate.get("bio", ""),
+                                    role_description=role_description,
+                                    role_requirements=role_requirements,
+                                )
+                                logger.info(f"Using interview-specific instructions for interview {interview_id}")
+                            else:
+                                logger.warning(f"Interview {interview_id} not found, using default instructions")
+                        except Exception as e:
+                            logger.error(f"Error fetching interview: {e}, using default instructions")
+
+                    # Create session config with appropriate instructions
+                    session_config = SessionConfig(
+                        openai_api_key=config.openai_api_key,
+                        openai_model=config.openai_model,
+                        openai_voice=config.openai_voice,
+                        openai_instructions=interview_instructions,
+                        enable_latency_logging=config.enable_latency_logging,
+                        auto_greet=config.auto_greet,
+                    )
 
                     # Create session broker
                     session_broker = SessionBroker(
                         session_id=session_id,
-                        config=config,
+                        config=session_config,
                         send_to_client=send_to_client,
                     )
 
@@ -108,7 +155,6 @@ async def websocket_endpoint(
                         SessionReadyMessage(
                             event="session_ready",
                             session_id=session_id,
-                            avatar_url=settings.AVATAR_GLB_URL,
                         ).model_dump()
                     )
 

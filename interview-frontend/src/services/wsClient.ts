@@ -13,7 +13,7 @@ import {
   ErrorMessage,
   MetricsMessage,
   SessionReadyMessage,
-} from '../types/interview';
+} from '../types/interview.ts';
 
 export class WebSocketClient extends EventEmitter {
   private ws: WebSocket | null = null;

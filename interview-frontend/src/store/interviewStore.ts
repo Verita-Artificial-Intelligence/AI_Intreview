@@ -7,10 +7,8 @@ import {
   InterviewState,
   InterviewStatus,
   TranscriptEntry,
-  VisemeTimeline,
-  VisemeWeight,
   LatencyMetrics,
-} from '../types/interview';
+} from '../types/interview.ts';
 
 interface InterviewStore extends InterviewState {
   // Actions
@@ -22,11 +20,8 @@ interface InterviewStore extends InterviewState {
   setCurrentAIText: (text: string) => void;
   setMicActive: (active: boolean) => void;
   setAIPlaying: (playing: boolean) => void;
-  addVisemeEvent: (event: VisemeTimeline) => void;
-  setCurrentVisemes: (visemes: VisemeWeight[]) => void;
   setLatencyMetrics: (metrics: LatencyMetrics) => void;
   clearTranscripts: () => void;
-  clearVisemeTimeline: () => void;
   reset: () => void;
 }
 
@@ -39,8 +34,6 @@ const initialState: InterviewState = {
   currentAIText: '',
   isMicActive: false,
   isAIPlaying: false,
-  visemeTimeline: [],
-  currentVisemes: [],
   latencyMetrics: null,
 };
 
@@ -66,18 +59,9 @@ export const useInterviewStore = create<InterviewStore>((set) => ({
 
   setAIPlaying: (playing) => set({ isAIPlaying: playing }),
 
-  addVisemeEvent: (event) =>
-    set((state) => ({
-      visemeTimeline: [...state.visemeTimeline, event],
-    })),
-
-  setCurrentVisemes: (visemes) => set({ currentVisemes: visemes }),
-
   setLatencyMetrics: (metrics) => set({ latencyMetrics: metrics }),
 
   clearTranscripts: () => set({ transcripts: [] }),
-
-  clearVisemeTimeline: () => set({ visemeTimeline: [], currentVisemes: [] }),
 
   reset: () => set(initialState),
 }));
@@ -88,9 +72,6 @@ export const useInterviewStatus = () =>
 
 export const useTranscripts = () =>
   useInterviewStore((state) => state.transcripts);
-
-export const useCurrentVisemes = () =>
-  useInterviewStore((state) => state.currentVisemes);
 
 export const useIsAIPlaying = () =>
   useInterviewStore((state) => state.isAIPlaying);

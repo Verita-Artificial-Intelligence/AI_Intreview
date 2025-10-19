@@ -43,8 +43,27 @@ export class AudioPlayer {
       // Decode base64 to ArrayBuffer
       const audioData = this.base64ToArrayBuffer(audioB64);
 
-      // Decode audio data (MP3)
-      const audioBuffer = await this.audioContext.decodeAudioData(audioData);
+      // Skip empty audio chunks (mock mode)
+      if (audioData.byteLength === 0) {
+        console.log('Skipping empty audio chunk (mock mode)');
+
+        // Trigger playback callbacks even without audio
+        if (!this.isPlaying) {
+          this.isPlaying = true;
+          this.nextStartTime = this.audioContext.currentTime;
+          this.startTimestamp = this.nextStartTime;
+          this.currentPlaybackTime = 0;
+
+          if (this.onPlaybackStartCallback) {
+            this.onPlaybackStartCallback();
+          }
+        }
+        return;
+      }
+
+      // Convert PCM16 audio data to AudioBuffer
+      // OpenAI Realtime API sends raw PCM16 at 24kHz mono
+      const audioBuffer = this.pcm16ToAudioBuffer(audioData, 24000, 1);
 
       // If not playing yet, start playback
       if (!this.isPlaying) {
@@ -173,6 +192,31 @@ export class AudioPlayer {
     }
 
     return bytes.buffer;
+  }
+
+  /**
+   * Convert PCM16 raw audio data to AudioBuffer.
+   * PCM16 is 16-bit signed integer little-endian audio.
+   */
+  private pcm16ToAudioBuffer(arrayBuffer: ArrayBuffer, sampleRate: number, channels: number): AudioBuffer {
+    if (!this.audioContext) {
+      throw new Error('Audio context not initialized');
+    }
+
+    // PCM16 is 16-bit (2 bytes per sample)
+    const int16Array = new Int16Array(arrayBuffer);
+    const numSamples = int16Array.length;
+
+    // Create AudioBuffer
+    const audioBuffer = this.audioContext.createBuffer(channels, numSamples, sampleRate);
+
+    // Convert Int16 samples to Float32 range [-1, 1]
+    const channelData = audioBuffer.getChannelData(0);
+    for (let i = 0; i < numSamples; i++) {
+      channelData[i] = int16Array[i] / 32768.0; // Convert to float range
+    }
+
+    return audioBuffer;
   }
 
   /**

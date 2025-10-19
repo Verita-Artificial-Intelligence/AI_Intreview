@@ -1,9 +1,8 @@
 """
-ElevenLabs TTS service with streaming and viseme alignment.
+ElevenLabs TTS service with streaming.
 
 This service manages WebSocket connection to ElevenLabs for:
 - Streaming text-to-speech generation
-- Viseme alignment data for lip sync
 - Low-latency audio delivery
 """
 
@@ -25,8 +24,7 @@ class TTSService:
     Handles:
     - WebSocket connection lifecycle
     - Text streaming for TTS generation
-    - Audio chunk reception with alignment metadata
-    - Viseme data for lip sync
+    - Audio chunk reception
     """
 
     def __init__(
@@ -95,11 +93,10 @@ class TTSService:
             },
             "xi_api_key": self.api_key,
             "auto_mode": True,
-            "sync_alignment": True,
         }
 
         await self._send_message(init_message)
-        logger.info("ElevenLabs session initialized with alignment enabled")
+        logger.info("ElevenLabs session initialized")
 
     async def _send_message(self, message: Dict[str, Any]) -> None:
         """Send message to ElevenLabs WebSocket."""
@@ -164,7 +161,6 @@ class TTSService:
         Yields:
             Dictionaries with:
             - audio_b64: Base64-encoded audio chunk (MP3)
-            - align: List of alignment units for visemes
             - is_final: Boolean indicating if this is the last chunk
             - seq: Sequence number
         """
@@ -176,18 +172,11 @@ class TTSService:
 
                 # Process the response
                 audio_b64 = data.get("audio")
-                alignment = data.get("alignment")
                 is_final = data.get("isFinal", False)
 
                 if audio_b64:
-                    # Convert alignment to our format
-                    align_units = []
-                    if alignment:
-                        align_units = self._parse_alignment(alignment)
-
                     yield {
                         "audio_b64": audio_b64,
-                        "align": align_units,
                         "is_final": is_final,
                         "seq": self._chunk_seq,
                     }
@@ -197,7 +186,6 @@ class TTSService:
                     # Final message without audio
                     yield {
                         "audio_b64": "",
-                        "align": [],
                         "is_final": True,
                         "seq": self._chunk_seq,
                     }
@@ -208,43 +196,6 @@ class TTSService:
             except Exception as e:
                 logger.error(f"Error iterating audio chunks: {e}")
                 break
-
-    def _parse_alignment(
-        self, alignment: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
-        """
-        Parse ElevenLabs alignment data into viseme units.
-
-        Args:
-            alignment: Raw alignment data from ElevenLabs
-
-        Returns:
-            List of alignment units with format:
-            {t: float, d: float, unit: str, val: str}
-        """
-        align_units = []
-
-        # ElevenLabs provides character-level alignment
-        chars = alignment.get("characters", [])
-        char_start_times = alignment.get("character_start_times_seconds", [])
-        char_durations = alignment.get("character_end_times_seconds", [])
-
-        for i, char in enumerate(chars):
-            if i >= len(char_start_times) or i >= len(char_durations):
-                break
-
-            start_time = char_start_times[i]
-            end_time = char_durations[i]
-            duration = end_time - start_time
-
-            align_units.append({
-                "t": start_time,
-                "d": duration,
-                "unit": "char",
-                "val": char,
-            })
-
-        return align_units
 
     async def clear_queue(self) -> None:
         """Clear pending audio chunks (for interruptions)."""
