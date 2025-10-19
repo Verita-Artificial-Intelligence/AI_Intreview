@@ -113,12 +113,9 @@ class SessionBroker:
             # Optionally auto-start the conversation with a short greeting
             if self.config.auto_greet:
                 await asyncio.sleep(0.5)  # Ensure session is fully ready
-                # Force a focused first question rather than a generic greeting
-                first_turn_instructions = (
-                    "Start the interview with a concise, role-relevant first question. "
-                    "Avoid generic acknowledgements or offering broad help."
-                )
-                await self.realtime.create_response(instructions=first_turn_instructions)
+                # The system prompt now handles the soft opening, so no special
+                # instructions are needed here. A generic create_response will trigger it.
+                await self.realtime.create_response()
 
             logger.info(f"Session broker started: {self.session_id}")
 
