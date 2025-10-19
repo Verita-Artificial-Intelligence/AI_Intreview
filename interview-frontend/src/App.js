@@ -6,6 +6,7 @@ import Signup from './pages/Signup'
 import ProfileSetup from './pages/ProfileSetup'
 import NewInterviewPrep from './pages/NewInterviewPrep'
 import Interview from './pages/Interview'
+import RealtimeInterview from './pages/RealtimeInterview'
 import StatusScreen from './pages/StatusScreen'
 import '@/App.css'
 
@@ -43,6 +44,14 @@ function App() {
               element={
                 <ProtectedRoute requireProfile={true}>
                   <Interview />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/realtime-interview/:interviewId"
+              element={
+                <ProtectedRoute requireProfile={true}>
+                  <RealtimeInterview />
                 </ProtectedRoute>
               }
             />

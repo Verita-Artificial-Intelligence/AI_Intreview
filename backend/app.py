@@ -11,6 +11,7 @@ from routers import (
     audio_router,
     analysis_router,
     profile_router,
+    websocket_router,
 )
 
 # Create the main app without a prefix
@@ -37,6 +38,9 @@ api_router.include_router(analysis_router)
 
 # Include the router in the main app
 app.include_router(api_router)
+
+# Include WebSocket router (not under /api prefix)
+app.include_router(websocket_router)
 
 # Add CORS middleware
 app.add_middleware(

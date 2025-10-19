@@ -5,6 +5,7 @@ from .chat import router as chat_router
 from .audio import router as audio_router
 from .analysis import router as analysis_router
 from .profile import router as profile_router
+from .websocket import router as websocket_router
 
 __all__ = [
     "auth_router",
@@ -14,4 +15,5 @@ __all__ = [
     "audio_router",
     "analysis_router",
     "profile_router",
+    "websocket_router",
 ]
