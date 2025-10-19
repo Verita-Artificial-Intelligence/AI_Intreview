@@ -7,7 +7,7 @@ import aiofiles
 from pathlib import Path
 import os
 
-router = APIRouter(prefix="/interviews", tags=["Interviews"])
+router = APIRouter()
 logger = logging.getLogger(__name__)
 
 # Create uploads directory if it doesn't exist

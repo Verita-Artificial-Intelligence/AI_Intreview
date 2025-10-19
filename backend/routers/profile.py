@@ -3,7 +3,7 @@ from models import User, ProfileComplete
 from services import ProfileService
 from dependencies import get_current_user
 
-router = APIRouter(prefix="/profile", tags=["Profile"])
+router = APIRouter()
 
 
 @router.get("/me", response_model=User)

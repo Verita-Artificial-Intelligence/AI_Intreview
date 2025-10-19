@@ -20,18 +20,9 @@ export class AudioCapture {
   /**
    * Request microphone permission and initialize audio context.
    */
-  async initialize(): Promise<void> {
+  async initialize(stream: MediaStream): Promise<void> {
     try {
-      // Request microphone access
-      this.mediaStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          channelCount: 1,
-          sampleRate: 48000,
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
+      this.mediaStream = stream;
 
       // Create audio context
       this.audioContext = new AudioContext({ sampleRate: 48000 });
@@ -148,10 +139,8 @@ export class AudioCapture {
   dispose(): void {
     this.stop();
 
-    if (this.mediaStream) {
-      this.mediaStream.getTracks().forEach((track) => track.stop());
-      this.mediaStream = null;
-    }
+    // Do not stop the tracks of the stream, as it's shared
+    this.mediaStream = null;
 
     if (this.audioContext && this.audioContext.state !== 'closed') {
       this.audioContext.close();

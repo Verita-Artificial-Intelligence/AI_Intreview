@@ -2,7 +2,7 @@ from fastapi import APIRouter, File, UploadFile
 from models import TTSRequest
 from services import AudioService
 
-router = APIRouter(prefix="/audio", tags=["Audio"])
+router = APIRouter()
 
 
 @router.get("/persona")

@@ -3,7 +3,7 @@ from typing import List, Optional
 from models import Candidate, CandidateCreate
 from services import CandidateService
 
-router = APIRouter(prefix="/candidates", tags=["Candidates"])
+router = APIRouter()
 
 
 @router.post("", response_model=Candidate)
