@@ -1,261 +1,314 @@
 """
-WebSocket router for realtime interview sessions.
+Simple bidirectional proxy between client and OpenAI Realtime API.
 
-Handles:
-- WebSocket connection lifecycle
-- Message routing between client and session broker
-- Session state management
+Client ↔ Backend ↔ OpenAI
 """
 
 import asyncio
 import json
 import logging
-from typing import Dict, Optional
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
-from pydantic import ValidationError
+from typing import Optional
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from uuid import uuid4
 
 from config import settings
-from services.session_broker import SessionBroker, SessionConfig
+from services.realtime_service import RealtimeService
 from database import get_interviews_collection
 from prompts.chat import get_interviewer_system_prompt
-from models.websocket import (
-    StartSessionMessage,
-    MicChunkMessage,
-    UserTurnEndMessage,
-    BargeInMessage,
-    EndSessionMessage,
-    SessionReadyMessage,
-    ErrorMessage,
-    NoticeMessage,
-)
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# Active sessions: session_id -> SessionBroker
-active_sessions: Dict[str, SessionBroker] = {}
 
-
-async def get_session_config() -> SessionConfig:
-    """Get session configuration from settings."""
-    return SessionConfig(
-        openai_api_key=settings.OPENAI_API_KEY,
-        openai_model=settings.OPENAI_REALTIME_MODEL,
-        openai_voice=settings.OPENAI_REALTIME_VOICE,
-        openai_instructions=settings.AI_INTERVIEWER_PERSONA,
-        enable_latency_logging=settings.ENABLE_LATENCY_LOGGING,
-        auto_greet=settings.OPENAI_REALTIME_AUTO_GREET,
-    )
-
-
-@router.websocket("/ws/session")
-async def websocket_endpoint(
-    websocket: WebSocket,
-    config: SessionConfig = Depends(get_session_config),
-):
+@router.websocket("/session")
+async def websocket_endpoint(websocket: WebSocket):
     """
-    WebSocket endpoint for realtime interview sessions.
+    Bidirectional proxy for OpenAI Realtime API.
 
-    Protocol:
-    - Client sends: start, mic_chunk, user_turn_end, barge_in, end
-    - Server sends: session_ready, transcript, tts_chunk, answer_end, notice, error, metrics
+    Flow:
+    1. Client connects and sends session start with optional interview_id
+    2. Backend fetches interview context (if provided)
+    3. Backend creates OpenAI connection with interview-specific instructions
+    4. Backend proxies all messages bidirectionally
     """
     await websocket.accept()
-    logger.info("WebSocket connection established")
+    logger.info("Client connected")
 
-    session_broker: Optional[SessionBroker] = None
+    realtime: Optional[RealtimeService] = None
     session_id: Optional[str] = None
-
-    async def send_to_client(message: dict) -> None:
-        """Send message to client via WebSocket."""
-        try:
-            await websocket.send_json(message)
-        except Exception as e:
-            logger.error(f"Error sending to client: {e}")
+    openai_task: Optional[asyncio.Task] = None
+    client_proxy_task: Optional[asyncio.Task] = None
+    transcript: list[dict] = []
 
     try:
-        while True:
-            # Receive message from client
-            message = await websocket.receive_text()
+        # Wait for initial start message from client
+        start_msg = await websocket.receive_text()
+        data = json.loads(start_msg)
 
-            try:
-                data = json.loads(message)
-                event = data.get("event")
+        if data.get("event") != "start":
+            await websocket.send_json({
+                "event": "error",
+                "message": "First message must be 'start' event"
+            })
+            return
 
-                if event == "start":
-                    # Initialize session
-                    msg = StartSessionMessage(**data)
-                    session_id = msg.session_id
-                    interview_id = msg.interview_id
+        session_id = data.get("session_id") or str(uuid4())
+        interview_id = data.get("interview_id")
 
-                    logger.info(f"Starting session: {session_id}")
+        logger.info(f"Starting session: {session_id}")
 
-                    # Build interview-specific instructions if interview_id provided
-                    interview_instructions = config.openai_instructions
-                    if interview_id:
-                        try:
-                            # Fetch interview from database
-                            interviews_collection = get_interviews_collection()
-                            interview = await interviews_collection.find_one({"_id": interview_id})
+        # Get interview-specific instructions
+        instructions = await get_interview_instructions(interview_id)
 
-                            if interview:
-                                # Build custom instructions from interview and role data
-                                candidate = interview.get("candidate", {})
-                                role = interview.get("role", {})
-                                role_description = (
-                                    interview.get("role_description")
-                                    or role.get("description", "")
-                                )
-                                role_requirements = (
-                                    interview.get("role_requirements")
-                                    or role.get("requirements", [])
-                                )
+        # Create OpenAI connection
+        realtime = RealtimeService(
+            api_key=settings.OPENAI_API_KEY,
+            model=settings.OPENAI_REALTIME_MODEL,
+            voice=settings.OPENAI_REALTIME_VOICE,
+            instructions=instructions,
+        )
 
-                                interview_instructions = get_interviewer_system_prompt(
-                                    position=interview.get("position", "Software Engineer"),
-                                    candidate_name=candidate.get("name", "Candidate"),
-                                    candidate_skills=candidate.get("skills", []),
-                                    candidate_experience_years=candidate.get("experience_years", 0),
-                                    candidate_bio=candidate.get("bio", ""),
-                                    role_description=role_description,
-                                    role_requirements=role_requirements,
-                                )
-                                logger.info(f"Using interview-specific instructions for interview {interview_id}")
-                            else:
-                                logger.warning(f"Interview {interview_id} not found, using default instructions")
-                        except Exception as e:
-                            logger.error(f"Error fetching interview: {e}, using default instructions")
+        await realtime.connect()
 
-                    # Create session config with appropriate instructions
-                    session_config = SessionConfig(
-                        openai_api_key=config.openai_api_key,
-                        openai_model=config.openai_model,
-                        openai_voice=config.openai_voice,
-                        openai_instructions=interview_instructions,
-                        enable_latency_logging=config.enable_latency_logging,
-                        auto_greet=config.auto_greet,
-                    )
+        # Notify client session is ready
+        await websocket.send_json({
+            "event": "session_ready",
+            "session_id": session_id,
+        })
 
-                    # Create session broker
-                    session_broker = SessionBroker(
-                        session_id=session_id,
-                        config=session_config,
-                        send_to_client=send_to_client,
-                    )
+        logger.info(f"Session ready: {session_id}")
 
-                    # Start session
-                    await session_broker.start()
+        # Prompt the AI to start the conversation (GA event)
+        await realtime.send_event({"type": "response.create"})
+        logger.info("Sent response.create to AI")
 
-                    # Store in active sessions
-                    active_sessions[session_id] = session_broker
-
-                    # Send ready message
-                    await send_to_client(
-                        SessionReadyMessage(
-                            event="session_ready",
-                            session_id=session_id,
-                        ).model_dump()
-                    )
-
-                    logger.info(f"Session ready: {session_id}")
-
-                elif event == "mic_chunk":
-                    # Audio chunk from client
-                    msg = MicChunkMessage(**data)
-
-                    if session_broker:
-                        await session_broker.handle_mic_chunk(msg.audio_b64)
-
-                elif event == "user_turn_end":
-                    # User stopped speaking
-                    msg = UserTurnEndMessage(**data)
-
-                    if session_broker:
-                        await session_broker.handle_user_turn_end()
-
-                elif event == "barge_in":
-                    # User interrupts AI
-                    msg = BargeInMessage(**data)
-
-                    if session_broker:
-                        await session_broker.handle_barge_in()
-
-                elif event == "end":
-                    # End session
-                    msg = EndSessionMessage(**data)
-
-                    logger.info(f"Ending session: {session_id}")
-
-                    if session_broker:
-                        await session_broker.stop()
-
-                    if session_id and session_id in active_sessions:
-                        del active_sessions[session_id]
-
-                    break
-
-                else:
-                    logger.warning(f"Unknown event type: {event}")
-                    await send_to_client(
-                        NoticeMessage(
-                            event="notice",
-                            msg=f"Unknown event type: {event}",
-                            level="warning",
-                        ).model_dump()
-                    )
-
-            except ValidationError as e:
-                logger.error(f"Message validation error: {e}")
-                await send_to_client(
-                    ErrorMessage(
-                        event="error",
-                        code="INVALID_MESSAGE",
-                        message=str(e),
-                    ).model_dump()
-                )
-
-            except json.JSONDecodeError as e:
-                logger.error(f"JSON decode error: {e}")
-                await send_to_client(
-                    ErrorMessage(
-                        event="error",
-                        code="INVALID_JSON",
-                        message=str(e),
-                    ).model_dump()
-                )
+        # Start bidirectional forwarding
+        openai_task = asyncio.create_task(
+            forward_openai_to_client(realtime, websocket, transcript)
+        )
+        client_proxy_task = asyncio.create_task(
+            forward_client_to_openai(websocket, realtime)
+        )
+        await asyncio.gather(openai_task, client_proxy_task)
 
     except WebSocketDisconnect:
-        logger.info(f"WebSocket disconnected: {session_id}")
+        logger.info(f"Client disconnected: {session_id}")
 
     except Exception as e:
-        logger.error(f"WebSocket error: {e}", exc_info=True)
+        logger.error(f"Session error: {e}", exc_info=True)
         try:
-            await send_to_client(
-                ErrorMessage(
-                    event="error",
-                    code="INTERNAL_ERROR",
-                    message=str(e),
-                ).model_dump()
-            )
+            await websocket.send_json({
+                "event": "error",
+                "message": str(e)
+            })
         except:
             pass
 
     finally:
         # Cleanup
-        if session_broker:
-            await session_broker.stop()
+        if openai_task:
+            openai_task.cancel()
+        if client_proxy_task:
+            client_proxy_task.cancel()
 
-        if session_id and session_id in active_sessions:
-            del active_sessions[session_id]
+        # Await task cancellation to avoid hanging during reload
+        tasks = [t for t in (openai_task, client_proxy_task) if t]
+        if tasks:
+            try:
+                await asyncio.gather(*tasks, return_exceptions=True)
+            except Exception:
+                pass
 
-        logger.info(f"WebSocket connection closed: {session_id}")
+        if realtime:
+            await realtime.close()
+
+        if interview_id and transcript:
+            await save_transcript(interview_id, transcript)
+
+        logger.info(f"Session closed: {session_id}")
 
 
-@router.get("/ws/sessions/active")
+async def save_transcript(interview_id: str, transcript: list[dict]):
+    """
+    Save the interview transcript to the database.
+    """
+    try:
+        interviews_collection = get_interviews_collection()
+        await interviews_collection.update_one(
+            {"_id": interview_id},
+            {"$set": {"transcript": transcript, "status": "completed"}}
+        )
+        logger.info(f"Transcript saved for interview {interview_id}")
+    except Exception as e:
+        logger.error(f"Error saving transcript for interview {interview_id}: {e}")
+
+
+async def get_interview_instructions(interview_id: Optional[str]) -> str:
+    """
+    Get interview-specific instructions from database.
+    Falls back to default if not found.
+    """
+    if not interview_id:
+        logger.info("No interview ID provided, using default instructions.")
+        return get_interviewer_system_prompt()
+
+    try:
+        interviews_collection = get_interviews_collection()
+        interview = await interviews_collection.find_one({"_id": interview_id})
+
+        if not interview:
+            logger.warning(f"Interview {interview_id} not found, using default instructions")
+            return get_interviewer_system_prompt()
+
+        # Build custom instructions
+        candidate = interview.get("candidate", {})
+        role = interview.get("role", {})
+
+        instructions = get_interviewer_system_prompt(
+            position=interview.get("position", "Software Engineer"),
+            candidate_name=candidate.get("name", "Candidate"),
+            candidate_skills=candidate.get("skills", []),
+            candidate_experience_years=candidate.get("experience_years", 0),
+            candidate_bio=candidate.get("bio", ""),
+            role_description=interview.get("role_description") or role.get("description", ""),
+            role_requirements=interview.get("role_requirements") or role.get("requirements", []),
+        )
+
+        logger.info(f"Using custom instructions for interview {interview_id}")
+        return instructions
+
+    except Exception as e:
+        logger.error(f"Error fetching interview: {e}")
+        return get_interviewer_system_prompt()
+
+
+async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeService):
+    """Forward messages from client to OpenAI."""
+    try:
+        while True:
+            message = await websocket.receive_text()
+            data = json.loads(message)
+
+            event_type = data.get("event")
+
+            # Map client events to OpenAI events
+            if event_type == "mic_chunk":
+                # Audio input from client
+                await realtime.send_event({
+                    "type": "input_audio_buffer.append",
+                    "audio": data.get("audio_b64")
+                })
+
+            elif event_type == "user_turn_end":
+                # Explicit end of user's turn -> commit audio buffer
+                await realtime.send_event({
+                    "type": "input_audio_buffer.commit"
+                })
+
+            elif event_type == "barge_in":
+                # Interrupt current model response
+                await realtime.send_event({
+                    "type": "response.cancel"
+                })
+
+            elif event_type == "end":
+                # Client wants to end session
+                logger.info("Client requested session end")
+                break
+
+            # Ignore other client events - OpenAI handles turn detection
+
+    except WebSocketDisconnect:
+        pass
+    except Exception as e:
+        logger.error(f"Error forwarding to OpenAI: {e}")
+        raise
+
+
+async def forward_openai_to_client(
+    realtime: RealtimeService, websocket: WebSocket, transcript: list[dict]
+):
+    """Forward events from OpenAI to client."""
+    try:
+        async for event in realtime.iter_events():
+            event_type = event.get("type", "")
+
+            # Map OpenAI events to client events
+            if event_type == "conversation.item.done":
+                item = event.get("item", {})
+                if item.get("type") == "input_audio_transcription":
+                    # User transcript
+                    text = item.get("transcript", "")
+                    if text:
+                        transcript.append({"speaker": "user", "text": text})
+                        await websocket.send_json({
+                            "event": "transcript",
+                            "speaker": "user",
+                            "text": text,
+                            "final": True
+                        })
+                        # After user's turn completes, ask model to respond
+                        await realtime.send_event({"type": "response.create"})
+
+            elif event_type == "response.output_text.delta":
+                # AI transcript
+                text = event.get("delta", "")
+                if text:
+                    # This is a bit tricky as we get deltas. We'll add to the last message if it's from the assistant.
+                    if transcript and transcript[-1]["speaker"] == "assistant":
+                        transcript[-1]["text"] += text
+                    else:
+                        transcript.append({"speaker": "assistant", "text": text})
+
+                    await websocket.send_json({
+                        "event": "transcript",
+                        "speaker": "assistant",
+                        "text": text,
+                        "final": False
+                    })
+
+            elif event_type == "response.output_audio.delta":
+                # AI audio chunk
+                await websocket.send_json({
+                    "event": "tts_chunk",
+                    "audio_b64": event.get("delta", ""),
+                    "is_final": False
+                })
+
+            elif event_type == "response.output_audio.done":
+                # AI finished speaking
+                await websocket.send_json({
+                    "event": "tts_chunk",
+                    "audio_b64": "",
+                    "is_final": True
+                })
+                await websocket.send_json({
+                    "event": "answer_end"
+                })
+
+            elif event_type == "error":
+                # OpenAI error
+                error = event.get("error", {})
+                await websocket.send_json({
+                    "event": "error",
+                    "code": "OPENAI_ERROR",
+                    "message": error.get("message", "Unknown error")
+                })
+
+            # Pass through other events for debugging
+            else:
+                logger.debug(f"OpenAI event: {event_type}")
+
+    except WebSocketDisconnect:
+        pass
+    except Exception as e:
+        logger.error(f"Error forwarding to client: {e}")
+        raise
+
+
+@router.get("/sessions/active")
 async def get_active_sessions():
     """Get count of active sessions (for monitoring)."""
-    return {
-        "active_sessions": len(active_sessions),
-        "session_ids": list(active_sessions.keys()),
-    }
+    # Simplified - no session tracking needed
+    return {"active_sessions": 0}

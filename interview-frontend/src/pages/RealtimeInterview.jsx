@@ -40,7 +40,7 @@ export default function RealtimeInterview() {
 
   // State
   const [isInitialized, setIsInitialized] = useState(false);
-  const [shouldForwardAudio, setShouldForwardAudio] = useState(true);
+  const [mediaStream, setMediaStream] = useState(null);
 
   // Initialize services on mount
   useEffect(() => {
@@ -63,9 +63,26 @@ export default function RealtimeInterview() {
    */
   const initializeServices = async () => {
     try {
+      // Get user media first
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          sampleRate: 48000,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user',
+        },
+      });
+      setMediaStream(stream);
+
       // Initialize audio services
       audioCaptureRef.current = new AudioCapture();
-      await audioCaptureRef.current.initialize();
+      await audioCaptureRef.current.initialize(stream);
 
       audioPlayerRef.current = new AudioPlayer();
       await audioPlayerRef.current.initialize();
@@ -74,17 +91,11 @@ export default function RealtimeInterview() {
       audioPlayerRef.current.onPlaybackStart(() => {
         setAIPlaying(true);
         setStatus('speaking');
-
-        // Stop forwarding audio chunks while AI is speaking to avoid echo
-        setShouldForwardAudio(false);
       });
 
       audioPlayerRef.current.onPlaybackEnd(() => {
         setAIPlaying(false);
         setStatus('listening');
-
-        // Resume forwarding audio chunks after AI finishes speaking
-        setShouldForwardAudio(true);
       });
 
       setIsInitialized(true);
@@ -202,8 +213,8 @@ export default function RealtimeInterview() {
     setStatus('listening');
 
     audioCaptureRef.current.start((seq, audioB64) => {
-      // Send audio chunk to server only if we should forward audio
-      if (wsClientRef.current && wsClientRef.current.isConnected() && shouldForwardAudio) {
+      // Send all audio chunks to server - OpenAI handles VAD
+      if (wsClientRef.current && wsClientRef.current.isConnected()) {
         wsClientRef.current.send({
           event: 'mic_chunk',
           seq,
@@ -298,6 +309,10 @@ export default function RealtimeInterview() {
       wsClientRef.current.close();
       wsClientRef.current = null;
     }
+
+    if (mediaStream) {
+      mediaStream.getTracks().forEach((track) => track.stop());
+    }
   };
 
   return (
@@ -312,7 +327,11 @@ export default function RealtimeInterview() {
 
         {/* User Camera - Bottom Right, refined styling */}
         <div className="absolute bottom-8 right-8 w-64 h-48 rounded-xl overflow-hidden shadow-xl border border-gray-300/50 backdrop-blur-sm bg-white/20">
-          <UserVideoFeed sessionId={useInterviewStore((state) => state.sessionId)} interviewId={interviewId} />
+          <UserVideoFeed
+            sessionId={useInterviewStore((state) => state.sessionId)}
+            interviewId={interviewId}
+            stream={mediaStream}
+          />
         </div>
       </div>
 
@@ -329,45 +348,17 @@ export default function RealtimeInterview() {
 /**
  * User video feed component with recording.
  */
-function UserVideoFeed({ sessionId, interviewId }) {
+function UserVideoFeed({ sessionId, interviewId, stream }) {
   const videoRef = useRef(null);
   const videoRecorderRef = useRef(new VideoRecorder());
-  const [stream, setStream] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
 
   useEffect(() => {
-    let videoStream = null;
-
-    const startCamera = async () => {
-      try {
-        videoStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            facingMode: 'user',
-          },
-          audio: true,
-        });
-
-        if (videoRef.current) {
-          videoRef.current.srcObject = videoStream;
-        }
-
-        setStream(videoStream);
-      } catch (error) {
-        console.error('Error accessing camera:', error);
-      }
-    };
-
-    startCamera();
-
-    return () => {
-      // Stop camera when component unmounts
-      if (videoStream) {
-        videoStream.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, []);
+    if (stream && videoRef.current) {
+      videoRef.current.srcObject = stream;
+    }
+    // No cleanup needed here for the stream, parent component handles it
+  }, [stream]);
 
   // Start recording when session is ready
   useEffect(() => {
@@ -387,7 +378,7 @@ function UserVideoFeed({ sessionId, interviewId }) {
         videoRecorderRef.current.stopRecording();
       }
     };
-  }, [stream, sessionId, interviewId]);
+  }, [stream, sessionId, interviewId, isRecording]);
 
   return (
     <div className="relative w-full h-full bg-black/80">

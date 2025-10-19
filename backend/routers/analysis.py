@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from services import AnalysisService
 
-router = APIRouter(prefix="/interviews", tags=["Analysis"])
+router = APIRouter()
 
 
 @router.post("/{interview_id}/analyze")

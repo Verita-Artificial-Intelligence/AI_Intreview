@@ -4,43 +4,42 @@ import logging
 from config import CORS_ORIGINS
 from database import shutdown_db_client
 from routers import (
-    auth_router,
-    candidates_router,
-    interviews_router,
-    chat_router,
-    audio_router,
-    analysis_router,
-    profile_router,
-    websocket_router,
+    auth,
+    profile,
+    interviews,
+    candidates,
+    analysis,
+    audio,
+    chat,
+    websocket,
+    uploads,
 )
 
-# Create the main app without a prefix
-app = FastAPI()
+# Main application setup
+app = FastAPI(
+    title="AI Interview Platform API",
+    description="API for managing AI-powered interviews, candidates, and analysis.",
+    version="1.0.0",
+)
 
-# Create a router with the /api prefix
-api_router = APIRouter(prefix="/api")
-
-
-# Root route
-@api_router.get("/")
-async def root():
-    return {"message": "AI Interviewer API"}
+# Event handlers for database connection
+@app.on_event("shutdown")
+async def shutdown_db():
+    await shutdown_db_client()
 
 
 # Include all routers
-api_router.include_router(auth_router)
-api_router.include_router(profile_router)
-api_router.include_router(candidates_router)
-api_router.include_router(interviews_router)
-api_router.include_router(chat_router)
-api_router.include_router(audio_router)
-api_router.include_router(analysis_router)
-
-# Include the router in the main app
-app.include_router(api_router)
+app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
+app.include_router(profile.router, prefix="/api/profile", tags=["User Profile"])
+app.include_router(interviews.router, prefix="/api/interviews", tags=["Interviews"])
+app.include_router(candidates.router, prefix="/api/candidates", tags=["Candidates"])
+app.include_router(analysis.router, prefix="/api/analysis", tags=["Analysis"])
+app.include_router(audio.router, prefix="/api/audio", tags=["Audio"])
+app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
+app.include_router(uploads.router, prefix="/api", tags=["Uploads"])
 
 # Include WebSocket router (not under /api prefix)
-app.include_router(websocket_router)
+app.include_router(websocket.router, prefix="/ws", tags=["WebSocket"])
 
 # Add CORS middleware
 app.add_middleware(
@@ -56,9 +55,3 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
-
-
-@app.on_event("shutdown")
-async def shutdown():
-    """Shutdown event handler"""
-    await shutdown_db_client()

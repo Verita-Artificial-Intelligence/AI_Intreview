@@ -2,126 +2,82 @@
  * Video recorder service for capturing and uploading interview recordings.
  */
 
+import { getAuthToken } from '../utils/auth.js';
+
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
 
 export class VideoRecorder {
   private mediaRecorder: MediaRecorder | null = null;
   private recordedChunks: Blob[] = [];
-  private sessionId: string | null = null;
-  private interviewId: string | null = null;
+  private stream: MediaStream | null = null;
 
-  /**
-   * Start recording video.
-   */
-  public async startRecording(
+  async startRecording(
     stream: MediaStream,
     sessionId: string,
-    interviewId?: string
+    interviewId: string
   ): Promise<void> {
-    this.sessionId = sessionId;
-    this.interviewId = interviewId || null;
-    this.recordedChunks = [];
+    this.stream = stream;
+    
+    // Filter for video tracks only for recording
+    const videoStream = new MediaStream(stream.getVideoTracks());
 
-    try {
-      // Choose codec
-      const options = { mimeType: 'video/webm;codecs=vp9' };
-      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-        options.mimeType = 'video/webm';
-        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-          options.mimeType = 'video/webm;codecs=vp8';
-        }
+    this.mediaRecorder = new MediaRecorder(videoStream, {
+      mimeType: 'video/webm; codecs=vp9',
+    });
+
+    this.mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        this.recordedChunks.push(event.data);
       }
+    };
 
-      this.mediaRecorder = new MediaRecorder(stream, options);
+    this.mediaRecorder.onstop = () => {
+      this.uploadVideo(sessionId, interviewId);
+    };
 
-      this.mediaRecorder.ondataavailable = (event) => {
-        if (event.data && event.data.size > 0) {
-          this.recordedChunks.push(event.data);
-        }
-      };
-
-      this.mediaRecorder.onstop = () => {
-        this.uploadRecording();
-      };
-
-      // Capture data every second
-      this.mediaRecorder.start(1000);
-
-      console.log('Video recording started');
-    } catch (error) {
-      console.error('Error starting video recording:', error);
-      throw error;
-    }
+    this.mediaRecorder.start();
+    console.log('Video recording started');
   }
 
-  /**
-   * Stop recording.
-   */
-  public stopRecording(): void {
-    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+  stopRecording(): void {
+    if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
       this.mediaRecorder.stop();
+      console.log('Video recording stopped');
     }
   }
 
-  /**
-   * Upload recorded video to backend.
-   */
-  private async uploadRecording(): Promise<void> {
+  private async uploadVideo(sessionId: string, interviewId: string): Promise<void> {
     if (this.recordedChunks.length === 0) {
-      console.warn('No recorded data to upload');
+      console.warn('No video data to upload');
       return;
     }
 
     const blob = new Blob(this.recordedChunks, { type: 'video/webm' });
-    console.log('Recording complete:', blob.size, 'bytes');
+    this.recordedChunks = [];
 
-    // Create FormData for upload
     const formData = new FormData();
-    formData.append('video', blob, `interview-${this.sessionId}.webm`);
-    formData.append('session_id', this.sessionId || '');
-    if (this.interviewId) {
-      formData.append('interview_id', this.interviewId);
-    }
+    formData.append('video', blob, `interview_${interviewId}.webm`);
+    formData.append('session_id', sessionId);
+    formData.append('interview_id', interviewId);
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/interviews/upload-video`, {
+        const token = getAuthToken();
+        const response = await fetch(`${BACKEND_URL}/api/interviews/upload/video`, {
         method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const result = await response.json();
       console.log('Video uploaded successfully:', result);
     } catch (error) {
       console.error('Error uploading video:', error);
-      // Save locally as fallback
-      this.downloadLocally(blob);
     }
-  }
-
-  /**
-   * Download recording locally as fallback.
-   */
-  private downloadLocally(blob: Blob): void {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = url;
-    a.download = `interview-${this.sessionId}-${Date.now()}.webm`;
-    document.body.appendChild(a);
-    a.click();
-    URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-    console.log('Video saved locally');
-  }
-
-  /**
-   * Get current recording state.
-   */
-  public isRecording(): boolean {
-    return this.mediaRecorder?.state === 'recording';
   }
 }
