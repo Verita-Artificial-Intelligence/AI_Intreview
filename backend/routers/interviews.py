@@ -56,10 +56,11 @@ async def delete_interview(interview_id: str):
 async def accept_candidate(interview_id: str):
     """
     Accept a candidate for annotation work.
-    This will:
-    1. Update the interview's acceptance_status to 'accepted'
-    2. Create annotation tasks for all human_data jobs
-    3. Link the tasks to the candidate
+    This updates the interview's acceptance_status to 'accepted'.
+
+    Note: Annotation tasks should be created manually through the admin UI
+    after accepting a candidate. This allows for more control over task
+    assignment and metadata (task name, description, instructions).
     """
     try:
         # Get the interview
@@ -77,43 +78,14 @@ async def accept_candidate(interview_id: str):
         if result.modified_count == 0:
             logger.warning(f"Interview {interview_id} acceptance_status not updated")
 
-        # Get all human_data jobs
-        jobs_cursor = db.jobs.find({"interview_type": "human_data"})
-        jobs = await jobs_cursor.to_list(length=None)
-
-        # Create annotation tasks for each job
-        tasks_created = 0
-        for job in jobs:
-            # Prepare data to annotate from interview
-            data_to_annotate = {
-                "interview_id": interview.id,
-                "candidate_id": interview.candidate_id,
-                "candidate_name": interview.candidate_name,
-                "transcript": interview.transcript or [],
-                "video_url": interview.video_url,
-                "audio_path": interview.audio_path,
-            }
-
-            # Create annotation task
-            task = AnnotationTask(
-                job_id=job["id"],
-                annotator_id=interview.candidate_id,
-                data_to_annotate=data_to_annotate,
-                status="assigned"
-            )
-
-            await AnnotationService.create_annotation_task(task)
-            tasks_created += 1
-
-        logger.info(f"Accepted candidate {interview.candidate_id} and created {tasks_created} annotation tasks")
+        logger.info(f"Accepted candidate {interview.candidate_id} for interview {interview_id}")
 
         # Return updated interview
         updated_interview = await InterviewService.get_interview(interview_id)
         return {
             "success": True,
-            "message": f"Candidate accepted and {tasks_created} annotation tasks created",
-            "interview": updated_interview.model_dump(),
-            "tasks_created": tasks_created
+            "message": "Candidate accepted. You can now create annotation tasks for them.",
+            "interview": updated_interview.model_dump()
         }
 
     except Exception as e:

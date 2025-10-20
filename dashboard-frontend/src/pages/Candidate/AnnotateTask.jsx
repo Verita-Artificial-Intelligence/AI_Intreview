@@ -232,13 +232,13 @@ export default function AnnotateTask() {
         {/* Annotation Form */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Your Annotation</CardTitle>
+            <CardTitle className="text-lg">Your Feedback</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Quality Rating */}
             <div>
               <label className="block text-sm font-semibold text-neutral-900 mb-4">
-                Quality Rating *
+                Creative Rating *
               </label>
               <div className="flex gap-2">
                 {[1, 2, 3, 4, 5].map((i) => (
@@ -296,7 +296,7 @@ export default function AnnotateTask() {
                 disabled={submitting || rating === 0}
                 className="flex-1 bg-brand-500 hover:bg-brand-600 text-white"
               >
-                {submitting ? 'Submitting...' : 'Submit Annotation'}
+                {submitting ? 'Submitting...' : 'Submit Feedback'}
               </Button>
             </div>
           </CardContent>
@@ -306,9 +306,9 @@ export default function AnnotateTask() {
         <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Submit Annotation?</AlertDialogTitle>
+              <AlertDialogTitle>Submit Your Feedback?</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to submit this annotation? You cannot change it after submission.
+                Are you sure you want to submit your feedback? You cannot change it after submission.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="bg-neutral-50 p-4 rounded-lg mb-4">

@@ -96,7 +96,7 @@ export default function CandidatePortal() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-neutral-600">Annotation Tasks</p>
+                  <p className="text-sm text-neutral-600">Creative Tasks</p>
                   <p className="text-3xl font-bold text-neutral-900 mt-1">{annotationTasks.length}</p>
                 </div>
                 <CheckSquare className="w-10 h-10 text-brand-500" />
@@ -117,14 +117,14 @@ export default function CandidatePortal() {
           </Card>
         </div>
 
-        {/* Annotation Tasks Section */}
+        {/* Creative Tasks Section */}
         {annotationTasks.length > 0 && (
           <Card className="mb-8">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="w-5 h-5" />
-                  My Annotation Tasks
+                  My Creative Tasks
                 </CardTitle>
                 <Button
                   variant="outline"

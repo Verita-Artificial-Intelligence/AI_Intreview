@@ -10,6 +10,8 @@ InterviewType = Literal[
     "custom_exercise",
 ]
 
+JobStatus = Literal["pending", "in_progress", "completed", "archived"]
+
 
 class SkillDefinition(BaseModel):
     name: str
@@ -22,7 +24,7 @@ class Job(BaseModel):
     title: str
     description: str
     position_type: str
-    status: str = "open"
+    status: JobStatus = "pending"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     pay_per_hour: Optional[float] = None
 
@@ -44,6 +46,17 @@ class Job(BaseModel):
         }
         return migration_map.get(v, v)
 
+    @field_validator('status', mode='before')
+    @classmethod
+    def migrate_old_statuses(cls, v):
+        """Migrate old status values to new workflow statuses"""
+        # Map old statuses to new statuses
+        migration_map = {
+            'open': 'pending',
+            'closed': 'archived',
+        }
+        return migration_map.get(v, v)
+
 
 class JobCreate(BaseModel):
     title: str
@@ -59,4 +72,4 @@ class JobCreate(BaseModel):
 
 
 class JobStatusUpdate(BaseModel):
-    status: str
+    status: JobStatus

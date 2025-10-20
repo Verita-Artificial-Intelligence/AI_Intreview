@@ -26,6 +26,7 @@ import {
   cardStyles,
   cssGradients,
 } from '@/lib/design-system'
+import CandidateSidebar from '@/components/CandidateSidebar'
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
 const API = `${BACKEND_URL}/api`
@@ -359,23 +360,27 @@ const InterviewPrep = () => {
   const displayStep = getDisplayStep()
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className={pageHeader.wrapper}>
-        <div className={`${containers.lg} ${pageHeader.container}`}>
-          <Button
-            onClick={() => navigate('/')}
-            variant="outline"
-            size="sm"
-            className="rounded-lg"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Go back
-          </Button>
-        </div>
-      </div>
+    <div className="flex min-h-screen bg-background">
+      <CandidateSidebar showAnnotationTasks={true} />
 
-      <div className={`${containers.lg} mx-auto px-6 py-8`}>
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto">
+        {/* Header */}
+        <div className={pageHeader.wrapper}>
+          <div className={`${containers.lg} ${pageHeader.container}`}>
+            <Button
+              onClick={() => navigate('/candidate/portal')}
+              variant="outline"
+              size="sm"
+              className="rounded-lg"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Go back
+            </Button>
+          </div>
+        </div>
+
+        <div className={`${containers.lg} mx-auto px-6 py-8`}>
         {/* Progress Steps */}
         <div className="mb-8">
           <div className="flex items-center justify-between max-w-3xl mx-auto">
@@ -821,6 +826,7 @@ const InterviewPrep = () => {
           )}
         </div>
       </div>
+      </main>
     </div>
   )
 }

@@ -24,6 +24,12 @@ async def get_job(job_id: str):
     return await JobService.get_job(job_id)
 
 
+@router.get("/{job_id}/can-complete")
+async def can_complete_job(job_id: str):
+    """Check if a job can be marked as completed (all annotation tasks done)"""
+    return await JobService.can_complete_job(job_id)
+
+
 @router.put("/{job_id}/status", response_model=Job)
 async def update_job_status(job_id: str, status_update: JobStatusUpdate):
     """Update job status"""

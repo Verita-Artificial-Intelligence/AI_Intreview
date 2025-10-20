@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
-import { Briefcase, Plus, Search, Trash2, FileText, BarChart, Users, ChevronRight, CheckSquare, Upload } from 'lucide-react'
+import { Briefcase, Plus, Search, Trash2, FileText } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -15,6 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import Sidebar from '@/components/Sidebar'
 import JobForm from '@/components/JobForm'
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
@@ -29,6 +30,8 @@ const Jobs = () => {
   const [showJobForm, setShowJobForm] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [jobToDelete, setJobToDelete] = useState(null)
+  const [showStatusDialog, setShowStatusDialog] = useState(false)
+  const [statusTransition, setStatusTransition] = useState(null)
 
   useEffect(() => {
     fetchJobs()
@@ -110,104 +113,135 @@ const Jobs = () => {
     return labels[type] || type
   }
 
+  const getStatusBadge = (status) => {
+    const badges = {
+      pending: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Pending' },
+      in_progress: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'In Progress' },
+      completed: { bg: 'bg-green-100', text: 'text-green-800', label: 'Completed' },
+      archived: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Archived' },
+    }
+    return badges[status] || badges.pending
+  }
+
+  const getNextStatus = (currentStatus) => {
+    const transitions = {
+      pending: 'in_progress',
+      in_progress: 'completed',
+      completed: 'archived',
+      archived: null,
+    }
+    return transitions[currentStatus]
+  }
+
+  const getNextStatusLabel = (currentStatus) => {
+    const labels = {
+      pending: 'Move to In Progress',
+      in_progress: 'Mark as Completed',
+      completed: 'Archive Job',
+      archived: null,
+    }
+    return labels[currentStatus]
+  }
+
+  const getStatusTransitionMessage = (currentStatus, nextStatus) => {
+    const messages = {
+      in_progress: {
+        title: 'Move Job to In Progress?',
+        message: '⚠️ You will no longer be able to add new annotation data. Annotators will be able to start working on assigned tasks. Are you sure?',
+      },
+      completed: {
+        title: 'Mark Job as Completed?',
+        message: 'All annotation work for this job will be marked as complete. Make sure all tasks are finished.',
+      },
+      archived: {
+        title: 'Archive This Job?',
+        message: 'This job will be moved to archived jobs. You can view it later in the archived section.',
+      },
+    }
+    return messages[nextStatus] || { title: 'Change Status?', message: 'Are you sure?' }
+  }
+
+  const handleStatusChange = async (job) => {
+    const nextStatus = getNextStatus(job.status)
+    if (!nextStatus) return
+
+    // If moving to completed, check if all tasks are done
+    if (nextStatus === 'completed') {
+      try {
+        const response = await axios.get(`${API}/jobs/${job.id}/can-complete`)
+        if (!response.data.can_complete) {
+          alert(`Cannot mark as completed: ${response.data.reason}`)
+          return
+        }
+      } catch (error) {
+        console.error('Error checking job completion:', error)
+        alert('Failed to check if job can be completed')
+        return
+      }
+    }
+
+    setStatusTransition({
+      job,
+      nextStatus,
+      ...getStatusTransitionMessage(job.status, nextStatus),
+    })
+    setShowStatusDialog(true)
+  }
+
+  const confirmStatusChange = async () => {
+    if (!statusTransition) return
+
+    try {
+      await axios.put(`${API}/jobs/${statusTransition.job.id}/status`, {
+        status: statusTransition.nextStatus,
+      })
+      setShowStatusDialog(false)
+      setStatusTransition(null)
+      fetchJobs()
+    } catch (error) {
+      console.error('Error updating job status:', error)
+      alert(error.response?.data?.detail || 'Failed to update job status')
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-neutral-200 overflow-y-auto">
-        <div className="p-6">
-          <h2 className="text-xl font-display font-bold text-neutral-900 mb-1">Verita</h2>
-          <p className="text-xs text-neutral-600">AI Interview Platform</p>
-        </div>
-
-        <nav className="px-3">
-          <a
-            href="/"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <BarChart className="w-4 h-4" />
-            <span>Dashboard</span>
-          </a>
-          <a
-            href="/candidates"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <Users className="w-4 h-4" />
-            <span>Candidates</span>
-          </a>
-          <a
-            href="/interviews"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <Briefcase className="w-4 h-4" />
-            <span>Interviews</span>
-          </a>
-          <a
-            href="/jobs"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm bg-brand-50 text-brand-600 font-medium mb-1"
-          >
-            <Briefcase className="w-4 h-4" />
-            <span>Jobs</span>
-            <ChevronRight className="w-4 h-4 ml-auto" />
-          </a>
-
-          <div className="border-t border-neutral-200 my-3" />
-
-          <a
-            href="/annotation-data"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <Upload className="w-4 h-4" />
-            <span>Annotation Data</span>
-          </a>
-          <a
-            href="/annotation-tasks"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <CheckSquare className="w-4 h-4" />
-            <span>Annotation Tasks</span>
-          </a>
-          <a
-            href="/annotators"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <Users className="w-4 h-4" />
-            <span>Annotators</span>
-          </a>
-        </nav>
-      </aside>
+    <div className="min-h-screen bg-white">
+      <Sidebar />
 
       {/* Main Content */}
-      <main className="ml-64 overflow-y-auto">
-        <div className="max-w-7xl mx-auto p-8">
+      <main className="ml-64 overflow-y-auto bg-white">
+        <div className="max-w-7xl mx-auto px-8 py-12">
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-3xl font-display font-bold text-neutral-900">
-                Job Openings
-              </h2>
-              <p className="text-neutral-600 mt-1">
-                Manage your open positions and interview configurations
-              </p>
-            </div>
+          <div className="mb-12">
+            <h1 className="text-5xl font-bold text-neutral-900 mb-3 tracking-tight leading-tight">
+              Job Openings
+            </h1>
+            <p className="text-lg text-neutral-600 font-light">
+              Manage your open positions and interview configurations
+            </p>
+          </div>
+
+          {/* Create Job Button */}
+          <div className="mb-8">
             <Button
               onClick={() => setShowJobForm(true)}
-              className="bg-brand-500 hover:bg-brand-600 text-white rounded-lg"
+              className="bg-brand-500 hover:bg-brand-600 text-white rounded-lg h-12 px-6"
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-5 h-5 mr-2" />
               Create Job
             </Button>
           </div>
 
           {/* Search */}
-          <div className="mb-6">
-            <div className="relative">
+          <div className="mb-8">
+            <div className="relative max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-5 h-5" />
               <Input
                 type="text"
                 placeholder="Search jobs by title, type, or description..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full max-w-md"
+                className="pl-10 h-11 rounded-lg border-neutral-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 text-base"
               />
             </div>
           </div>
@@ -306,27 +340,39 @@ const Jobs = () => {
 
                     {/* Status Badge */}
                     <div className="mb-4">
-                      <span
-                        className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                          job.status === 'open'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-neutral-100 text-neutral-700'
-                        }`}
-                      >
-                        {job.status === 'open' ? 'Open' : 'Closed'}
-                      </span>
+                      {(() => {
+                        const badge = getStatusBadge(job.status)
+                        return (
+                          <span
+                            className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}
+                          >
+                            {badge.label}
+                          </span>
+                        )
+                      })()}
                     </div>
                   </div>
 
                   {/* Actions */}
-                  <Button
-                    onClick={() => handleViewInterviews(job.id)}
-                    variant="outline"
-                    size="sm"
-                    className="w-full rounded-lg"
-                  >
-                    View Interviews
-                  </Button>
+                  <div className="space-y-2">
+                    <Button
+                      onClick={() => handleViewInterviews(job.id)}
+                      variant="outline"
+                      size="sm"
+                      className="w-full rounded-lg"
+                    >
+                      View Interviews
+                    </Button>
+                    {getNextStatus(job.status) && (
+                      <Button
+                        onClick={() => handleStatusChange(job)}
+                        size="sm"
+                        className="w-full rounded-lg bg-brand-500 hover:bg-brand-600 text-white"
+                      >
+                        {getNextStatusLabel(job.status)}
+                      </Button>
+                    )}
+                  </div>
                 </Card>
               ))}
             </div>
@@ -357,6 +403,29 @@ const Jobs = () => {
               className="bg-red-500 hover:bg-red-600"
             >
               Delete Job
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Status Transition Dialog */}
+      <AlertDialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{statusTransition?.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {statusTransition?.message}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setStatusTransition(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmStatusChange}
+              className="bg-brand-500 hover:bg-brand-600"
+            >
+              Continue
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

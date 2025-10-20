@@ -19,6 +19,11 @@ class AnnotationTask(BaseModel):
     job_id: str
     annotator_id: Optional[str] = None
 
+    # Task metadata
+    task_name: str  # Short name for the task (required)
+    task_description: Optional[str] = None  # What the annotator should do (optional)
+    instructions: str  # Specific instructions for annotation (required)
+
     # Data to annotate (from an interview)
     data_to_annotate: Dict[str, Any]  # Contains transcript, video_url, audio_path, etc.
 
@@ -41,7 +46,12 @@ class AnnotationTask(BaseModel):
 
 class AnnotationTaskCreate(BaseModel):
     job_id: str
+    annotator_id: Optional[str] = None
+    task_name: str  # Required
+    task_description: Optional[str] = None  # Optional
+    instructions: str  # Required
     data_to_annotate: Dict[str, Any]
+    status: Optional[AnnotationTaskStatus] = "assigned"
 
 
 class AnnotationTaskUpdate(BaseModel):
@@ -52,3 +62,13 @@ class AnnotationTaskUpdate(BaseModel):
 
 class AnnotationTaskAssign(BaseModel):
     annotator_id: str
+
+
+class AnnotatorStats(BaseModel):
+    """Aggregated statistics for an annotator"""
+    annotator_id: str
+    name: str
+    total_tasks: int
+    completed_tasks: int
+    completion_rate: float  # Percentage (0-100)
+    avg_rating: float  # Average quality rating (0-5)

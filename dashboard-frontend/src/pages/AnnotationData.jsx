@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
-import { Upload, Plus, Search, Trash2, FileText, Image, Video, Music, File, BarChart, Briefcase, CheckSquare, Users, ChevronRight, Eye } from 'lucide-react'
+import { Upload, Plus, Search, Trash2, FileText, Image, Video, Music, File, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { toast } from 'sonner'
+import Sidebar from '@/components/Sidebar'
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
 const API = `${BACKEND_URL}/api`
@@ -34,6 +35,8 @@ const AnnotationData = () => {
   const [jobs, setJobs] = useState([])
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [dataToDelete, setDataToDelete] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 12
 
   useEffect(() => {
     fetchData()
@@ -42,6 +45,7 @@ const AnnotationData = () => {
 
   useEffect(() => {
     filterData()
+    setCurrentPage(1)
   }, [searchQuery, jobFilter, typeFilter, data])
 
   const fetchData = async () => {
@@ -131,90 +135,31 @@ const AnnotationData = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-neutral-200 overflow-y-auto">
-        <div className="p-6">
-          <h2 className="text-xl font-display font-bold text-neutral-900 mb-1">Verita</h2>
-          <p className="text-xs text-neutral-600">AI Interview Platform</p>
-        </div>
-
-        <nav className="px-3">
-          <a
-            href="/"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <BarChart className="w-4 h-4" />
-            <span>Dashboard</span>
-          </a>
-          <a
-            href="/candidates"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <Users className="w-4 h-4" />
-            <span>Candidates</span>
-          </a>
-          <a
-            href="/interviews"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <Briefcase className="w-4 h-4" />
-            <span>Interviews</span>
-          </a>
-          <a
-            href="/jobs"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <Briefcase className="w-4 h-4" />
-            <span>Jobs</span>
-          </a>
-
-          <div className="border-t border-neutral-200 my-3" />
-
-          <a
-            href="/annotation-data"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm bg-brand-50 text-brand-600 font-medium mb-1"
-          >
-            <Upload className="w-4 h-4" />
-            <span>Annotation Data</span>
-            <ChevronRight className="w-4 h-4 ml-auto" />
-          </a>
-          <a
-            href="/annotation-tasks"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <CheckSquare className="w-4 h-4" />
-            <span>Annotation Tasks</span>
-          </a>
-          <a
-            href="/annotators"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <Users className="w-4 h-4" />
-            <span>Annotators</span>
-          </a>
-        </nav>
-      </aside>
+    <div className="min-h-screen bg-white">
+      <Sidebar />
 
       {/* Main Content */}
-      <main className="ml-64 overflow-y-auto">
-        <div className="max-w-7xl mx-auto p-8">
+      <main className="ml-64 overflow-y-auto bg-white">
+        <div className="max-w-7xl mx-auto px-8 py-12">
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-3xl font-display font-bold text-neutral-900">
-                Annotation Data
-              </h2>
-              <p className="text-neutral-600 mt-1">
-                Manage data files for annotation tasks
-              </p>
-            </div>
+          <div className="mb-12">
+            <h1 className="text-5xl font-bold text-neutral-900 mb-3 tracking-tight leading-tight">
+              Annotation Data
+            </h1>
+            <p className="text-lg text-neutral-600 font-light">
+              Manage creative project data and assets
+            </p>
+          </div>
+
+          {/* Upload Button */}
+          <div className="mb-8">
             <Button
-              onClick={() => navigate('/annotation-data/upload')}
-              className="bg-brand-500 hover:bg-brand-600 text-white rounded-lg"
+              onClick={() => navigate(jobs.length === 0 ? '/jobs' : '/annotation-data/upload')}
+              className="bg-brand-500 hover:bg-brand-600 text-white rounded-lg h-12 px-6"
+              title={jobs.length === 0 ? 'Create a job first before uploading data' : 'Upload annotation data'}
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Upload Data
+              <Plus className="w-5 h-5 mr-2" />
+              {jobs.length === 0 ? 'Create Job First' : 'Upload Data'}
             </Button>
           </div>
 
@@ -265,6 +210,23 @@ const AnnotationData = () => {
             <div className="text-center py-12">
               <p className="text-neutral-600">Loading annotation data...</p>
             </div>
+          ) : jobs.length === 0 ? (
+            <div className="text-center py-12">
+              <Upload className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
+              <p className="text-neutral-600 mb-2 font-medium">
+                No jobs available
+              </p>
+              <p className="text-sm text-neutral-500 mb-4">
+                You need to create at least one creative project before uploading data
+              </p>
+              <Button
+                onClick={() => navigate('/jobs')}
+                className="bg-brand-500 hover:bg-brand-600 text-white rounded-lg"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Your First Job
+              </Button>
+            </div>
           ) : filteredData.length === 0 ? (
             <div className="text-center py-12">
               <Upload className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
@@ -285,75 +247,126 @@ const AnnotationData = () => {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredData.map((item) => {
-                const Icon = getDataTypeIcon(item.data_type)
-                const job = jobs.find(j => j.id === item.job_id)
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-4">
+                {filteredData
+                  .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                  .map((item) => {
+                    const Icon = getDataTypeIcon(item.data_type)
+                    const job = jobs.find(j => j.id === item.job_id)
 
-                return (
-                  <Card
-                    key={item.id}
-                    className="p-6 hover:shadow-lg transition-shadow relative group"
-                  >
-                    {/* Delete Button */}
-                    <button
-                      onClick={() => handleDelete(item.id, item.title)}
-                      className="absolute top-3 right-3 p-2 text-neutral-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg hover:bg-red-50"
-                      title="Delete data"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    return (
+                      <Card
+                        key={item.id}
+                        className="p-6 hover:shadow-lg transition-shadow relative group"
+                      >
+                        {/* Delete Button */}
+                        <button
+                          onClick={() => handleDelete(item.id, item.title)}
+                          className="absolute top-3 right-3 p-2 text-neutral-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg hover:bg-red-50"
+                          title="Delete data"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
 
-                    {/* Content */}
-                    <div className="mb-4">
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className="p-2 bg-brand-100 rounded-lg">
-                          <Icon className="w-5 h-5 text-brand-600" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg text-neutral-900 mb-1">
-                            {item.title}
-                          </h3>
-                          <Badge className={getDataTypeColor(item.data_type)}>
-                            {item.data_type}
-                          </Badge>
-                        </div>
-                      </div>
-
-                      {item.description && (
-                        <p className="text-sm text-neutral-600 line-clamp-2 mb-3">
-                          {item.description}
-                        </p>
-                      )}
-
-                      <div className="space-y-2 text-xs text-neutral-600">
-                        <div>
-                          <span className="font-medium">Job:</span> {job?.title || 'Unknown'}
-                        </div>
-                        <div>
-                          <span className="font-medium">Created:</span>{' '}
-                          {new Date(item.created_at).toLocaleDateString()}
-                        </div>
-                        {item.data_url && (
-                          <div className="flex items-center gap-1">
-                            <span className="font-medium">Source:</span>
-                            <a
-                              href={item.data_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-brand-600 hover:text-brand-700 truncate"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              View file
-                            </a>
+                        {/* Content */}
+                        <div className="mb-4">
+                          <div className="flex items-start gap-3 mb-3">
+                            <div className="p-2 bg-brand-100 rounded-lg">
+                              <Icon className="w-5 h-5 text-brand-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-lg text-neutral-900 mb-1 line-clamp-2">
+                                {item.title}
+                              </h3>
+                              <Badge className={getDataTypeColor(item.data_type)}>
+                                {item.data_type}
+                              </Badge>
+                            </div>
                           </div>
-                        )}
-                      </div>
+
+                          {item.description && (
+                            <p className="text-sm text-neutral-600 line-clamp-2 mb-3">
+                              {item.description}
+                            </p>
+                          )}
+
+                          <div className="space-y-2 text-xs text-neutral-600">
+                            <div>
+                              <span className="font-medium">Job:</span> {job?.title || 'Unknown'}
+                            </div>
+                            <div>
+                              <span className="font-medium">Created:</span>{' '}
+                              {new Date(item.created_at).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    )
+                  })}
+              </div>
+
+              {/* Pagination */}
+              {Math.ceil(filteredData.length / itemsPerPage) > 1 && (
+                <div className="flex items-center justify-center gap-1 py-2">
+                  <button
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className="p-1 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-100 rounded flex items-center"
+                    title="First page"
+                  >
+                    <div className="flex items-center">
+                      <ChevronLeft className="w-4 h-4" />
+                      <ChevronLeft className="w-4 h-4 -ml-2" />
                     </div>
-                  </Card>
-                )
-              })}
-            </div>
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="p-1 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-100 rounded"
+                    title="Previous page"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+
+                  <div className="flex items-center gap-1 px-2">
+                    {Array.from({ length: Math.ceil(filteredData.length / itemsPerPage) }).map((_, i) => (
+                      <button
+                        key={i + 1}
+                        onClick={() => setCurrentPage(i + 1)}
+                        className={`h-6 w-6 rounded text-xs font-medium ${
+                          currentPage === i + 1
+                            ? 'bg-brand-500 text-white'
+                            : 'hover:bg-neutral-100 text-neutral-700'
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredData.length / itemsPerPage)))}
+                    disabled={currentPage === Math.ceil(filteredData.length / itemsPerPage)}
+                    className="p-1 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-100 rounded"
+                    title="Next page"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(Math.ceil(filteredData.length / itemsPerPage))}
+                    disabled={currentPage === Math.ceil(filteredData.length / itemsPerPage)}
+                    className="p-1 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-100 rounded flex items-center"
+                    title="Last page"
+                  >
+                    <div className="flex items-center">
+                      <ChevronRight className="w-4 h-4" />
+                      <ChevronRight className="w-4 h-4 -ml-2" />
+                    </div>
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>

@@ -150,7 +150,7 @@ export default function Opportunities() {
                         <div className="flex-1 min-w-0">
                           <CardTitle className="text-lg mb-2">{job.title || job.position}</CardTitle>
                           {isAnnotationJob && (
-                            <Badge className="bg-purple-100 text-purple-700 mb-2">Annotation Job</Badge>
+                            <Badge className="bg-purple-100 text-purple-700 mb-2">Creative Project</Badge>
                           )}
                         </div>
                         <Badge className="bg-green-100 text-green-700 flex-shrink-0">Open</Badge>

@@ -52,23 +52,39 @@ const AdminInterviewReview = () => {
       setInterview(interviewRes.data)
       setMessages(messagesRes.data)
 
-      // Fetch candidate
-      const candidateRes = await axios.get(
-        `${API}/candidates/${interviewRes.data.candidate_id}`
-      )
-      setCandidate(candidateRes.data)
+      // Try to fetch full candidate data, fall back to interview data if not available
+      let candidateData
+      try {
+        const candidateRes = await axios.get(
+          `${API}/candidates/${interviewRes.data.candidate_id}`
+        )
+        candidateData = candidateRes.data
+      } catch (candidateError) {
+        // If candidate fetch fails (e.g., profile not completed), use interview data
+        console.warn('Could not fetch full candidate profile, using interview data:', candidateError.message)
+        candidateData = {
+          id: interviewRes.data.candidate_id,
+          name: interviewRes.data.candidate_name || 'Unknown',
+          email: 'N/A',
+          position: interviewRes.data.position || interviewRes.data.job_title || 'N/A',
+          skills: interviewRes.data.skills?.map(s => s.name) || [],
+          experience_years: 0,
+          bio: '',
+        }
+      }
+      setCandidate(candidateData)
 
       // Check if analysis already exists
       if (interviewRes.data.analysis_result && interviewRes.data.analysis_status === 'completed') {
         setAnalysis(interviewRes.data.analysis_result)
       } else if (interviewRes.data.analysis_status === 'pending') {
-        await generateAnalysis(messagesRes.data, candidateRes.data)
+        await generateAnalysis(messagesRes.data, candidateData)
       } else if (interviewRes.data.analysis_status === 'processing') {
         setAnalysis({ processing: true })
       } else if (interviewRes.data.analysis_status === 'failed') {
         setAnalysis({ failed: true })
       } else {
-        await generateAnalysis(messagesRes.data, candidateRes.data)
+        await generateAnalysis(messagesRes.data, candidateData)
       }
     } catch (error) {
       console.error('Error fetching interview data:', error)
@@ -92,7 +108,7 @@ const AdminInterviewReview = () => {
   const confirmAcceptCandidate = async () => {
     try {
       await axios.patch(`${API}/interviews/${interviewId}/accept`)
-      toast.success('Candidate accepted! Annotation tasks have been created.')
+      toast.success('Candidate accepted! You can now create annotation tasks for them.')
       setShowAcceptDialog(false)
       fetchInterviewData()
     } catch (error) {
@@ -307,7 +323,7 @@ const AdminInterviewReview = () => {
                   <CheckCircle className="w-5 h-5 text-green-600" />
                   <div>
                     <p className="font-bold text-sm text-green-900">Candidate Accepted</p>
-                    <p className="text-xs text-green-700">Annotation tasks have been created</p>
+                    <p className="text-xs text-green-700">Ready for annotation task assignment</p>
                   </div>
                 </div>
               </Card>
@@ -557,7 +573,7 @@ const AdminInterviewReview = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Accept Candidate</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to accept this candidate? This will create annotation tasks for them and notify the candidate.
+              Are you sure you want to accept this candidate? After accepting, you can create annotation tasks for them through the Annotation Tasks page.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

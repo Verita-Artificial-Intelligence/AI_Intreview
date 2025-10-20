@@ -36,6 +36,11 @@ def get_annotation_data_collection():
     return db["annotation_data"]
 
 
+def get_earnings_collection():
+    """Get earnings collection"""
+    return db["earnings"]
+
+
 async def shutdown_db_client():
     """Close MongoDB connection on application shutdown"""
     client.close()

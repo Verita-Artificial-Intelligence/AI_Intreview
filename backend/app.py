@@ -1,6 +1,8 @@
 from fastapi import FastAPI, APIRouter
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 import logging
+import os
 from config import CORS_ORIGINS
 from database import shutdown_db_client
 from routers import (
@@ -16,6 +18,7 @@ from routers import (
     jobs,
     annotations,
     annotation_data,
+    earnings,
 )
 
 # Main application setup
@@ -48,6 +51,7 @@ app.include_router(candidates.router, prefix="/api/candidates", tags=["Candidate
 app.include_router(jobs.router, prefix="/api/jobs", tags=["Jobs"])
 app.include_router(annotations.router, prefix="/api/annotations", tags=["Annotations"])
 app.include_router(annotation_data.router, prefix="/api/annotation-data", tags=["Annotation Data"])
+app.include_router(earnings.router, prefix="/api/earnings", tags=["Earnings"])
 app.include_router(analysis.router, prefix="/api/analysis", tags=["Analysis"])
 app.include_router(audio.router, prefix="/api/audio", tags=["Audio"])
 app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
@@ -55,6 +59,14 @@ app.include_router(uploads.router, prefix="/api", tags=["Uploads"])
 
 # Include WebSocket router (not under /api prefix)
 app.include_router(websocket.router, prefix="/ws", tags=["WebSocket"])
+
+# Mount static files for uploads
+UPLOAD_DIR = "uploads"
+if os.path.exists(UPLOAD_DIR):
+    app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+else:
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # Configure logging
 logging.basicConfig(

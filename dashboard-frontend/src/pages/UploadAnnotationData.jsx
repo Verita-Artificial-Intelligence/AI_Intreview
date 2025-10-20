@@ -35,6 +35,7 @@ const UploadAnnotationData = () => {
     job_id: '',
     title: '',
     description: '',
+    instructions: '',
     data_type: 'text',
     data_url: '',
     data_content: '',
@@ -111,6 +112,13 @@ const UploadAnnotationData = () => {
       return
     }
 
+    // Check job status - can only upload data for pending jobs
+    const selectedJob = jobs.find(j => j.id === formData.job_id)
+    if (selectedJob && selectedJob.status !== 'pending') {
+      toast.error(`Cannot add annotation data. Job is in '${selectedJob.status}' status. Data can only be added when job is 'pending'.`)
+      return
+    }
+
     if (formData.data_type === 'text' && !formData.data_content) {
       toast.error('Please enter text content')
       return
@@ -144,7 +152,7 @@ const UploadAnnotationData = () => {
 
             let dataUrl
             try {
-              const uploadResponse = await axios.post(`${API}/upload`, formDataUpload, {
+              const uploadResponse = await axios.post(`${API}/annotation-data/upload`, formDataUpload, {
                 headers: {
                   'Content-Type': 'multipart/form-data',
                 },
@@ -161,6 +169,7 @@ const UploadAnnotationData = () => {
               job_id: formData.job_id,
               title: selectedFiles.length === 1 ? formData.title : file.name.replace(/\.[^/.]+$/, ''),
               description: formData.description,
+              instructions: formData.instructions,
               data_type: formData.data_type,
               data_url: dataUrl,
             }
@@ -185,6 +194,7 @@ const UploadAnnotationData = () => {
           job_id: formData.job_id,
           title: formData.title,
           description: formData.description,
+          instructions: formData.instructions,
           data_type: formData.data_type,
         }
 
@@ -297,6 +307,23 @@ const UploadAnnotationData = () => {
                   placeholder="Provide context about what annotators should focus on..."
                   rows={3}
                 />
+              </div>
+
+              {/* Instructions */}
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Instructions *
+                </label>
+                <Textarea
+                  value={formData.instructions}
+                  onChange={(e) => setFormData({ ...formData, instructions: e.target.value })}
+                  placeholder="Detailed instructions for annotators on how to review and rate this content..."
+                  rows={4}
+                  required
+                />
+                <p className="text-xs text-neutral-500 mt-1">
+                  These instructions will guide annotators on what to look for and how to evaluate the content
+                </p>
               </div>
 
               {/* Data Type */}
