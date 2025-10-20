@@ -73,6 +73,9 @@ async def websocket_endpoint(websocket: WebSocket):
         candidate_id = data.get("candidate_id")
         candidate_name = data.get("candidate_name")
 
+        if not candidate_id:
+            logger.warning(f"Starting session {session_id} WITHOUT candidate_id - interview will have null candidate_id!")
+
         logger.info(f"Starting session: {session_id} for candidate: {candidate_name} ({candidate_id})")
 
         # Initialize audio buffer for server-side mixing
@@ -229,12 +232,19 @@ async def websocket_endpoint(websocket: WebSocket):
             await realtime.close()
 
         # Save mixed audio and transcript
+        logger.info(f"Session ending - can_persist={can_persist}, interview_id={interview_id}, transcript_length={len(transcript) if transcript else 0}")
+
         if can_persist and interview_id is not None:
             if transcript:
+                logger.info(f"Saving transcript with {len(transcript)} entries for interview {interview_id}")
                 await save_transcript(interview_id, transcript)
+            else:
+                logger.warning(f"No transcript to save for interview {interview_id}")
 
             if audio_buffer:
                 await save_mixed_audio(session_id, interview_id, audio_buffer)
+        else:
+            logger.warning(f"NOT saving data - can_persist={can_persist}, interview_id={interview_id}")
 
         logger.info(f"Session closed: {session_id}")
 
@@ -424,6 +434,7 @@ async def forward_openai_to_client(
                     text = item.get("transcript", "")
                     if text:
                         transcript.append({"speaker": "user", "text": text})
+                        logger.info(f"USER transcript added: '{text[:50]}...' (total entries: {len(transcript)})")
                         await websocket.send_json({
                             "event": "transcript",
                             "speaker": "user",
@@ -477,6 +488,7 @@ async def forward_openai_to_client(
                         transcript[-1]["text"] = text
                     else:
                         transcript.append({"speaker": "assistant", "text": text})
+                    logger.info(f"ASSISTANT transcript added: '{text[:50]}...' (total entries: {len(transcript)})")
 
                     await websocket.send_json({
                         "event": "transcript",

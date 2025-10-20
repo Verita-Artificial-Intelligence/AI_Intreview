@@ -56,16 +56,30 @@ const AdminInterviewReview = () => {
 
       // Try to fetch full candidate data, fall back to interview data if not available
       let candidateData
-      try {
-        const candidateRes = await axios.get(
-          `${API}/candidates/${interviewRes.data.candidate_id}`
-        )
-        candidateData = candidateRes.data
-      } catch (candidateError) {
-        // If candidate fetch fails (e.g., profile not completed), use interview data
-        console.warn('Could not fetch full candidate profile, using interview data:', candidateError.message)
+      if (interviewRes.data.candidate_id) {
+        try {
+          const candidateRes = await axios.get(
+            `${API}/candidates/${interviewRes.data.candidate_id}`
+          )
+          candidateData = candidateRes.data
+        } catch (candidateError) {
+          // If candidate fetch fails (e.g., profile not completed), use interview data
+          console.warn('Could not fetch full candidate profile, using interview data:', candidateError.message)
+          candidateData = {
+            id: interviewRes.data.candidate_id,
+            name: interviewRes.data.candidate_name || 'Unknown',
+            email: 'N/A',
+            position: interviewRes.data.position || interviewRes.data.job_title || 'N/A',
+            skills: interviewRes.data.skills?.map(s => s.name) || [],
+            experience_years: 0,
+            bio: '',
+          }
+        }
+      } else {
+        // No candidate_id in interview, use interview data directly
+        console.warn('Interview has no candidate_id, using interview data')
         candidateData = {
-          id: interviewRes.data.candidate_id,
+          id: null,
           name: interviewRes.data.candidate_name || 'Unknown',
           email: 'N/A',
           position: interviewRes.data.position || interviewRes.data.job_title || 'N/A',
