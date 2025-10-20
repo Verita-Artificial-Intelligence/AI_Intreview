@@ -23,7 +23,7 @@ export default function RealtimeInterview() {
   const { interviewId } = useParams();
   const [searchParams] = useSearchParams();
   const jobId = searchParams.get('jobId');
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   // Store
   const {
@@ -151,6 +151,11 @@ export default function RealtimeInterview() {
       // Include job_id if available
       if (jobId) {
         startMessage.job_id = jobId;
+      }
+      // Include candidate info from authenticated user
+      if (user) {
+        startMessage.candidate_id = user.id;
+        startMessage.candidate_name = user.name || 'Unknown';
       }
       wsClient.send(startMessage);
 

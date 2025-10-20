@@ -1,9 +1,7 @@
 from . import (
-    analysis,
     audio,
     auth,
     candidates,
-    chat,
     interviews,
     jobs,
     annotations,
@@ -19,9 +17,7 @@ __all__ = [
     "candidates_router",
     "interviews_router",
     "jobs_router",
-    "chat_router",
     "audio_router",
-    "analysis_router",
     "profile_router",
     "websocket_router",
 ]

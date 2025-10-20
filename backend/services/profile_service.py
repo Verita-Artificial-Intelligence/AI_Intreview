@@ -10,7 +10,7 @@ class ProfileService:
     @staticmethod
     async def complete_profile(user_id: str, profile_data: ProfileComplete) -> User:
         """
-        Complete user profile and create their interview
+        Complete user profile
 
         Args:
             user_id: The user's ID
@@ -20,7 +20,6 @@ class ProfileService:
             Updated user object
         """
         users_collection = get_users_collection()
-        interviews_collection = get_interviews_collection()
 
         # Update user with profile data
         update_data = {
@@ -41,38 +40,20 @@ class ProfileService:
             raise HTTPException(status_code=404, detail="User not found")
 
         user = User(**user_doc)
-
-        # Create interview for the user
-        interview = Interview(
-            candidate_id=user.id,
-            candidate_name=profile_data.name,
-            position=profile_data.position or "Creative Professional",
-            status="not_started",
-        )
-
-        await interviews_collection.insert_one(interview.model_dump())
-
-        # Update user with interview ID
-        await users_collection.update_one(
-            {"id": user_id}, {"$set": {"interview_id": interview.id}}
-        )
-        user.interview_id = interview.id
-
         return user
 
     @staticmethod
     async def get_interview_status(user_id: str) -> dict:
         """
-        Get user's interview status
+        Get user's profile completion status
 
         Args:
             user_id: The user's ID
 
         Returns:
-            Dictionary with profile_completed, interview_id, and status
+            Dictionary with profile_completed status
         """
         users_collection = get_users_collection()
-        interviews_collection = get_interviews_collection()
 
         # Get user
         user_doc = await users_collection.find_one({"id": user_id})
@@ -83,17 +64,6 @@ class ProfileService:
 
         response = {
             "profile_completed": user.profile_completed,
-            "interview_id": user.interview_id,
-            "status": None,
         }
-
-        # Get interview status if exists
-        if user.interview_id:
-            interview_doc = await interviews_collection.find_one(
-                {"id": user.interview_id}
-            )
-            if interview_doc:
-                interview = Interview(**interview_doc)
-                response["status"] = interview.status
 
         return response

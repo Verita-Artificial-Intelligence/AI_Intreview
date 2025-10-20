@@ -70,8 +70,10 @@ async def websocket_endpoint(websocket: WebSocket):
         session_id = data.get("session_id") or str(uuid4())
         interview_id = data.get("interview_id")
         job_id = data.get("job_id")
+        candidate_id = data.get("candidate_id")
+        candidate_name = data.get("candidate_name")
 
-        logger.info(f"Starting session: {session_id}")
+        logger.info(f"Starting session: {session_id} for candidate: {candidate_name} ({candidate_id})")
 
         # Initialize audio buffer for server-side mixing
         audio_buffer = AudioBuffer(sample_rate=24000, channels=1)
@@ -90,7 +92,10 @@ async def websocket_endpoint(websocket: WebSocket):
                         "id": interview_id,
                         "status": "in_progress",
                         "created_at": datetime.now(timezone.utc),
-                        "transcript": []
+                        "transcript": [],
+                        "acceptance_status": "pending",  # Set default acceptance status
+                        "candidate_id": candidate_id,
+                        "candidate_name": candidate_name or "Unknown"
                     }
 
                     # Add job information if job_id provided
@@ -101,7 +106,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             interview_doc["job_id"] = job_id
                             interview_doc["job_title"] = job.get("title")
                             interview_doc["position"] = job.get("title")
-                            # ALWAYS set interview configuration (even if None to ensure clean state)
+                            # Set interview configuration from job
                             interview_doc["interview_type"] = job.get("interview_type") or "standard"
                             interview_doc["skills"] = job.get("skills") or None
                             interview_doc["custom_questions"] = job.get("custom_questions") or None
@@ -109,52 +114,9 @@ async def websocket_endpoint(websocket: WebSocket):
                             logger.info(f"Loaded job config: type={job.get('interview_type', 'standard')}, custom_questions={len(job.get('custom_questions') or [])}, skills={len(job.get('skills') or [])}")
 
                     await interviews_collection.insert_one(interview_doc)
-                    logger.info(f"Created new interview document: {interview_id}")
+                    logger.info(f"Created new interview document: {interview_id} for candidate {candidate_name} ({candidate_id}) with acceptance_status: pending")
                 else:
-                    # Interview exists - check if applying to a different job
-                    current_job_id = interview_doc.get("job_id")
-
-                    if job_id:
-                        # ALWAYS load fresh job config (stateless approach)
-                        from datetime import datetime, timezone
-                        jobs_collection = get_jobs_collection()
-                        job = await jobs_collection.find_one({"id": job_id}, {"_id": 0})
-                        if job:
-                            # Check if job changed
-                            is_new_job = (job_id != current_job_id)
-
-                            logger.info(f"{'NEW JOB' if is_new_job else 'SAME JOB'} - Loading job config: type={job.get('interview_type', 'standard')}, custom_questions={len(job.get('custom_questions') or [])}, skills={len(job.get('skills') or [])}")
-
-                            update_data = {
-                                "job_id": job_id,
-                                "job_title": job.get("title"),
-                                "position": job.get("title"),
-                                # ALWAYS set interview configuration (even if None to clear old values)
-                                "interview_type": job.get("interview_type") or "standard",
-                                "skills": job.get("skills") or None,
-                                "custom_questions": job.get("custom_questions") or None,
-                                "custom_exercise_prompt": job.get("custom_exercise_prompt") or None
-                            }
-
-                            # If it's a new job, also reset interview state
-                            if is_new_job:
-                                update_data.update({
-                                    "status": "in_progress",
-                                    "transcript": [],
-                                    "created_at": datetime.now(timezone.utc),
-                                    "completed_at": None,
-                                    "summary": None,
-                                    "analysis_status": None,
-                                    "analysis_result": None
-                                })
-
-                            await interviews_collection.update_one(
-                                {"id": interview_id},
-                                {"$set": update_data}
-                            )
-                            interview_doc = await interviews_collection.find_one({"id": interview_id})
-                            logger.info(f"{'Reset' if is_new_job else 'Updated'} interview {interview_id} for job {job_id}: {job.get('title')}")
-
+                    # Interview already exists - check if it's completed
                     if interview_doc.get("status") == "completed":
                         await websocket.send_json({
                             "event": "notice",

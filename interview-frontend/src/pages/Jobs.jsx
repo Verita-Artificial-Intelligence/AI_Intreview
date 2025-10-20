@@ -196,28 +196,6 @@ export default function Jobs() {
 
                         {/* Annotation Tasks */}
                         {(() => {
-                          const jobStatus = getJobStatus(interview.job_id)
-                          const isPending = jobStatus === 'pending'
-
-                          // If job is pending and tasks exist, show "Starting Soon"
-                          if (isPending && tasks.length > 0) {
-                            return (
-                              <div className="mt-8 pt-8 border-t border-neutral-200">
-                                <div className="flex items-baseline gap-2 mb-6">
-                                  <span className="text-3xl font-bold text-neutral-900">{tasks.length}</span>
-                                  <p className="text-base font-medium text-neutral-600">Creative Task{tasks.length !== 1 ? 's' : ''} Assigned</p>
-                                </div>
-                                <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg text-center">
-                                  <Clock className="w-8 h-8 text-blue-600 mx-auto mb-3" />
-                                  <p className="text-sm font-medium text-blue-900 mb-1">Starting Soon</p>
-                                  <p className="text-xs text-blue-700">
-                                    Your tasks are ready! They will be available to start once the project enters the active phase.
-                                  </p>
-                                </div>
-                              </div>
-                            )
-                          }
-
                           // If no tasks, show "Tasks Being Prepared"
                           if (tasks.length === 0) {
                             return (
@@ -233,7 +211,7 @@ export default function Jobs() {
                             )
                           }
 
-                          // Job is active (in_progress), show tasks normally
+                          // Show active tasks (assigned or in_progress)
                           if (activeTasks.length > 0) {
                             return (
                               <div className="mt-8 pt-8 border-t border-neutral-200">
