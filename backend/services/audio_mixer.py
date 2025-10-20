@@ -104,73 +104,57 @@ class AudioMixer:
             return False
 
     def _chunks_to_audioclip(self, chunks: List[AudioChunk], volume: float) -> AudioClip:
-        """
-        Convert audio chunks to a MoviePy AudioClip.
+        if not chunks:
+            return AudioClip(lambda t: np.zeros((len(np.atleast_1d(t)), 1)), duration=0.0, fps=self.sample_rate)
 
-        Args:
-            chunks: List of audio chunks with timestamps
-            volume: Volume multiplier
-
-        Returns:
-            AudioClip with properly aligned audio
-        """
-        # Sort chunks by timestamp
+        # Sort chunks by timestamp to ensure chronological order
         sorted_chunks = sorted(chunks, key=lambda c: c.timestamp)
 
-        if not sorted_chunks:
-            # Return silent clip
-            return AudioClip(lambda t: np.zeros(1), duration=0.0, fps=self.sample_rate)
-
-        # Calculate total duration
+        # Determine total duration of the final clip
         last_chunk = sorted_chunks[-1]
-        last_chunk_samples = len(last_chunk.data) // 2  # PCM16 = 2 bytes per sample
-        last_chunk_duration = last_chunk_samples / self.sample_rate
-        total_duration = last_chunk.timestamp + last_chunk_duration
+        last_chunk_duration_seconds = (len(last_chunk.data) / (2 * self.channels)) / self.sample_rate
+        total_duration = last_chunk.timestamp + last_chunk_duration_seconds
 
-        # Pre-allocate audio array
+        # Create a silent numpy array representing the full audio timeline
         total_samples = int(total_duration * self.sample_rate)
-        audio_array = np.zeros(total_samples, dtype=np.float32)
+        audio_array = np.zeros(total_samples * self.channels, dtype=np.float32)
 
-        # Fill audio array with chunks
+        # Place each chunk's audio data onto the timeline
         for chunk in sorted_chunks:
-            # Decode PCM16 to float32
-            pcm16_data = np.frombuffer(chunk.data, dtype=np.int16)
-            float_data = pcm16_data.astype(np.float32) / 32768.0  # Normalize to [-1, 1]
-
-            # Apply volume
-            float_data *= volume
-
-            # Calculate position in array
             start_sample = int(chunk.timestamp * self.sample_rate)
-            end_sample = start_sample + len(float_data)
+            
+            # Convert PCM16 byte data to a numpy array of floats
+            pcm_data = np.frombuffer(chunk.data, dtype=np.int16).astype(np.float32) / 32768.0
+            
+            end_sample = start_sample + len(pcm_data)
 
-            # Ensure we don't exceed array bounds
-            if end_sample > len(audio_array):
-                end_sample = len(audio_array)
-                float_data = float_data[:end_sample - start_sample]
+            # Mix audio by adding the new chunk to the corresponding slice of the timeline
+            if end_sample <= len(audio_array):
+                audio_array[start_sample:end_sample] += pcm_data * volume
 
-            # Add to array (mixing if overlapping)
-            audio_array[start_sample:end_sample] += float_data
+        # Ensure the audio array is reshaped for stereo or mono
+        audio_array = audio_array.reshape(-1, self.channels)
 
-        # Clip to prevent overflow
+        # Clip to prevent distortion from clipping
         audio_array = np.clip(audio_array, -1.0, 1.0)
 
-        # Create AudioClip from array
         def make_frame(t):
-            # t can be a scalar or an array of times
-            # Handle both cases for MoviePy compatibility
+            """
+            Creates a moviepy audio frame for a given time t.
+            t can be a scalar or a numpy array.
+            """
             if isinstance(t, np.ndarray):
-                # Vectorized operation for array input
+                # Vectorized processing for an array of times
                 indices = (t * self.sample_rate).astype(int)
-                # Clip indices to valid range
-                indices = np.clip(indices, 0, len(audio_array) - 1)
-                # Return the audio samples at those indices
-                return audio_array[indices].reshape(-1, 1)
+                # Ensure indices are within bounds
+                indices = np.clip(indices, 0, audio_array.shape[0] - 1)
+                return audio_array[indices]
             else:
-                # Scalar input
+                # Scalar processing for a single time
                 idx = int(t * self.sample_rate)
-                if idx >= len(audio_array):
-                    return np.array([0.0])
-                return np.array([audio_array[idx]])
+                if idx < audio_array.shape[0]:
+                    return audio_array[idx]
+                else:
+                    return np.zeros(self.channels)
 
         return AudioClip(make_frame, duration=total_duration, fps=self.sample_rate)

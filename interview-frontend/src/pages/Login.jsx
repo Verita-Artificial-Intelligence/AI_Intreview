@@ -29,7 +29,7 @@ const Login = () => {
     const handleRedirect = async () => {
       // Check if profile is complete
       if (!isProfileComplete) {
-        navigate('/profile-setup')
+        navigate('/onboarding')
         return
       }
 

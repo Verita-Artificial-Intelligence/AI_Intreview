@@ -19,22 +19,33 @@ class AnalysisService:
             if not interview:
                 raise HTTPException(status_code=404, detail="Interview not found")
 
-            # Get candidate and messages
+            # Get candidate and transcript
             candidate = await db.candidates.find_one({"id": interview["candidate_id"]})
-            messages = await db.messages.find(
-                {"interview_id": interview_id}, {"_id": 0}
-            ).to_list(1000)
-
+            
+            # If candidate not found, create fallback from interview data
+            if not candidate:
+                candidate = {
+                    "name": interview.get("candidate_name", "Candidate"),
+                    "skills": [skill.get("name", skill) if isinstance(skill, dict) else skill 
+                              for skill in interview.get("skills", [])],
+                    "experience_years": 0
+                }
+            
+            # Use transcript from interview document (new format)
+            transcript = interview.get("transcript", [])
+            
             # Check for insufficient data
-            if len(messages) < 3:
+            if len(transcript) < 2:
                 return AnalysisService._create_insufficient_data_response()
 
-            # Build conversation with timestamps
+            # Build conversation with timestamps from transcript
             conversation_with_timestamps = []
-            for i, m in enumerate(messages):
+            for i, entry in enumerate(transcript):
                 timestamp = f"[{i+1}]"
+                speaker = entry.get("speaker", "unknown").upper()
+                text = entry.get("text", "")
                 conversation_with_timestamps.append(
-                    f"{timestamp} {m['role'].upper()}: {m['content']}"
+                    f"{timestamp} {speaker}: {text}"
                 )
 
             conversation = "\n".join(conversation_with_timestamps)

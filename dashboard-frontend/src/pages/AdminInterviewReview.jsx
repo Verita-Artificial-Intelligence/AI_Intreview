@@ -63,16 +63,30 @@ const AdminInterviewReview = () => {
 
       // Try to fetch full candidate data, fall back to interview data if not available
       let candidateData
-      try {
-        const candidateRes = await axios.get(
-          `${API}/candidates/${interviewRes.data.candidate_id}`
-        )
-        candidateData = candidateRes.data
-      } catch (candidateError) {
-        // If candidate fetch fails (e.g., profile not completed), use interview data
-        console.warn('Could not fetch full candidate profile, using interview data:', candidateError.message)
+      if (interviewRes.data.candidate_id) {
+        try {
+          const candidateRes = await axios.get(
+            `${API}/candidates/${interviewRes.data.candidate_id}`
+          )
+          candidateData = candidateRes.data
+        } catch (candidateError) {
+          // If candidate fetch fails (e.g., profile not completed), use interview data
+          console.warn('Could not fetch full candidate profile, using interview data:', candidateError.message)
+          candidateData = {
+            id: interviewRes.data.candidate_id,
+            name: interviewRes.data.candidate_name || 'Unknown',
+            email: 'N/A',
+            position: interviewRes.data.position || interviewRes.data.job_title || 'N/A',
+            skills: interviewRes.data.skills?.map(s => s.name) || [],
+            experience_years: 0,
+            bio: '',
+          }
+        }
+      } else {
+        // No candidate_id in interview, use interview data directly
+        console.warn('Interview has no candidate_id, using interview data')
         candidateData = {
-          id: interviewRes.data.candidate_id,
+          id: null,
           name: interviewRes.data.candidate_name || 'Unknown',
           email: 'N/A',
           position: interviewRes.data.position || interviewRes.data.job_title || 'N/A',
@@ -116,14 +130,14 @@ const AdminInterviewReview = () => {
       // Check if analysis already exists
       if (interviewRes.data.analysis_result && interviewRes.data.analysis_status === 'completed') {
         setAnalysis(interviewRes.data.analysis_result)
-      } else if (interviewRes.data.analysis_status === 'pending') {
-        await generateAnalysis(messagesRes.data, candidateData)
       } else if (interviewRes.data.analysis_status === 'processing') {
         setAnalysis({ processing: true })
       } else if (interviewRes.data.analysis_status === 'failed') {
         setAnalysis({ failed: true })
       } else {
-        await generateAnalysis(messagesRes.data, candidateData)
+        // No analysis exists - automatically generate it
+        console.log('No analysis found, automatically generating...')
+        generateAnalysis(messagesRes.data, candidateData)
       }
     } catch (error) {
       console.error('Error fetching interview data:', error)
@@ -472,6 +486,19 @@ const AdminInterviewReview = () => {
 
           {/* Right Column - Analysis & Transcript */}
           <div className="lg:col-span-2 space-y-4">
+            {/* Show pending state if analysis is pending */}
+            {analysis?.pending ? (
+              <Card className={`p-4 ${cardStyles.default}`}>
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Clock className="w-16 h-16 text-brand-500 mb-4" />
+                  <h3 className="text-xl font-bold mb-2 text-neutral-900">Analysis Pending</h3>
+                  <p className="text-neutral-600 text-center max-w-md">
+                    The AI analysis for this interview is being prepared. Please check back later.
+                  </p>
+                </div>
+              </Card>
+            ) : (
+              <>
             {/* Overall Score */}
             <Card className={`p-4 ${cardStyles.default}`}>
               <div className="flex items-center justify-between">
@@ -649,24 +676,28 @@ const AdminInterviewReview = () => {
             </Card>
 
             {/* Interview Transcript */}
-            <Card className={`p-4 ${cardStyles.default}`}>
-              <h3 className="text-base font-bold mb-3 text-neutral-900">Interview Transcript</h3>
-              <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-                {messages.map((message, index) => (
-                  <div key={index} className="border-l-2 border-neutral-200 pl-3">
-                    <div className="flex items-baseline gap-2 mb-1">
-                      <span className="text-xs font-semibold text-neutral-900">
-                        {message.role === 'assistant' ? 'Interviewer' : candidate.name}
-                      </span>
-                      <span className="text-[10px] text-neutral-500">
-                        {new Date(message.timestamp).toLocaleTimeString()}
-                      </span>
+            {interview.transcript && interview.transcript.length > 0 && (
+              <Card className={`p-4 ${cardStyles.default}`}>
+                <h3 className="text-base font-bold mb-3 text-neutral-900">Interview Transcript</h3>
+                <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                  {interview.transcript.map((entry, index) => (
+                    <div key={index} className="border-l-2 border-neutral-200 pl-3">
+                      <div className="flex items-baseline gap-2 mb-1">
+                        <span className="text-xs font-semibold text-neutral-900">
+                          {entry.speaker === 'assistant' ? 'AI Interviewer' : candidate.name}
+                        </span>
+                        <span className="text-[10px] text-neutral-500">
+                          [{index + 1}]
+                        </span>
+                      </div>
+                      <p className="text-sm text-neutral-700 leading-relaxed">{entry.text}</p>
                     </div>
-                    <p className="text-sm text-neutral-700 leading-relaxed">{message.content}</p>
-                  </div>
-                ))}
-              </div>
-            </Card>
+                  ))}
+                </div>
+              </Card>
+            )}
+            </>
+            )}
           </div>
         </div>
       </div>

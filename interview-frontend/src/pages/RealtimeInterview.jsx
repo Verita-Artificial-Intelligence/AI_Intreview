@@ -23,7 +23,7 @@ export default function RealtimeInterview() {
   const { interviewId } = useParams();
   const [searchParams] = useSearchParams();
   const jobId = searchParams.get('jobId');
-  const { token, user } = useAuth();
+  const { token, user, loading: authLoading } = useAuth();
 
   // Store
   const {
@@ -59,12 +59,28 @@ export default function RealtimeInterview() {
     };
   }, []);
 
-  // Auto-start interview once services are initialized
+  // Auto-start interview once services are initialized AND user is loaded
   useEffect(() => {
+    // Don't start if still loading auth
+    if (authLoading) {
+      console.log('Waiting for auth to finish loading...');
+      return;
+    }
+
+    // Check if user is loaded
+    if (!user) {
+      console.error('User not loaded - cannot start interview without candidate_id!');
+      setError('User not loaded. Please refresh and try again.');
+      setStatus('error');
+      return;
+    }
+
+    // Start interview when services ready and user loaded
     if (isInitialized) {
+      console.log('Starting interview with user:', user.name, user.id);
       handleStartInterview();
     }
-  }, [isInitialized]);
+  }, [isInitialized, user, authLoading]);
 
   /**
    * Initialize all services.
@@ -156,6 +172,9 @@ export default function RealtimeInterview() {
       if (user) {
         startMessage.candidate_id = user.id;
         startMessage.candidate_name = user.name || 'Unknown';
+        console.log('Starting interview with candidate:', user.name, user.id);
+      } else {
+        console.warn('WARNING: Starting interview without user data - candidate_id will be null');
       }
       wsClient.send(startMessage);
 
@@ -397,8 +416,36 @@ export default function RealtimeInterview() {
     }
   };
 
+  // Show loading screen while auth is loading
+  if (authLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gradient-to-b from-neutral-50 via-white to-neutral-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-neutral-600">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex flex-col relative overflow-hidden bg-gradient-to-b from-neutral-50 via-white to-neutral-100">
+      {/* Pink atmospheric background glow */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '1200px',
+            height: '1200px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(236, 72, 153, 0.15) 0%, rgba(219, 39, 119, 0.08) 25%, rgba(190, 24, 93, 0.04) 45%, transparent 70%)',
+            filter: 'blur(100px)',
+          }}
+        />
+      </div>
 
       {/* Main Video Area */}
       <div className="flex-1 relative flex items-center justify-center">
