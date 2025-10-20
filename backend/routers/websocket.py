@@ -343,8 +343,8 @@ async def get_interview_instructions(interview_id: Optional[str]) -> str:
         instructions = InterviewService.get_interview_instructions(interview)
 
         interview_type = interview_doc.get("interview_type", "standard")
-        custom_questions_count = len(interview_doc.get("custom_questions", []))
-        skills_count = len(interview_doc.get("skills", []))
+        custom_questions_count = len(interview_doc.get("custom_questions") or [])
+        skills_count = len(interview_doc.get("skills") or [])
         logger.info(f"Using {interview_type} interview instructions for interview {interview_id} (custom_questions: {custom_questions_count}, skills: {skills_count})")
         logger.debug(f"Instructions preview: {instructions[:200]}...")
 
@@ -425,13 +425,25 @@ async def forward_openai_to_client(
         async for event in realtime.iter_events():
             event_type = event.get("type", "")
 
+            # LOG ALL EVENT TYPES to debug transcription issue
+            logger.info(f"🔍 OpenAI Event Type: {event_type}")
+
+            # Log full event for transcription/audio/item related events
+            if "transcription" in event_type or "transcript" in event_type or "audio" in event_type or "item" in event_type:
+                logger.info(f"   Full event data: {event}")
+
             # Map OpenAI events to client events
             if event_type == "conversation.item.done":
                 item = event.get("item", {})
+                item_type = item.get("type")
+                item_role = item.get("role")
+                logger.info(f"conversation.item.done - type: {item_type}, role: {item_role}")
+
                 # Case 1: legacy-style transcription item
-                if item.get("type") == "input_audio_transcription":
+                if item_type == "input_audio_transcription":
                     # User transcript
                     text = item.get("transcript", "")
+                    logger.info(f"  input_audio_transcription text: '{text[:100] if text else 'EMPTY'}'")
                     if text:
                         transcript.append({"speaker": "user", "text": text})
                         logger.info(f"USER transcript added: '{text[:50]}...' (total entries: {len(transcript)})")
@@ -443,17 +455,22 @@ async def forward_openai_to_client(
                         })
                         # Server VAD will automatically trigger response, no manual response.create needed
                 # Case 2: GA message item containing user content entries
-                elif item.get("type") == "message" and item.get("role") == "user":
+                elif item_type == "message" and item_role == "user":
                     content = item.get("content", []) or []
+                    logger.info(f"  user message with {len(content)} content entries")
                     extracted_text = None
                     for c in content:
                         ctype = c.get("type")
+                        logger.info(f"    content type: {ctype}")
                         if ctype == "input_audio_transcription":
                             extracted_text = c.get("transcript") or c.get("text")
+                            logger.info(f"      transcript: '{extracted_text[:100] if extracted_text else 'EMPTY'}'")
                         elif ctype == "input_text" and not extracted_text:
                             extracted_text = c.get("text")
+                            logger.info(f"      text: '{extracted_text[:100] if extracted_text else 'EMPTY'}'")
                     if extracted_text:
                         transcript.append({"speaker": "user", "text": extracted_text})
+                        logger.info(f"USER transcript added: '{extracted_text[:50]}...' (total entries: {len(transcript)})")
                         await websocket.send_json({
                             "event": "transcript",
                             "speaker": "user",
@@ -461,6 +478,53 @@ async def forward_openai_to_client(
                             "final": True
                         })
                         # Server VAD will automatically trigger response, no manual response.create needed
+                    else:
+                        logger.warning(f"  user message had NO extractable text! content: {content}")
+
+            elif event_type == "conversation.item.input_audio_transcription.completed":
+                # User audio transcription completed event
+                item_id = event.get("item_id")
+                content_index = event.get("content_index", 0)
+                transcript_text = event.get("transcript", "")
+                logger.info(f"conversation.item.input_audio_transcription.completed - item_id: {item_id}, transcript: '{transcript_text[:100] if transcript_text else 'EMPTY'}'")
+
+                if transcript_text:
+                    transcript.append({"speaker": "user", "text": transcript_text})
+                    logger.info(f"USER transcript added (from .completed event): '{transcript_text[:50]}...' (total entries: {len(transcript)})")
+
+                    await websocket.send_json({
+                        "event": "transcript",
+                        "speaker": "user",
+                        "text": transcript_text,
+                        "final": True
+                    })
+
+            elif event_type == "conversation.item.input_audio_transcription.delta":
+                # User audio transcription streaming delta
+                item_id = event.get("item_id")
+                content_index = event.get("content_index", 0)
+                delta = event.get("delta", "")
+                logger.info(f"conversation.item.input_audio_transcription.delta - item_id: {item_id}, delta: '{delta[:100] if delta else 'EMPTY'}'")
+
+                if delta:
+                    # Append to last user message if exists, otherwise create new
+                    if transcript and transcript[-1]["speaker"] == "user":
+                        transcript[-1]["text"] += delta
+                    else:
+                        transcript.append({"speaker": "user", "text": delta})
+
+                    await websocket.send_json({
+                        "event": "transcript",
+                        "speaker": "user",
+                        "text": delta,
+                        "final": False
+                    })
+
+            elif event_type == "conversation.item.input_audio_transcription.failed":
+                # User audio transcription failed
+                item_id = event.get("item_id")
+                error = event.get("error", {})
+                logger.error(f"conversation.item.input_audio_transcription.failed - item_id: {item_id}, error: {error}")
 
             elif event_type == "response.output_audio_transcript.delta":
                 # Streaming assistant audio transcription (GA)
@@ -481,13 +545,11 @@ async def forward_openai_to_client(
 
             elif event_type == "response.output_audio_transcript.done":
                 # Finalized assistant audio transcription (GA)
+                # NOTE: Each .done event is a NEW conversation turn, not an update!
                 text = event.get("transcript", "")
                 if text:
-                    # Replace or create assistant transcript entry
-                    if transcript and transcript[-1]["speaker"] == "assistant":
-                        transcript[-1]["text"] = text
-                    else:
-                        transcript.append({"speaker": "assistant", "text": text})
+                    # Always append new assistant messages (each is a separate turn)
+                    transcript.append({"speaker": "assistant", "text": text})
                     logger.info(f"ASSISTANT transcript added: '{text[:50]}...' (total entries: {len(transcript)})")
 
                     await websocket.send_json({

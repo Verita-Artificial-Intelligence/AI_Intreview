@@ -94,13 +94,13 @@ const AdminInterviewReview = () => {
       if (interviewRes.data.analysis_result && interviewRes.data.analysis_status === 'completed') {
         setAnalysis(interviewRes.data.analysis_result)
       } else if (interviewRes.data.analysis_status === 'pending') {
-        await generateAnalysis(messagesRes.data, candidateData)
+        setAnalysis({ pending: true })
       } else if (interviewRes.data.analysis_status === 'processing') {
         setAnalysis({ processing: true })
       } else if (interviewRes.data.analysis_status === 'failed') {
         setAnalysis({ failed: true })
       } else {
-        await generateAnalysis(messagesRes.data, candidateData)
+        setAnalysis({ pending: true })
       }
     } catch (error) {
       console.error('Error fetching interview data:', error)
@@ -424,6 +424,19 @@ const AdminInterviewReview = () => {
 
           {/* Right Column - Analysis & Transcript */}
           <div className="lg:col-span-2 space-y-4">
+            {/* Show pending state if analysis is pending */}
+            {analysis?.pending ? (
+              <Card className={`p-4 ${cardStyles.default}`}>
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Clock className="w-16 h-16 text-brand-500 mb-4" />
+                  <h3 className="text-xl font-bold mb-2 text-neutral-900">Analysis Pending</h3>
+                  <p className="text-neutral-600 text-center max-w-md">
+                    The AI analysis for this interview is being prepared. Please check back later.
+                  </p>
+                </div>
+              </Card>
+            ) : (
+              <>
             {/* Overall Score */}
             <Card className={`p-4 ${cardStyles.default}`}>
               <div className="flex items-center justify-between">
@@ -600,8 +613,8 @@ const AdminInterviewReview = () => {
               )}
             </Card>
 
-            {/* Interview Transcript */}
-            <Card className={`p-4 ${cardStyles.default}`}>
+            {/* Interview Transcript - Hidden for now while working on transcription system */}
+            {/* <Card className={`p-4 ${cardStyles.default}`}>
               <h3 className="text-base font-bold mb-3 text-neutral-900">Interview Transcript</h3>
               <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
                 {messages.map((message, index) => (
@@ -618,7 +631,9 @@ const AdminInterviewReview = () => {
                   </div>
                 ))}
               </div>
-            </Card>
+            </Card> */}
+            </>
+            )}
           </div>
         </div>
       </div>
