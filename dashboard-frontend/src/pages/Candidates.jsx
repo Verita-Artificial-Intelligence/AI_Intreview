@@ -69,11 +69,11 @@ const Candidates = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-neutral-50">
       <Sidebar />
 
       {/* Main Content */}
-      <main className="ml-64 overflow-y-auto bg-white">
+      <main className="ml-64 overflow-y-auto bg-neutral-50">
         <div className={`${containers.lg} mx-auto px-8 py-12`}>
           {/* Header */}
           <div className="mb-12">
@@ -105,7 +105,7 @@ const Candidates = () => {
           {loading ? (
             <p className="text-sm text-neutral-600">Loading candidates...</p>
           ) : candidates.length === 0 ? (
-            <Card className={`p-8 text-center ${cardStyles.default}`}>
+            <Card className={`p-8 text-center ${cardStyles.default} bg-white border border-neutral-200 shadow-lg`}>
               <Users className="w-12 h-12 mx-auto mb-3 text-neutral-300" />
               <h3 className="text-lg font-display font-semibold mb-2 text-neutral-900">
                 No Candidates Yet
@@ -115,7 +115,7 @@ const Candidates = () => {
               </p>
             </Card>
           ) : filteredCandidates.length === 0 ? (
-            <Card className={`p-8 text-center ${cardStyles.default}`}>
+            <Card className={`p-8 text-center ${cardStyles.default} bg-white border border-neutral-200 shadow-lg`}>
               <Search className="w-12 h-12 mx-auto mb-3 text-neutral-300" />
               <h3 className="text-lg font-display font-semibold mb-2 text-neutral-900">
                 No Results Found
@@ -137,7 +137,10 @@ const Candidates = () => {
                 const interviewCount = getCandidateInterviewCount(candidate.id)
 
                 return (
-                  <Card key={candidate.id} className={`p-5 ${cardStyles.default} flex flex-col`}>
+                  <Card
+                    key={candidate.id}
+                    className={`group relative overflow-hidden p-6 ${cardStyles.default} flex flex-col bg-white border border-neutral-200/80 shadow-lg hover:shadow-xl hover:border-brand-200 transition-all`}
+                  >
                     <div className="flex items-start gap-3 mb-4">
                       <div className="w-12 h-12 rounded-full flex items-center justify-center text-base font-bold text-white bg-gradient-to-br from-brand-400 to-brand-600 flex-shrink-0">
                         {candidate.name?.charAt(0).toUpperCase() || 'U'}
