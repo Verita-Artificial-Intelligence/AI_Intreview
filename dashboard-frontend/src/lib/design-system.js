@@ -123,30 +123,30 @@ export const iconBackgrounds = {
 }
 
 /**
- * Common spacing values (reduced for better density)
+ * Common spacing values
  */
 export const spacing = {
-  xs: 'gap-1.5',
-  sm: 'gap-3',
-  md: 'gap-4',
-  lg: 'gap-5',
-  xl: 'gap-8',
+  xs: 'gap-2',
+  sm: 'gap-4',
+  md: 'gap-6',
+  lg: 'gap-8',
+  xl: 'gap-12',
 }
 
 /**
- * Typography utilities (scaled down ~33% for better density)
+ * Typography utilities
  */
 export const typography = {
-  h1: 'text-2xl font-display font-bold text-neutral-900',
-  h2: 'text-xl font-display font-bold text-neutral-900',
-  h3: 'text-lg font-display font-semibold text-neutral-900',
-  h4: 'text-base font-display font-semibold text-neutral-800',
-  h5: 'text-sm font-display font-semibold text-neutral-800',
-  body: 'text-sm font-sans text-neutral-700',
-  bodyLarge: 'text-base font-sans text-neutral-700',
-  bodySmall: 'text-xs font-sans text-neutral-600',
-  caption: 'text-[10px] font-sans text-neutral-500',
-  label: 'text-xs font-medium text-neutral-700',
+  h1: 'text-4xl font-display font-bold text-neutral-900',
+  h2: 'text-3xl font-display font-bold text-neutral-900',
+  h3: 'text-2xl font-display font-semibold text-neutral-900',
+  h4: 'text-xl font-display font-semibold text-neutral-800',
+  h5: 'text-lg font-display font-semibold text-neutral-800',
+  body: 'text-base font-sans text-neutral-700',
+  bodyLarge: 'text-lg font-sans text-neutral-700',
+  bodySmall: 'text-sm font-sans text-neutral-600',
+  caption: 'text-xs font-sans text-neutral-500',
+  label: 'text-sm font-medium text-neutral-700',
 }
 
 /**
@@ -163,34 +163,34 @@ export const buttonVariants = {
 }
 
 /**
- * Card styles (reduced rounded corners for less AI-generated look)
+ * Card styles
  */
 export const cardStyles = {
   default:
-    'bg-surface rounded-lg border-0 shadow-card hover:shadow-lg transition-shadow duration-300',
+    'bg-surface rounded-xl border-0 shadow-card hover:shadow-lg transition-shadow duration-300',
   elevated:
-    'bg-surface rounded-lg border-0 shadow-lg hover:shadow-xl transition-shadow duration-300',
-  flat: 'bg-surface rounded-lg border border-neutral-200',
+    'bg-surface rounded-xl border-0 shadow-lg hover:shadow-xl transition-shadow duration-300',
+  flat: 'bg-surface rounded-xl border border-neutral-200',
 }
 
 /**
- * Container max widths (reduced for better content density)
+ * Container max widths
  */
 export const containers = {
-  sm: 'max-w-2xl',
-  md: 'max-w-3xl',
-  lg: 'max-w-5xl',
-  xl: 'max-w-6xl',
+  sm: 'max-w-3xl',
+  md: 'max-w-5xl',
+  lg: 'max-w-7xl',
+  xl: 'max-w-screen-xl',
 }
 
 /**
- * Page header styles (scaled down for better density)
+ * Page header styles
  */
 export const pageHeader = {
   wrapper: 'bg-surface border-b border-neutral-200 shadow-sm',
-  container: 'mx-auto px-5 py-3 flex items-center justify-between',
-  title: 'text-xl font-display font-bold text-neutral-900',
-  subtitle: 'text-xs text-neutral-600',
+  container: 'mx-auto px-6 py-4 flex items-center justify-between',
+  title: 'text-2xl font-display font-bold text-neutral-900',
+  subtitle: 'text-sm text-neutral-600',
 }
 
 /**

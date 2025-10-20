@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import Sidebar from '@/components/Sidebar'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -62,14 +63,19 @@ const Marketplace = () => {
   const fetchJobs = async () => {
     try {
       const [jobsRes, interviewsRes] = await Promise.all([
-        axios.get(`${API}/jobs?status=open`),
+        axios.get(`${API}/jobs`), // Get all jobs
         axios.get(`${API}/interviews`, {
           headers: { Authorization: `Bearer ${token}` }
         })
       ])
 
-      setJobs(jobsRes.data)
-      setFilteredJobs(jobsRes.data)
+      // Filter out completed and archived jobs - candidates can apply for pending and in_progress jobs
+      const activeJobs = jobsRes.data.filter(
+        job => job.status !== 'completed' && job.status !== 'archived'
+      )
+
+      setJobs(activeJobs)
+      setFilteredJobs(activeJobs)
 
       // Filter interviews for current user
       const myInterviews = interviewsRes.data.filter(
@@ -123,12 +129,20 @@ const Marketplace = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white relative">
-      <div className={`${containers.lg} mx-auto px-6 py-8`}>
+    <div className="flex min-h-screen bg-white relative">
+      <Sidebar />
+
+      <main className="flex-1 overflow-y-auto bg-white">
+        <div className={`${containers.lg} mx-auto px-8 py-12`}>
         {/* Header */}
-        <h1 className="text-3xl font-display font-bold text-neutral-900 mb-6">
-          Explore opportunities
-        </h1>
+        <div className="mb-12">
+          <h1 className="text-5xl font-bold text-neutral-900 mb-3 tracking-tight leading-tight">
+            Explore opportunities
+          </h1>
+          <p className="text-lg text-neutral-600 font-light">
+            Discover elite projects matched to your expertise and skills
+          </p>
+        </div>
 
         {/* Search Bar and Filters */}
         {jobs.length > 0 && (
@@ -287,7 +301,8 @@ const Marketplace = () => {
             })}
           </div>
         )}
-      </div>
+        </div>
+      </main>
 
       {/* Overlay */}
       {selectedJob && (

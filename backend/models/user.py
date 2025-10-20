@@ -18,8 +18,17 @@ class User(BaseModel):
     name: Optional[str] = None
     position: Optional[str] = None
     skills: Optional[List[str]] = None
+    expertise: Optional[List[str]] = None  # Creative skills/specialties
     experience_years: Optional[int] = None
     bio: Optional[str] = None
+
+    # Additional profile sections
+    education: Optional[List[dict]] = None
+    work_experience: Optional[List[dict]] = None
+    projects: Optional[List[dict]] = None
+    publications: Optional[List[dict]] = None
+    certifications: Optional[List[dict]] = None
+    resume_url: Optional[str] = None
 
     # Interview tracking
     interview_id: Optional[str] = None
@@ -46,8 +55,18 @@ class UserLogin(BaseModel):
 class ProfileComplete(BaseModel):
     """Profile completion data"""
 
+    # Required fields
     name: str
-    position: str
-    skills: List[str]
-    experience_years: int
     bio: str
+    expertise: List[str]
+
+    # Optional fields - using simpler Pydantic v2 syntax
+    position: str | None = None
+    skills: List[str] | None = None
+    experience_years: int | None = None
+    education: List[dict] | None = None
+    work_experience: List[dict] | None = None
+    projects: List[dict] | None = None
+    publications: List[dict] | None = None
+    certifications: List[dict] | None = None
+    resume_url: str | None = None

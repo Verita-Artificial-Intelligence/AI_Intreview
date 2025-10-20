@@ -8,6 +8,7 @@ from . import (
     jobs,
     annotations,
     annotation_data,
+    earnings,
     profile,
     websocket,
     uploads,

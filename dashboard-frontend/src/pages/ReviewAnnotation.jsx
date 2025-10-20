@@ -4,8 +4,9 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
-import { ArrowLeft, Star, BarChart, Briefcase, CheckSquare, Users, ChevronRight, Upload } from 'lucide-react'
+import { ArrowLeft, Star } from 'lucide-react'
 import { toast } from 'sonner'
+import Sidebar from '../components/Sidebar'
 
 const API = process.env.REACT_APP_BACKEND_URL ? `${process.env.REACT_APP_BACKEND_URL}/api` : 'http://localhost:8000/api'
 
@@ -67,74 +68,12 @@ export default function ReviewAnnotation() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-neutral-200 flex-shrink-0">
-        <div className="p-6">
-          <h2 className="text-xl font-display font-bold text-neutral-900 mb-1">Verita</h2>
-          <p className="text-xs text-neutral-600">AI Interview Platform</p>
-        </div>
-
-        <nav className="px-3">
-          <a
-            href="/"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <BarChart className="w-4 h-4" />
-            <span>Dashboard</span>
-          </a>
-          <a
-            href="/candidates"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <Users className="w-4 h-4" />
-            <span>Candidates</span>
-          </a>
-          <a
-            href="/interviews"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <Briefcase className="w-4 h-4" />
-            <span>Interviews</span>
-          </a>
-          <a
-            href="/jobs"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <Briefcase className="w-4 h-4" />
-            <span>Jobs</span>
-          </a>
-
-          <div className="border-t border-neutral-200 my-3" />
-
-          <a
-            href="/annotation-data"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <Upload className="w-4 h-4" />
-            <span>Annotation Data</span>
-          </a>
-          <a
-            href="/annotation-tasks"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm bg-brand-50 text-brand-600 font-medium mb-1"
-          >
-            <CheckSquare className="w-4 h-4" />
-            <span>Annotation Tasks</span>
-            <ChevronRight className="w-4 h-4 ml-auto" />
-          </a>
-          <a
-            href="/annotators"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <Users className="w-4 h-4" />
-            <span>Annotators</span>
-          </a>
-        </nav>
-      </aside>
+    <div className="min-h-screen bg-white">
+      <Sidebar />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="p-8">
+      <main className="ml-64 overflow-y-auto bg-white">
+        <div className="max-w-7xl mx-auto px-8 py-12">
           {/* Back Button */}
           <button
             onClick={() => navigate('/annotation-tasks')}
@@ -241,21 +180,5 @@ export default function ReviewAnnotation() {
         </div>
       </main>
     </div>
-  )
-}
-
-function NavLink({ to, label, icon: Icon, active }) {
-  return (
-    <a
-      href={to}
-      className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
-        active
-          ? 'bg-brand-50 text-brand-600 font-medium'
-          : 'text-neutral-700 hover:bg-neutral-50'
-      }`}
-    >
-      <Icon className="w-5 h-5" />
-      <span>{label}</span>
-    </a>
   )
 }

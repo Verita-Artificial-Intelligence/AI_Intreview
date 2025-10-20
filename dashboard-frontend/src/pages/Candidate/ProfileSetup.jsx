@@ -115,7 +115,7 @@ const ProfileSetup = () => {
               }
               required
               className="mt-1 h-8 text-sm rounded-lg border-neutral-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
-              placeholder="e.g. Software Engineer, Data Scientist, Designer"
+              placeholder="e.g. Illustrator, UI Designer, Cinematographer"
             />
           </div>
 
@@ -140,7 +140,7 @@ const ProfileSetup = () => {
                   }
                 }}
                 className="flex-1 h-8 text-sm rounded-lg border-neutral-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
-                placeholder="e.g. Python, React, Data Analysis, etc."
+                placeholder="e.g. Adobe Creative Suite, Figma, Cinema 4D, etc."
               />
               <Button
                 type="button"

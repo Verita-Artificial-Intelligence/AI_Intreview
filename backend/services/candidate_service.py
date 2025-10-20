@@ -42,20 +42,18 @@ class CandidateService:
         candidates = []
         for user_doc in users:
             user = User(**user_doc)
-            if (
-                user.name
-                and user.position
-                and user.skills
-                and user.experience_years is not None
-                and user.bio
-            ):
+            # Only require name and bio (profile_completed already filters for basics)
+            if user.name and user.bio:
+                # Use expertise as skills if skills not populated (new profile system)
+                skills_list = user.skills or user.expertise or []
+
                 candidate = Candidate(
                     id=user.id,
                     name=user.name,
                     email=user.email,
-                    position=user.position,
-                    skills=user.skills,
-                    experience_years=user.experience_years,
+                    position=user.position or "Creative Professional",
+                    skills=skills_list,
+                    experience_years=user.experience_years or 0,
                     bio=user.bio,
                     created_at=user.created_at,
                 )
@@ -76,20 +74,23 @@ class CandidateService:
 
         user = User(**user_doc)
 
-        # Verify user has completed profile
-        if not user.profile_completed or not user.name or not user.position:
+        # Verify user has completed profile (only require name and bio)
+        if not user.profile_completed or not user.name or not user.bio:
             raise HTTPException(
                 status_code=404, detail="Candidate profile not completed"
             )
+
+        # Use expertise as skills if skills not populated (new profile system)
+        skills_list = user.skills or user.expertise or []
 
         candidate = Candidate(
             id=user.id,
             name=user.name,
             email=user.email,
-            position=user.position,
-            skills=user.skills or [],
+            position=user.position or "Creative Professional",
+            skills=skills_list,
             experience_years=user.experience_years or 0,
-            bio=user.bio or "",
+            bio=user.bio,
             created_at=user.created_at,
         )
 

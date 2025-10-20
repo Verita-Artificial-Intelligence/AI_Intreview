@@ -22,8 +22,9 @@ class AnnotationData(BaseModel):
 
 class AnnotationDataCreate(BaseModel):
     job_id: str
-    title: str
-    description: Optional[str] = None
+    title: str  # Will be used as task_name
+    description: Optional[str] = None  # Will be used as task_description
+    instructions: str  # Required for annotation tasks
     data_type: DataType
     data_url: Optional[str] = None
     data_content: Optional[Dict[str, Any]] = None

@@ -3,8 +3,12 @@ import { AuthProvider } from './contexts/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
-import ProfileSetup from './pages/ProfileSetup'
+import Onboarding from './pages/Onboarding'
 import Marketplace from './pages/Marketplace'
+import Jobs from './pages/Jobs'
+import Annotate from './pages/Annotate'
+import Earnings from './pages/Earnings'
+import Profile from './pages/Profile'
 import NewInterviewPrep from './pages/NewInterviewPrep'
 import Interview from './pages/Interview'
 import RealtimeInterview from './pages/RealtimeInterview'
@@ -23,10 +27,10 @@ function App() {
 
             {/* Protected routes - require authentication */}
             <Route
-              path="/profile-setup"
+              path="/onboarding"
               element={
                 <ProtectedRoute>
-                  <ProfileSetup />
+                  <Onboarding />
                 </ProtectedRoute>
               }
             />
@@ -70,6 +74,38 @@ function App() {
               element={
                 <ProtectedRoute requireProfile={true}>
                   <StatusScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/jobs"
+              element={
+                <ProtectedRoute requireProfile={true}>
+                  <Jobs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/annotate/:taskId"
+              element={
+                <ProtectedRoute requireProfile={true}>
+                  <Annotate />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/earnings"
+              element={
+                <ProtectedRoute requireProfile={true}>
+                  <Earnings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute requireProfile={true}>
+                  <Profile />
                 </ProtectedRoute>
               }
             />

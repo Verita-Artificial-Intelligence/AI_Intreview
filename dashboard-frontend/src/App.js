@@ -1,6 +1,10 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import '@/App.css'
+
+// Admin auth
+import Login from './pages/Login'
 
 // Admin pages
 import Dashboard from './pages/Dashboard'
@@ -13,7 +17,6 @@ import InterviewPrep from './pages/InterviewPrep'
 import AdminInterviewReview from './pages/AdminInterviewReview'
 import AnnotationData from './pages/AnnotationData'
 import UploadAnnotationData from './pages/UploadAnnotationData'
-import AnnotationTasks from './pages/AnnotationTasks'
 import Annotators from './pages/Annotators'
 import ReviewAnnotation from './pages/ReviewAnnotation'
 
@@ -31,6 +34,9 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+          {/* Admin auth routes */}
+          <Route path="/login" element={<Login />} />
+
           {/* Public candidate auth routes */}
           <Route path="/candidate/login" element={<CandidateLogin />} />
           <Route path="/candidate/signup" element={<CandidateSignup />} />
@@ -86,7 +92,6 @@ function App() {
           <Route path="/jobs" element={<Jobs />} />
           <Route path="/annotation-data" element={<AnnotationData />} />
           <Route path="/annotation-data/upload" element={<UploadAnnotationData />} />
-          <Route path="/annotation-tasks" element={<AnnotationTasks />} />
           <Route path="/annotators" element={<Annotators />} />
           <Route path="/review/:taskId" element={<ReviewAnnotation />} />
           <Route

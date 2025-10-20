@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Briefcase, Trash2, X, Search } from 'lucide-react'
-import AdminSidebar from '@/components/AdminSidebar'
+import Sidebar from '@/components/Sidebar'
 import { cardStyles, containers, getStatusClass, getStatusLabel } from '@/lib/design-system'
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
@@ -103,45 +103,45 @@ const Interviews = () => {
   })()
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminSidebar />
+    <div className="min-h-screen bg-white">
+      <Sidebar />
 
       {/* Main Content */}
-      <div className="ml-64 overflow-auto">
-        <div className={`${containers.lg} mx-auto px-6 py-6`}>
+      <main className="ml-64 overflow-y-auto bg-white">
+        <div className={`${containers.lg} mx-auto px-8 py-12`}>
           {/* Header */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <h1 className="text-2xl font-display font-bold text-neutral-900">
+          <div className="mb-12">
+            <div className="flex items-center justify-between mb-3">
+              <h1 className="text-5xl font-bold text-neutral-900 tracking-tight leading-tight">
                 {getPageTitle()}
               </h1>
               {(candidateFilter || jobFilter) && (
                 <Button
                   onClick={clearFilter}
                   variant="outline"
-                  className="h-8 text-xs rounded-lg"
+                  className="h-11 rounded-lg"
                 >
-                  <X className="w-3 h-3 mr-1" />
+                  <X className="w-4 h-4 mr-2" />
                   Clear Filter
                 </Button>
               )}
             </div>
-            <p className="text-sm text-neutral-600">
+            <p className="text-lg text-neutral-600 font-light">
               {getPageDescription()}
             </p>
           </div>
 
           {/* Search Bar */}
           {interviews.length > 0 && (
-            <div className="mb-6">
+            <div className="mb-8">
               <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-5 h-5" />
                 <Input
                   type="text"
                   placeholder="Search by candidate, job title, or position..."
                   value={interviewSearch}
                   onChange={(e) => setInterviewSearch(e.target.value)}
-                  className="pl-10 h-10 rounded-lg border-neutral-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
+                  className="pl-10 h-11 rounded-lg border-neutral-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 text-base"
                 />
               </div>
             </div>
@@ -214,11 +214,30 @@ const Interviews = () => {
                     </div>
                   </div>
                   <div className="flex items-center justify-between mb-4">
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${getStatusClass(interview.status)}`}
-                    >
-                      {getStatusLabel(interview.status)}
-                    </span>
+                    <div className="flex gap-2">
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${getStatusClass(interview.status)}`}
+                      >
+                        {getStatusLabel(interview.status)}
+                      </span>
+                      {interview.acceptance_status && (
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                            interview.acceptance_status === 'accepted'
+                              ? 'bg-green-100 text-green-700 border border-green-300'
+                              : interview.acceptance_status === 'rejected'
+                              ? 'bg-red-100 text-red-700 border border-red-300'
+                              : 'bg-gray-100 text-gray-700 border border-gray-300'
+                          }`}
+                        >
+                          {interview.acceptance_status === 'accepted'
+                            ? 'Accepted'
+                            : interview.acceptance_status === 'rejected'
+                            ? 'Rejected'
+                            : 'Pending Review'}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-neutral-500">
                       {new Date(interview.created_at).toLocaleDateString()}
                     </p>
@@ -248,7 +267,7 @@ const Interviews = () => {
             </div>
           )}
         </div>
-      </div>
+      </main>
     </div>
   )
 }

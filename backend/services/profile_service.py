@@ -46,7 +46,7 @@ class ProfileService:
         interview = Interview(
             candidate_id=user.id,
             candidate_name=profile_data.name,
-            position=profile_data.position,
+            position=profile_data.position or "Creative Professional",
             status="not_started",
         )
 

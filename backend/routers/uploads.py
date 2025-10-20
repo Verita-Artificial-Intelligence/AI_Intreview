@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 import logging
 from uuid import uuid4
 import os
+import shutil
 from database import get_interviews_collection
 from models.user import User
 from dependencies import get_current_user
@@ -13,6 +14,10 @@ router = APIRouter()
 
 UPLOAD_DIR = os.path.join("uploads", "videos")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# Create general uploads directory for annotation data
+ANNOTATION_UPLOAD_DIR = "uploads"
+os.makedirs(ANNOTATION_UPLOAD_DIR, exist_ok=True)
 
 @router.post("/interviews/upload/video")
 async def upload_video(
@@ -56,3 +61,43 @@ async def upload_video(
     except Exception as e:
         logger.error(f"Error uploading video for interview {interview_id}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to upload video.")
+
+
+@router.post("/files/upload")
+async def upload_file(
+    file: UploadFile = File(...),
+    job_id: str = Form(default=None)
+):
+    """
+    Upload a file for annotation data.
+    """
+    try:
+        if not file:
+            raise HTTPException(status_code=400, detail="No file provided")
+
+        # Generate a unique filename to avoid collisions
+        file_extension = os.path.splitext(file.filename)[1]
+        unique_filename = f"{uuid4()}{file_extension}"
+        file_path = os.path.join(ANNOTATION_UPLOAD_DIR, unique_filename)
+
+        # Save the file
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        logger.info(f"File {file.filename} uploaded successfully to {file_path}")
+
+        # Return the URL path where the file can be accessed
+        file_url = f"/uploads/{unique_filename}"
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "message": "File uploaded successfully",
+                "url": file_url,
+                "filename": file.filename
+            }
+        )
+
+    except Exception as e:
+        logger.error(f"Error uploading file {file.filename}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to upload file.")

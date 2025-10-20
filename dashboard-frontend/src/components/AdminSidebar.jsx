@@ -20,7 +20,6 @@ export default function AdminSidebar() {
 
   const annotationItems = [
     { path: '/annotation-data', icon: FileText, label: 'Annotation Data' },
-    { path: '/annotation-tasks', icon: CheckSquare, label: 'Annotation Tasks' },
     { path: '/annotators', icon: Users, label: 'Annotators' },
   ]
 

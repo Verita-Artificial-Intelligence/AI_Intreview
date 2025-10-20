@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Users, Search, Mail, Award, PlayCircle, Trash2 } from 'lucide-react'
 import InterviewCreationModal from '@/components/InterviewCreationModal'
-import AdminSidebar from '@/components/AdminSidebar'
+import Sidebar from '@/components/Sidebar'
 import { cardStyles, containers } from '@/lib/design-system'
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
@@ -69,33 +69,33 @@ const Candidates = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminSidebar />
+    <div className="min-h-screen bg-white">
+      <Sidebar />
 
       {/* Main Content */}
-      <div className="ml-64 overflow-auto">
-        <div className={`${containers.lg} mx-auto px-6 py-6`}>
+      <main className="ml-64 overflow-y-auto bg-white">
+        <div className={`${containers.lg} mx-auto px-8 py-12`}>
           {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-display font-bold text-neutral-900 mb-2">
+          <div className="mb-12">
+            <h1 className="text-5xl font-bold text-neutral-900 mb-3 tracking-tight leading-tight">
               Candidate Marketplace
             </h1>
-            <p className="text-sm text-neutral-600">
+            <p className="text-lg text-neutral-600 font-light">
               Browse and manage your candidate pool
             </p>
           </div>
 
           {/* Search */}
           {candidates.length > 0 && (
-            <div className="mb-6">
+            <div className="mb-8">
               <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-5 h-5" />
                 <Input
                   type="text"
                   placeholder="Search by name, position, or skills..."
                   value={candidateSearch}
                   onChange={(e) => setCandidateSearch(e.target.value)}
-                  className="pl-10 h-10 rounded-lg border-neutral-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
+                  className="pl-10 h-11 rounded-lg border-neutral-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 text-base"
                 />
               </div>
             </div>
@@ -208,7 +208,7 @@ const Candidates = () => {
             </div>
           )}
         </div>
-      </div>
+      </main>
 
       <InterviewCreationModal
         open={interviewModalOpen}

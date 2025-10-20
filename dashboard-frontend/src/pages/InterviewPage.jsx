@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { Send, ArrowLeft, CheckCircle } from 'lucide-react'
 import { pageHeader, containers, cssGradients } from '@/lib/design-system'
+import CandidateSidebar from '@/components/CandidateSidebar'
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
 const API = `${BACKEND_URL}/api`
@@ -129,9 +130,13 @@ const InterviewPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      {/* Header */}
-      <div className={pageHeader.wrapper}>
+    <div className="flex min-h-screen bg-background">
+      <CandidateSidebar showAnnotationTasks={true} />
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col">
+        {/* Header */}
+        <div className={pageHeader.wrapper}>
         <div className={`${containers.md} ${pageHeader.container}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -244,6 +249,7 @@ const InterviewPage = () => {
           </div>
         </div>
       )}
+      </main>
     </div>
   )
 }
