@@ -146,27 +146,15 @@ class AudioBuffer:
             Tuple of (mic_chunks, ai_chunks), sorted by timestamp
         """
         async with self.lock:
-            # Sort chunks by timestamp
+            # Sort chunks by timestamp before returning
             mic_sorted = sorted(self.mic_chunks, key=lambda c: c.timestamp)
             ai_sorted = sorted(self.ai_chunks, key=lambda c: c.timestamp)
-
-            stats = {
-                "mic_chunks": len(mic_sorted),
-                "ai_chunks": len(ai_sorted),
-                "mic_bytes": sum(len(c.data) for c in mic_sorted),
-                "ai_bytes": sum(len(c.data) for c in ai_sorted)
-            }
-
-            logger.info(f"Flushing audio buffer: {stats}")
-
-            # Clear buffers
-            mic_result = self.mic_chunks.copy()
-            ai_result = self.ai_chunks.copy()
-
+            
+            # Clear the buffer after copying the data
             self.mic_chunks.clear()
             self.ai_chunks.clear()
 
-            return mic_result, ai_result
+            return mic_sorted, ai_sorted
 
     async def clear(self) -> None:
         """Clear all buffered audio."""

@@ -274,44 +274,76 @@ async def save_mixed_audio(session_id: str, interview_id: str, audio_buffer: Aud
     Mix and save the audio streams for this interview.
     """
     try:
+        # Get buffer stats before flushing
+        stats = await audio_buffer.get_stats()
+        logger.info(f"Audio buffer stats for interview {interview_id}: {stats}")
+        
+        # Flush audio buffer to get all chunks
+        mic_chunks, ai_chunks = await audio_buffer.flush()
+
+        if not mic_chunks and not ai_chunks:
+            logger.warning(f"No audio data to save for interview {interview_id}")
+            return
+
         # Create audio directory
         audio_dir = Path("uploads/audio")
         audio_dir.mkdir(parents=True, exist_ok=True)
-
-        # Output path for mixed audio
-        output_path = audio_dir / f"interview_{interview_id}_audio.wav"
-
-        # Flush audio buffer
-        mic_chunks, ai_chunks = await audio_buffer.flush()
-
-        stats = await audio_buffer.get_stats()
-        logger.info(f"Mixing audio for interview {interview_id}: {stats}")
-
-        if not mic_chunks and not ai_chunks:
-            logger.warning(f"No audio data to mix for interview {interview_id}")
-            return
-
-        # Mix audio streams
+        
+        # Initialize mixer and paths dictionary
         mixer = AudioMixer(sample_rate=24000, channels=1)
-        success = await mixer.mix_streams(
-            mic_chunks=mic_chunks,
-            ai_chunks=ai_chunks,
-            output_path=output_path,
-            mic_volume=1.0,
-            ai_volume=1.0
-        )
+        paths = {}
 
-        if success:
-            logger.info(f"Mixed audio saved: {output_path}")
+        # Save microphone audio stream separately
+        if mic_chunks:
+            mic_path = audio_dir / f"interview_{interview_id}_mic.wav"
+            paths["mic"] = str(mic_path)
+            try:
+                mic_clip = mixer._chunks_to_audioclip(mic_chunks, 1.0)
+                mic_clip.write_audiofile(str(mic_path), fps=mixer.sample_rate, nbytes=2, codec='pcm_s16le', logger=None)
+                mic_clip.close()
+                logger.info(f"Microphone audio saved to {mic_path}")
+            except Exception as e:
+                logger.error(f"Failed to save microphone audio for interview {interview_id}: {e}", exc_info=True)
 
-            # Update database with audio path
-            interviews_collection = get_interviews_collection()
-            await interviews_collection.update_one(
-                {"id": interview_id},
-                {"$set": {"audio_path": str(output_path)}}
+        # Save AI audio stream separately
+        if ai_chunks:
+            ai_path = audio_dir / f"interview_{interview_id}_ai.wav"
+            paths["ai"] = str(ai_path)
+            try:
+                ai_clip = mixer._chunks_to_audioclip(ai_chunks, 1.0)
+                ai_clip.write_audiofile(str(ai_path), fps=mixer.sample_rate, nbytes=2, codec='pcm_s16le', logger=None)
+                ai_clip.close()
+                logger.info(f"AI audio saved to {ai_path}")
+            except Exception as e:
+                logger.error(f"Failed to save AI audio for interview {interview_id}: {e}", exc_info=True)
+
+        # Mix the two streams
+        mixed_path = audio_dir / f"interview_{interview_id}_mixed.wav"
+        paths["mixed"] = str(mixed_path)
+        try:
+            success = await mixer.mix_streams(
+                mic_chunks=mic_chunks,
+                ai_chunks=ai_chunks,
+                output_path=mixed_path,
+                mic_volume=1.0,
+                ai_volume=1.0
             )
-        else:
-            logger.error(f"Failed to mix audio for interview {interview_id}")
+            if success:
+                logger.info(f"Mixed audio saved successfully to {mixed_path}")
+            else:
+                logger.error(f"Audio mixing failed for interview {interview_id}, but individual streams were saved.")
+        except Exception as e:
+            logger.error(f"An exception occurred during audio mixing for interview {interview_id}: {e}", exc_info=True)
+        
+        # Update database with all audio paths
+        interviews_collection = get_interviews_collection()
+        await interviews_collection.update_one(
+            {"id": interview_id},
+            {"$set": {
+                "audio_paths": paths,
+                "audio_path": paths.get("mixed", paths.get("mic")) # For legacy support
+            }}
+        )
 
     except Exception as e:
         logger.error(f"Error saving mixed audio for interview {interview_id}: {e}", exc_info=True)
@@ -430,7 +462,13 @@ async def forward_openai_to_client(
 
             # Log full event for transcription/audio/item related events
             if "transcription" in event_type or "transcript" in event_type or "audio" in event_type or "item" in event_type:
-                logger.info(f"   Full event data: {event}")
+                if event_type == "response.output_audio.delta":
+                    # Avoid logging large base64 audio chunks
+                    log_event = event.copy()
+                    log_event["delta"] = f"<audio chunk len={len(event.get('delta', ''))}>"
+                    logger.info(f"   Full event data: {log_event}")
+                else:
+                    logger.info(f"   Full event data: {event}")
 
             # Map OpenAI events to client events
             if event_type == "conversation.item.done":

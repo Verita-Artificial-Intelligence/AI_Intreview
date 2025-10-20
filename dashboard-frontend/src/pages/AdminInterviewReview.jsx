@@ -93,14 +93,14 @@ const AdminInterviewReview = () => {
       // Check if analysis already exists
       if (interviewRes.data.analysis_result && interviewRes.data.analysis_status === 'completed') {
         setAnalysis(interviewRes.data.analysis_result)
-      } else if (interviewRes.data.analysis_status === 'pending') {
-        setAnalysis({ pending: true })
       } else if (interviewRes.data.analysis_status === 'processing') {
         setAnalysis({ processing: true })
       } else if (interviewRes.data.analysis_status === 'failed') {
         setAnalysis({ failed: true })
       } else {
-        setAnalysis({ pending: true })
+        // No analysis exists - automatically generate it
+        console.log('No analysis found, automatically generating...')
+        generateAnalysis(messagesRes.data, candidateData)
       }
     } catch (error) {
       console.error('Error fetching interview data:', error)
@@ -613,25 +613,27 @@ const AdminInterviewReview = () => {
               )}
             </Card>
 
-            {/* Interview Transcript - Hidden for now while working on transcription system */}
-            {/* <Card className={`p-4 ${cardStyles.default}`}>
-              <h3 className="text-base font-bold mb-3 text-neutral-900">Interview Transcript</h3>
-              <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-                {messages.map((message, index) => (
-                  <div key={index} className="border-l-2 border-neutral-200 pl-3">
-                    <div className="flex items-baseline gap-2 mb-1">
-                      <span className="text-xs font-semibold text-neutral-900">
-                        {message.role === 'assistant' ? 'Interviewer' : candidate.name}
-                      </span>
-                      <span className="text-[10px] text-neutral-500">
-                        {new Date(message.timestamp).toLocaleTimeString()}
-                      </span>
+            {/* Interview Transcript */}
+            {interview.transcript && interview.transcript.length > 0 && (
+              <Card className={`p-4 ${cardStyles.default}`}>
+                <h3 className="text-base font-bold mb-3 text-neutral-900">Interview Transcript</h3>
+                <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                  {interview.transcript.map((entry, index) => (
+                    <div key={index} className="border-l-2 border-neutral-200 pl-3">
+                      <div className="flex items-baseline gap-2 mb-1">
+                        <span className="text-xs font-semibold text-neutral-900">
+                          {entry.speaker === 'assistant' ? 'AI Interviewer' : candidate.name}
+                        </span>
+                        <span className="text-[10px] text-neutral-500">
+                          [{index + 1}]
+                        </span>
+                      </div>
+                      <p className="text-sm text-neutral-700 leading-relaxed">{entry.text}</p>
                     </div>
-                    <p className="text-sm text-neutral-700 leading-relaxed">{message.content}</p>
-                  </div>
-                ))}
-              </div>
-            </Card> */}
+                  ))}
+                </div>
+              </Card>
+            )}
             </>
             )}
           </div>

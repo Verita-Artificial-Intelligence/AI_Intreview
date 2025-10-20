@@ -49,7 +49,8 @@ class Interview(BaseModel):
     analysis_status: Optional[AnalysisStatus] = None
     analysis_result: Optional[Dict[str, Any]] = None
     video_url: Optional[str] = None
-    audio_path: Optional[str] = None
+    audio_path: Optional[str] = None  # Legacy support for single audio file
+    audio_paths: Optional[Dict[str, str]] = None  # For separate mic, AI, and mixed audio
     interview_type: InterviewType = "standard"
     skills: Optional[List[SkillDefinition]] = None
     custom_questions: Optional[List[str]] = None

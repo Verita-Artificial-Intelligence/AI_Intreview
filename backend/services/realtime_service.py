@@ -81,7 +81,7 @@ class RealtimeService:
                 "model": self.model,
                 "instructions": self.instructions,
                 "input_audio_transcription": {
-                    "model": "gpt-4o-mini-transcribe"
+                    "model": "whisper-small"
                 },
                 "audio": {
                     "output": {"voice": self.voice},
