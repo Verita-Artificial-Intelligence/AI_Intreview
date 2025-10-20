@@ -40,10 +40,18 @@ async def websocket_endpoint(websocket: WebSocket):
     openai_task: Optional[asyncio.Task] = None
     client_proxy_task: Optional[asyncio.Task] = None
     transcript: list[dict] = []
+    interview_id: Optional[str] = None
 
     try:
-        # Wait for initial start message from client
-        start_msg = await websocket.receive_text()
+        # Wait for initial start message from client with timeout
+        try:
+            start_msg = await asyncio.wait_for(websocket.receive_text(), timeout=15)
+        except asyncio.TimeoutError:
+            await websocket.send_json({
+                "event": "error",
+                "message": "Session start timed out. Please retry."
+            })
+            return
         data = json.loads(start_msg)
 
         if data.get("event") != "start":
@@ -79,9 +87,19 @@ async def websocket_endpoint(websocket: WebSocket):
 
         logger.info(f"Session ready: {session_id}")
 
-        # Prompt the AI to start the conversation (GA event)
+        # Seed initial turn so the model starts proactively
+        await realtime.send_event({
+            "type": "conversation.item.create",
+            "item": {
+                "type": "message",
+                "role": "user",
+                "content": [
+                    { "type": "input_text", "text": "Please begin the interview with a brief greeting and the first creative-focused question." }
+                ]
+            }
+        })
         await realtime.send_event({"type": "response.create"})
-        logger.info("Sent response.create to AI")
+        logger.info("Seeded message item and sent response.create to AI")
 
         # Start bidirectional forwarding
         openai_task = asyncio.create_task(
@@ -123,7 +141,7 @@ async def websocket_endpoint(websocket: WebSocket):
         if realtime:
             await realtime.close()
 
-        if interview_id and transcript:
+        if interview_id is not None and transcript:
             await save_transcript(interview_id, transcript)
 
         logger.info(f"Session closed: {session_id}")
@@ -206,6 +224,12 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
                     "type": "input_audio_buffer.commit"
                 })
 
+            elif event_type == "clear_buffer":
+                # Clear any partial audio buffered on the server
+                await realtime.send_event({
+                    "type": "input_audio_buffer.clear"
+                })
+
             elif event_type == "barge_in":
                 # Interrupt current model response
                 await realtime.send_event({
@@ -268,6 +292,12 @@ async def forward_openai_to_client(
                         "final": False
                     })
 
+            elif event_type == "response.output_text.done":
+                # Assistant finished text output segment
+                await websocket.send_json({
+                    "event": "answer_end"
+                })
+
             elif event_type == "response.output_audio.delta":
                 # AI audio chunk
                 await websocket.send_json({
@@ -286,6 +316,30 @@ async def forward_openai_to_client(
                 await websocket.send_json({
                     "event": "answer_end"
                 })
+
+            elif event_type == "response.completed":
+                # Model signaled response is fully completed (catch-all)
+                await websocket.send_json({
+                    "event": "answer_end"
+                })
+
+            elif event_type == "response.function_call.arguments.delta":
+                # Accumulate function call args if needed (not used here)
+                pass
+
+            elif event_type == "response.function_call":
+                # Tool call dispatch
+                tool_name = event.get("name") or event.get("function", {}).get("name")
+                if tool_name == "end_conversation":
+                    reason = event.get("arguments", {}).get("reason", "")
+                    # Tell client conversation ended
+                    await websocket.send_json({
+                        "event": "conversation_ended",
+                        "reason": reason,
+                    })
+                    # Gracefully stop: cancel model responses and break loops
+                    await realtime.send_event({"type": "response.cancel"})
+                    break
 
             elif event_type == "error":
                 # OpenAI error
