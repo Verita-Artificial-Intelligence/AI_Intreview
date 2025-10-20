@@ -2,7 +2,9 @@
 .idea/
 .vscode/
 *.swp
-
+# python envs
+venv/*
+venv/
 # Dependencies
 node_modules/
 /node_modules

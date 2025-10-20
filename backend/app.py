@@ -17,6 +17,7 @@ from routers import (
     annotations,
     annotation_data,
     earnings,
+    admin,
 )
 
 # Main application setup
@@ -52,6 +53,7 @@ app.include_router(annotation_data.router, prefix="/api/annotation-data", tags=[
 app.include_router(earnings.router, prefix="/api/earnings", tags=["Earnings"])
 app.include_router(audio.router, prefix="/api/audio", tags=["Audio"])
 app.include_router(uploads.router, prefix="/api", tags=["Uploads"])
+app.include_router(admin.router, prefix="/api", tags=["Admin"])
 
 # Include WebSocket router (not under /api prefix)
 app.include_router(websocket.router, prefix="/ws", tags=["WebSocket"])
