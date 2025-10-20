@@ -4,8 +4,9 @@ import axios from 'axios'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Users, Search, Mail, Award, PlayCircle, Trash2, ChevronRight, Briefcase, BarChart } from 'lucide-react'
+import { Users, Search, Mail, Award, PlayCircle, Trash2 } from 'lucide-react'
 import InterviewCreationModal from '@/components/InterviewCreationModal'
+import AdminSidebar from '@/components/AdminSidebar'
 import { cardStyles, containers } from '@/lib/design-system'
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
@@ -68,49 +69,11 @@ const Candidates = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-neutral-200 flex-shrink-0">
-        <div className="p-6">
-          <h2 className="text-xl font-display font-bold text-neutral-900 mb-1">Verita</h2>
-          <p className="text-xs text-neutral-600">AI Interview Platform</p>
-        </div>
-
-        <nav className="px-3">
-          <a
-            href="/"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <BarChart className="w-4 h-4" />
-            <span>Dashboard</span>
-          </a>
-          <a
-            href="/candidates"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm bg-brand-50 text-brand-600 font-medium mb-1"
-          >
-            <Users className="w-4 h-4" />
-            <span>Candidates</span>
-            <ChevronRight className="w-4 h-4 ml-auto" />
-          </a>
-          <a
-            href="/interviews"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <Briefcase className="w-4 h-4" />
-            <span>Interviews</span>
-          </a>
-          <a
-            href="/jobs"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <Briefcase className="w-4 h-4" />
-            <span>Jobs</span>
-          </a>
-        </nav>
-      </aside>
+    <div className="min-h-screen bg-background">
+      <AdminSidebar />
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="ml-64 overflow-auto">
         <div className={`${containers.lg} mx-auto px-6 py-6`}>
           {/* Header */}
           <div className="mb-6">

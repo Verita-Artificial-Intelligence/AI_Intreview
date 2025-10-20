@@ -6,6 +6,8 @@ from . import (
     chat,
     interviews,
     jobs,
+    annotations,
+    annotation_data,
     profile,
     websocket,
     uploads,

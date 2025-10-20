@@ -4,6 +4,8 @@ from .interview import Interview, InterviewCreate
 from .chat import ChatMessage, ChatRequest
 from .audio import TTSRequest, TTSResponse, STTResponse
 from .job import Job, JobCreate, JobStatusUpdate, InterviewType, SkillDefinition
+from .annotation import AnnotationTask, AnnotationTaskCreate, AnnotationTaskUpdate, AnnotationTaskAssign, AnnotationTaskStatus
+from .annotation_data import AnnotationData, AnnotationDataCreate, DataType
 from .websocket import (
     StartSessionMessage,
     MicChunkMessage,
@@ -39,6 +41,11 @@ __all__ = [
     "Job",
     "JobCreate",
     "JobStatusUpdate",
+    "AnnotationTask",
+    "AnnotationTaskCreate",
+    "AnnotationTaskUpdate",
+    "AnnotationTaskAssign",
+    "AnnotationTaskStatus",
     "StartSessionMessage",
     "MicChunkMessage",
     "UserTurnEndMessage",

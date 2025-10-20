@@ -1,11 +1,22 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Users, Briefcase, Clock, CheckCircle, Plus, Trash2, ChevronRight, BarChart, Search } from 'lucide-react'
+import { Users, Briefcase, Clock, CheckCircle, Plus, Trash2, Search, Eye } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import InterviewCreationModal from '@/components/InterviewCreationModal'
+import AdminSidebar from '@/components/AdminSidebar'
 import {
   cardStyles,
   iconBackgrounds,
@@ -26,6 +37,8 @@ const Dashboard = () => {
   const [interviewModalOpen, setInterviewModalOpen] = useState(false)
   const [selectedCandidate, setSelectedCandidate] = useState(null)
   const [interviewSearch, setInterviewSearch] = useState('')
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [interviewToDelete, setInterviewToDelete] = useState(null)
 
   useEffect(() => {
     fetchData()
@@ -65,13 +78,18 @@ const Dashboard = () => {
     navigate(`/audio-interview/${interview.id}`, { state: { from: 'dashboard' } })
   }
 
-  const handleDeleteInterview = async (interviewId) => {
-    if (!window.confirm('Are you sure you want to delete this interview?')) {
-      return
-    }
+  const handleDeleteInterview = (interviewId, candidateName) => {
+    setInterviewToDelete({ id: interviewId, name: candidateName })
+    setShowDeleteDialog(true)
+  }
+
+  const confirmDeleteInterview = async () => {
+    if (!interviewToDelete) return
 
     try {
-      await axios.delete(`${API}/interviews/${interviewId}`)
+      await axios.delete(`${API}/interviews/${interviewToDelete.id}`)
+      setShowDeleteDialog(false)
+      setInterviewToDelete(null)
       fetchData()
     } catch (error) {
       console.error('Error deleting interview:', error)
@@ -101,49 +119,11 @@ const Dashboard = () => {
   ]
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-neutral-200 flex-shrink-0">
-        <div className="p-6">
-          <h2 className="text-xl font-display font-bold text-neutral-900 mb-1">Verita</h2>
-          <p className="text-xs text-neutral-600">AI Interview Platform</p>
-        </div>
-
-        <nav className="px-3">
-          <a
-            href="/"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm bg-brand-50 text-brand-600 font-medium mb-1"
-          >
-            <BarChart className="w-4 h-4" />
-            <span>Dashboard</span>
-            <ChevronRight className="w-4 h-4 ml-auto" />
-          </a>
-          <a
-            href="/candidates"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <Users className="w-4 h-4" />
-            <span>Candidates</span>
-          </a>
-          <a
-            href="/interviews"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <Briefcase className="w-4 h-4" />
-            <span>Interviews</span>
-          </a>
-          <a
-            href="/jobs"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
-          >
-            <Briefcase className="w-4 h-4" />
-            <span>Jobs</span>
-          </a>
-        </nav>
-      </aside>
+    <div className="min-h-screen bg-background">
+      <AdminSidebar />
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="ml-64 overflow-auto">
         {/* Header */}
         <div className={pageHeader.wrapper}>
           <div className={`${containers.lg} ${pageHeader.container}`}>
@@ -230,70 +210,71 @@ const Dashboard = () => {
               </p>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {displayedInterviews.slice(0, selectedCandidateId ? 100 : 6).map((interview) => (
-                <Card
-                  key={interview.id}
-                  className="p-6 hover:shadow-lg transition-shadow relative group flex flex-col"
-                >
-                  <button
-                    onClick={() => handleDeleteInterview(interview.id)}
-                    className="absolute top-3 right-3 p-1.5 rounded-lg text-neutral-400 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                    title="Delete interview"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-
-                  <div className="flex items-start gap-3 mb-4 flex-1">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white bg-gradient-to-br from-brand-400 to-brand-600 flex-shrink-0">
-                      {interview.candidate_name?.charAt(0).toUpperCase() || 'U'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-base text-neutral-900 truncate mb-1">
-                            {interview.candidate_name || 'Unknown'}
-                          </h3>
-                          <p className="text-sm text-neutral-600 truncate">
-                            {interview.job_title || interview.position || 'General Interview'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between mb-4">
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${getStatusClass(interview.status)}`}
-                    >
-                      {getStatusLabel(interview.status)}
-                    </span>
-                    <p className="text-xs text-neutral-500">
-                      {new Date(interview.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  {interview.status === 'completed' && (
-                    <>
-                      {interview.summary && (
-                        <div className="mt-2 p-2 bg-neutral-50 rounded-lg mb-2">
-                          <p className="text-[10px] text-neutral-700 line-clamp-3">
-                            {interview.summary}
-                          </p>
-                        </div>
-                      )}
-                      <Button
-                        onClick={() =>
-                          navigate(`/admin/review/${interview.id}`)
-                        }
-                        data-testid={`view-results-${interview.id}`}
-                        className="w-full h-7 text-xs rounded-lg font-medium border-2 border-brand-500 text-brand-600 hover:bg-brand-50 bg-white"
-                      >
-                        View Results
-                      </Button>
-                    </>
-                  )}
-                </Card>
-              ))}
-            </div>
+            <Card className={cardStyles.default}>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-neutral-200">
+                      <th className="text-left py-2 px-3 text-xs font-semibold text-neutral-700">Candidate</th>
+                      <th className="text-left py-2 px-3 text-xs font-semibold text-neutral-700">Job/Position</th>
+                      <th className="text-left py-2 px-3 text-xs font-semibold text-neutral-700">Status</th>
+                      <th className="text-left py-2 px-3 text-xs font-semibold text-neutral-700">Date</th>
+                      <th className="text-left py-2 px-3 text-xs font-semibold text-neutral-700">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {displayedInterviews.map((interview) => (
+                      <tr key={interview.id} className="border-b border-neutral-100 hover:bg-neutral-50 transition-colors">
+                        <td className="py-2 px-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white bg-gradient-to-br from-brand-400 to-brand-600 flex-shrink-0">
+                              {interview.candidate_name?.charAt(0).toUpperCase() || 'U'}
+                            </div>
+                            <span className="font-medium text-sm text-neutral-900">
+                              {interview.candidate_name || 'Unknown'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-2 px-3 text-sm text-neutral-700">
+                          {interview.job_title || interview.position || 'General Interview'}
+                        </td>
+                        <td className="py-2 px-3">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusClass(interview.status)}`}>
+                            {getStatusLabel(interview.status)}
+                          </span>
+                        </td>
+                        <td className="py-2 px-3 text-xs text-neutral-600">
+                          {new Date(interview.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="py-2 px-3">
+                          <div className="flex items-center gap-2">
+                            {interview.status === 'completed' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => navigate(`/admin/review/${interview.id}`)}
+                                className="h-7 text-xs border-brand-500 text-brand-600 hover:bg-brand-50"
+                              >
+                                <Eye className="w-3 h-3 mr-1" />
+                                View
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDeleteInterview(interview.id, interview.candidate_name)}
+                              className="h-7 text-xs border-red-300 text-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           )}
         </div>
       </div>
@@ -307,6 +288,27 @@ const Dashboard = () => {
           candidate={selectedCandidate}
           onSuccess={handleInterviewCreated}
         />
+
+        {/* Delete Interview Dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Interview</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete the interview for {interviewToDelete?.name || 'this candidate'}? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setInterviewToDelete(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmDeleteInterview}
+                className="bg-red-500 hover:bg-red-600"
+              >
+                Delete Interview
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   )

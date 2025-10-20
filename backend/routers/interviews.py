@@ -1,8 +1,10 @@
 from fastapi import APIRouter, File, UploadFile, Form, Query, Body
 from typing import List, Optional
 from models import Interview, InterviewCreate
+from models.annotation import AnnotationTask
 from services import InterviewService, AnalysisService
 from services.resume_service import ResumeService
+from services.annotation_service import AnnotationService
 import logging
 import aiofiles
 from pathlib import Path
@@ -47,6 +49,112 @@ async def delete_interview(interview_id: str):
         return {"success": True, "message": "Interview deleted successfully"}
     except Exception as e:
         logger.error(f"Error deleting interview: {e}")
+        return {"success": False, "error": str(e)}
+
+
+@router.patch("/{interview_id}/accept")
+async def accept_candidate(interview_id: str):
+    """
+    Accept a candidate for annotation work.
+    This will:
+    1. Update the interview's acceptance_status to 'accepted'
+    2. Create annotation tasks for all human_data jobs
+    3. Link the tasks to the candidate
+    """
+    try:
+        # Get the interview
+        interview = await InterviewService.get_interview(interview_id)
+        if not interview:
+            return {"success": False, "error": "Interview not found"}
+
+        # Update acceptance status
+        interviews_collection = get_interviews_collection()
+        result = await interviews_collection.update_one(
+            {"id": interview_id},
+            {"$set": {"acceptance_status": "accepted"}}
+        )
+
+        if result.modified_count == 0:
+            logger.warning(f"Interview {interview_id} acceptance_status not updated")
+
+        # Get all human_data jobs
+        jobs_cursor = db.jobs.find({"interview_type": "human_data"})
+        jobs = await jobs_cursor.to_list(length=None)
+
+        # Create annotation tasks for each job
+        tasks_created = 0
+        for job in jobs:
+            # Prepare data to annotate from interview
+            data_to_annotate = {
+                "interview_id": interview.id,
+                "candidate_id": interview.candidate_id,
+                "candidate_name": interview.candidate_name,
+                "transcript": interview.transcript or [],
+                "video_url": interview.video_url,
+                "audio_path": interview.audio_path,
+            }
+
+            # Create annotation task
+            task = AnnotationTask(
+                job_id=job["id"],
+                annotator_id=interview.candidate_id,
+                data_to_annotate=data_to_annotate,
+                status="assigned"
+            )
+
+            await AnnotationService.create_annotation_task(task)
+            tasks_created += 1
+
+        logger.info(f"Accepted candidate {interview.candidate_id} and created {tasks_created} annotation tasks")
+
+        # Return updated interview
+        updated_interview = await InterviewService.get_interview(interview_id)
+        return {
+            "success": True,
+            "message": f"Candidate accepted and {tasks_created} annotation tasks created",
+            "interview": updated_interview.model_dump(),
+            "tasks_created": tasks_created
+        }
+
+    except Exception as e:
+        logger.error(f"Error accepting candidate: {e}", exc_info=True)
+        return {"success": False, "error": str(e)}
+
+
+@router.patch("/{interview_id}/reject")
+async def reject_candidate(interview_id: str):
+    """
+    Reject a candidate.
+    This will update the interview's acceptance_status to 'rejected'
+    """
+    try:
+        # Get the interview
+        interview = await InterviewService.get_interview(interview_id)
+        if not interview:
+            return {"success": False, "error": "Interview not found"}
+
+        # Update acceptance status
+        interviews_collection = get_interviews_collection()
+        result = await interviews_collection.update_one(
+            {"id": interview_id},
+            {"$set": {"acceptance_status": "rejected"}}
+        )
+
+        if result.modified_count == 0:
+            return {"success": False, "error": "Failed to update interview"}
+
+        logger.info(f"Rejected candidate {interview.candidate_id} for interview {interview_id}")
+
+        # Return updated interview
+        updated_interview = await InterviewService.get_interview(interview_id)
+        return {
+            "success": True,
+            "message": "Candidate rejected",
+            "interview": updated_interview.model_dump()
+        }
+
+    except Exception as e:
+        logger.error(f"Error rejecting candidate: {e}", exc_info=True)
         return {"success": False, "error": str(e)}
 
 

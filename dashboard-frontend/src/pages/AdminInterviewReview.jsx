@@ -4,12 +4,25 @@ import axios from 'axios'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
   ArrowLeft,
   Briefcase,
   Award,
   Clock,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react'
 import { pageHeader, containers, cardStyles } from '@/lib/design-system'
+import { toast } from 'sonner'
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
 const API = `${BACKEND_URL}/api`
@@ -22,6 +35,8 @@ const AdminInterviewReview = () => {
   const [messages, setMessages] = useState([])
   const [analysis, setAnalysis] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [showAcceptDialog, setShowAcceptDialog] = useState(false)
+  const [showRejectDialog, setShowRejectDialog] = useState(false)
 
   useEffect(() => {
     fetchInterviewData()
@@ -71,6 +86,30 @@ const AdminInterviewReview = () => {
     } catch (error) {
       console.error('Error generating analysis:', error)
       setAnalysis(null)
+    }
+  }
+
+  const confirmAcceptCandidate = async () => {
+    try {
+      await axios.patch(`${API}/interviews/${interviewId}/accept`)
+      toast.success('Candidate accepted! Annotation tasks have been created.')
+      setShowAcceptDialog(false)
+      fetchInterviewData()
+    } catch (error) {
+      console.error('Error accepting candidate:', error)
+      toast.error('Failed to accept candidate')
+    }
+  }
+
+  const confirmRejectCandidate = async () => {
+    try {
+      await axios.patch(`${API}/interviews/${interviewId}/reject`)
+      toast.success('Candidate rejected')
+      setShowRejectDialog(false)
+      fetchInterviewData()
+    } catch (error) {
+      console.error('Error rejecting candidate:', error)
+      toast.error('Failed to reject candidate')
     }
   }
 
@@ -237,6 +276,54 @@ const AdminInterviewReview = () => {
                 <p className="text-xs text-neutral-600">{candidate.bio}</p>
               </div>
             </Card>
+
+            {/* Accept/Reject Actions */}
+            {interview.status === 'completed' && interview.acceptance_status !== 'accepted' && interview.acceptance_status !== 'rejected' && (
+              <Card className={`p-4 ${cardStyles.default}`}>
+                <h3 className="font-bold text-sm mb-3 text-neutral-900">Candidate Decision</h3>
+                <div className="space-y-2">
+                  <Button
+                    onClick={() => setShowAcceptDialog(true)}
+                    className="w-full bg-brand-500 hover:bg-brand-600 text-white"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Accept Candidate
+                  </Button>
+                  <Button
+                    onClick={() => setShowRejectDialog(true)}
+                    variant="outline"
+                    className="w-full border-neutral-300 text-neutral-700 hover:bg-neutral-50"
+                  >
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Reject Candidate
+                  </Button>
+                </div>
+              </Card>
+            )}
+
+            {interview.acceptance_status === 'accepted' && (
+              <Card className={`p-4 ${cardStyles.default} bg-green-50 border-green-200`}>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <div>
+                    <p className="font-bold text-sm text-green-900">Candidate Accepted</p>
+                    <p className="text-xs text-green-700">Annotation tasks have been created</p>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {interview.acceptance_status === 'rejected' && (
+              <Card className={`p-4 ${cardStyles.default} bg-neutral-50 border-neutral-200`}>
+                <div className="flex items-center gap-2">
+                  <XCircle className="w-5 h-5 text-neutral-600" />
+                  <div>
+                    <p className="font-bold text-sm text-neutral-900">Candidate Rejected</p>
+                    <p className="text-xs text-neutral-700">This candidate has been declined</p>
+                  </div>
+                </div>
+              </Card>
+            )}
 
             {/* Interview Metadata */}
             <Card className={`p-4 ${cardStyles.default}`}>
@@ -463,6 +550,48 @@ const AdminInterviewReview = () => {
           </div>
         </div>
       </div>
+
+      {/* Accept Candidate Dialog */}
+      <AlertDialog open={showAcceptDialog} onOpenChange={setShowAcceptDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Accept Candidate</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to accept this candidate? This will create annotation tasks for them and notify the candidate.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmAcceptCandidate}
+              className="bg-brand-500 hover:bg-brand-600"
+            >
+              Accept Candidate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reject Candidate Dialog */}
+      <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reject Candidate</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to reject this candidate? This action will update their status and they will not be able to proceed with annotation tasks.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmRejectCandidate}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Reject Candidate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
