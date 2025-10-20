@@ -10,11 +10,13 @@ interface InterviewControlsProps {
   onEndInterview: () => void;
   onInterrupt: () => void;
   onToggleMic: () => void;
+  onEndTurn?: () => void;
 }
 
 export const InterviewControls: React.FC<InterviewControlsProps> = ({
   onEndInterview,
   onToggleMic,
+  onEndTurn,
 }) => {
   const status = useInterviewStore((state) => state.status);
   const isMicActive = useInterviewStore((state) => state.isMicActive);
@@ -24,21 +26,24 @@ export const InterviewControls: React.FC<InterviewControlsProps> = ({
       {/* Microphone Toggle */}
       <button
         onClick={onToggleMic}
+        disabled={status === 'ended'}
         className={`
           flex items-center justify-center
           w-14 h-14 rounded-full
           transition-all duration-300 ease-out
           shadow-lg hover:shadow-xl
           ${
-            isMicActive
-              ? 'bg-white hover:bg-gray-50 text-gray-700'
-              : 'bg-gradient-to-br from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white'
+            status === 'ended'
+              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              : isMicActive
+                ? 'bg-white hover:bg-gray-50 text-gray-700'
+                : 'bg-gradient-to-br from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white'
           }
         `}
         title={isMicActive ? 'Mute' : 'Unmute'}
         aria-label={isMicActive ? 'Mute microphone' : 'Unmute microphone'}
       >
-        {isMicActive ? (
+        {isMicActive && status !== 'ended' ? (
           <Mic className="w-6 h-6" />
         ) : (
           <MicOff className="w-6 h-6" />
@@ -66,6 +71,11 @@ export const InterviewControls: React.FC<InterviewControlsProps> = ({
       {status === 'connecting' && (
         <div className="absolute left-6 text-gray-600 text-sm font-medium animate-pulse">
           Connecting...
+        </div>
+      )}
+      {status === 'ended' && (
+        <div className="absolute left-6 text-gray-600 text-sm font-medium">
+          Ended
         </div>
       )}
     </div>
