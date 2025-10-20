@@ -10,7 +10,7 @@ import tempfile
 from pathlib import Path
 from typing import List
 from services.audio_buffer import AudioChunk
-from moviepy.editor import AudioClip, CompositeAudioClip
+from moviepy import AudioClip, CompositeAudioClip
 import numpy as np
 
 logger = logging.getLogger(__name__)
