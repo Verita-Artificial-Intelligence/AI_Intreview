@@ -13,6 +13,7 @@ import NewInterviewPrep from './pages/NewInterviewPrep'
 import Interview from './pages/Interview'
 import RealtimeInterview from './pages/RealtimeInterview'
 import StatusScreen from './pages/StatusScreen'
+import NotFound from './pages/NotFound'
 import '@/App.css'
 
 function App() {
@@ -109,6 +110,9 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+            {/* 404 catch-all route */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>
