@@ -25,6 +25,21 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({ className }) => {
         justifyContent: 'center',
       }}
     >
+      {/* Large background hue - atmospheric glow */}
+      <div
+        style={{
+          position: 'absolute',
+          width: '800px',
+          height: '800px',
+          borderRadius: '50%',
+          background: isAIPlaying
+            ? 'radial-gradient(circle, rgba(236, 72, 153, 0.25) 0%, rgba(219, 39, 119, 0.15) 30%, rgba(190, 24, 93, 0.05) 50%, transparent 70%)'
+            : 'radial-gradient(circle, rgba(236, 72, 153, 0.12) 0%, rgba(219, 39, 119, 0.08) 30%, rgba(190, 24, 93, 0.03) 50%, transparent 70%)',
+          filter: 'blur(80px)',
+          transition: 'all 0.8s ease-in-out',
+        }}
+      />
+
       {/* Ambient glow layers for depth */}
       <div
         style={{
