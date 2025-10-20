@@ -57,7 +57,7 @@
     "zustand": "^5.0.8"
   },
   "scripts": {
-    "start": "craco start",
+    "start": "PORT=3000 craco start",
     "build": "craco build",
     "test": "craco test",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",

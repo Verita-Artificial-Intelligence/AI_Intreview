@@ -152,10 +152,15 @@ async def save_transcript(interview_id: str, transcript: list[dict]):
     Save the interview transcript to the database.
     """
     try:
+        from datetime import datetime, timezone
         interviews_collection = get_interviews_collection()
         await interviews_collection.update_one(
-            {"_id": interview_id},
-            {"$set": {"transcript": transcript, "status": "completed"}}
+            {"id": interview_id},
+            {"$set": {
+                "transcript": transcript,
+                "status": "completed",
+                "completed_at": datetime.now(timezone.utc)
+            }}
         )
         logger.info(f"Transcript saved for interview {interview_id}")
     except Exception as e:
@@ -173,7 +178,7 @@ async def get_interview_instructions(interview_id: Optional[str]) -> str:
 
     try:
         interviews_collection = get_interviews_collection()
-        interview = await interviews_collection.find_one({"_id": interview_id})
+        interview = await interviews_collection.find_one({"id": interview_id})
 
         if not interview:
             logger.warning(f"Interview {interview_id} not found, using default instructions")
