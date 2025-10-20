@@ -46,7 +46,6 @@ async def websocket_endpoint(websocket: WebSocket):
     transcript: list[dict] = []
     interview_id: Optional[str] = None
     can_persist: bool = True
-    idle_commit_task: Optional[asyncio.Task] = None
     audio_buffer: Optional[AudioBuffer] = None
 
     try:
@@ -153,9 +152,6 @@ async def websocket_endpoint(websocket: WebSocket):
 
         logger.info(f"Session ready: {session_id}")
 
-        # Shared state for audio timing
-        audio_timing = {"last_audio_ts": None, "commit_sent": False}
-
         # Seed initial turn so the model starts proactively
         await realtime.send_event({
             "type": "conversation.item.create",
@@ -175,27 +171,8 @@ async def websocket_endpoint(websocket: WebSocket):
             forward_openai_to_client(realtime, websocket, transcript, audio_buffer)
         )
         client_proxy_task = asyncio.create_task(
-            forward_client_to_openai(websocket, realtime, audio_buffer, audio_timing)
+            forward_client_to_openai(websocket, realtime, audio_buffer)
         )
-
-        # Idle commit watchdog to avoid VAD stalls
-        async def idle_commit_watcher():
-            try:
-                while True:
-                    await asyncio.sleep(0.5)
-                    if audio_timing["last_audio_ts"] is None:
-                        continue
-                    # If no audio for > 2.0s and we haven't committed this window, send commit
-                    if (asyncio.get_event_loop().time() - audio_timing["last_audio_ts"]) > 2.0 and not audio_timing["commit_sent"]:
-                        try:
-                            await realtime.send_event({"type": "input_audio_buffer.commit"})
-                            audio_timing["commit_sent"] = True
-                        except Exception as _:
-                            pass
-            except asyncio.CancelledError:
-                return
-
-        idle_commit_task = asyncio.create_task(idle_commit_watcher())
 
         await asyncio.gather(openai_task, client_proxy_task)
 
@@ -218,11 +195,8 @@ async def websocket_endpoint(websocket: WebSocket):
             openai_task.cancel()
         if client_proxy_task:
             client_proxy_task.cancel()
-        if idle_commit_task:
-            idle_commit_task.cancel()
-
         # Await task cancellation to avoid hanging during reload
-        tasks = [t for t in (openai_task, client_proxy_task, idle_commit_task) if t]
+        tasks = [t for t in (openai_task, client_proxy_task) if t]
         if tasks:
             try:
                 await asyncio.gather(*tasks, return_exceptions=True)
@@ -388,7 +362,7 @@ async def get_interview_instructions(interview_id: Optional[str]) -> str:
         return get_interviewer_system_prompt()
 
 
-async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeService, audio_buffer: AudioBuffer, audio_timing: dict):
+async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeService, audio_buffer: AudioBuffer):
     """Forward messages from client to OpenAI and buffer audio."""
     try:
         while True:
@@ -410,17 +384,12 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
                     "type": "input_audio_buffer.append",
                     "audio": audio_b64
                 })
-                # Update last audio time and reset commit window flag
-                audio_timing["last_audio_ts"] = asyncio.get_event_loop().time()
-                audio_timing["commit_sent"] = False
 
             elif event_type == "user_turn_end":
                 # Explicit end of user's turn -> commit audio buffer
                 await realtime.send_event({
                     "type": "input_audio_buffer.commit"
                 })
-                # Mark commit sent for this window
-                audio_timing["commit_sent"] = True
 
             elif event_type == "clear_buffer":
                 # Clear any partial audio buffered on the server
@@ -437,6 +406,11 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
             elif event_type == "end":
                 # Client wants to end session
                 logger.info("Client requested session end")
+                # Ensure any buffered audio is finalized without depending on local heuristics
+                try:
+                    await realtime.send_event({"type": "input_audio_buffer.commit"})
+                except Exception as exc:
+                    logger.debug(f"Failed to commit audio buffer on end: {exc}")
                 break
 
             # Ignore other client events - OpenAI handles turn detection
