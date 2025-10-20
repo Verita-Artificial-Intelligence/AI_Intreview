@@ -4,14 +4,16 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import axios from 'axios';
 import { AvatarCanvas } from '../components/avatar/AvatarCanvas.tsx';
-import { InterviewControls, StatusIndicator } from '../components/interview/InterviewControls.tsx';
+import { InterviewControls } from '../components/interview/InterviewControls.tsx';
 import { useInterviewStore } from '../store/interviewStore.ts';
 import { WebSocketClient } from '../services/wsClient.ts';
 import { AudioCapture } from '../services/audioCapture.ts';
 import { AudioPlayer } from '../services/audioPlayer.ts';
 import { VideoRecorder } from '../services/videoRecorder.ts';
 import { v4 as uuidv4 } from 'uuid';
+import { useAuth } from '../contexts/AuthContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
 const WS_URL = BACKEND_URL.replace('http', 'ws');
@@ -19,6 +21,7 @@ const WS_URL = BACKEND_URL.replace('http', 'ws');
 export default function RealtimeInterview() {
   const navigate = useNavigate();
   const { interviewId } = useParams();
+  const { token } = useAuth();
 
   // Store
   const {
@@ -303,7 +306,7 @@ export default function RealtimeInterview() {
   /**
    * End interview session.
    */
-  const handleEndInterview = () => {
+  const handleEndInterview = async () => {
     if (wsClientRef.current && wsClientRef.current.isConnected()) {
       wsClientRef.current.send({
         event: 'end',
@@ -312,6 +315,23 @@ export default function RealtimeInterview() {
     }
 
     cleanup();
+
+    // Mark interview as completed via API
+    if (interviewId && token) {
+      try {
+        await axios.post(
+          `${BACKEND_URL}/api/interviews/${interviewId}/complete`,
+          {},
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        console.log('Interview marked as completed');
+      } catch (error) {
+        console.error('Failed to mark interview as completed:', error);
+      }
+    }
+
     navigate('/status');
   };
 

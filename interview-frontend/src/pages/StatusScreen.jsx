@@ -27,6 +27,18 @@ const StatusScreen = () => {
 
   const getStatusConfig = () => {
     switch (status) {
+      case 'not_started':
+        return {
+          icon: Clock,
+          iconColor: 'text-brand-600',
+          iconBg: 'bg-brand-50',
+          accentColor: 'border-brand-200',
+          title: 'Interview ready to begin',
+          subtitle: 'Your interview is waiting for you',
+          message:
+            'Your interview has been created and is ready to begin. Please check your email for the interview link or navigate to the interview page when you are ready.',
+          showTimeline: false,
+        }
       case 'completed':
       case 'under_review':
         return {

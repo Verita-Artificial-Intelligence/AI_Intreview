@@ -63,17 +63,46 @@ class InterviewService:
 
     @staticmethod
     async def complete_interview(interview_id: str):
-        """Mark interview as completed and generate summary"""
+        """Mark interview as completed and optionally generate summary"""
         interview = await db.interviews.find_one({"id": interview_id})
         if not interview:
             raise HTTPException(status_code=404, detail="Interview not found")
 
-        # Get all messages
+        # Check if interview has a transcript (new realtime system)
+        has_transcript = "transcript" in interview and interview["transcript"]
+
+        # For realtime interviews with transcript, just mark as completed
+        if has_transcript:
+            await db.interviews.update_one(
+                {"id": interview_id},
+                {
+                    "$set": {
+                        "status": "completed",
+                        "completed_at": datetime.now(timezone.utc).isoformat(),
+                    }
+                },
+            )
+            return {"message": "Interview completed", "status": "completed"}
+
+        # For old chat-based system, generate summary from messages
         messages = await db.messages.find(
             {"interview_id": interview_id}, {"_id": 0}
         ).to_list(1000)
 
-        # Generate summary using AI
+        if not messages:
+            # No messages or transcript - just mark as completed
+            await db.interviews.update_one(
+                {"id": interview_id},
+                {
+                    "$set": {
+                        "status": "completed",
+                        "completed_at": datetime.now(timezone.utc).isoformat(),
+                    }
+                },
+            )
+            return {"message": "Interview completed", "status": "completed"}
+
+        # Generate summary using AI for chat-based interviews
         try:
             conversation = "\n".join([f"{m['role']}: {m['content']}" for m in messages])
             summary_prompt = get_summary_prompt(conversation)
@@ -100,7 +129,7 @@ class InterviewService:
                 },
             )
 
-            return {"message": "Interview completed", "summary": summary}
+            return {"message": "Interview completed", "summary": summary, "status": "completed"}
 
         except Exception as e:
             logging.error(f"Summary generation error: {str(e)}")
@@ -114,4 +143,4 @@ class InterviewService:
                     }
                 },
             )
-            return {"message": "Interview completed"}
+            return {"message": "Interview completed", "status": "completed"}
