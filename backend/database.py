@@ -26,6 +26,16 @@ def get_candidates_collection():
     return db["candidates"]
 
 
+def get_annotations_collection():
+    """Get annotation tasks collection"""
+    return db["annotation_tasks"]
+
+
+def get_annotation_data_collection():
+    """Get annotation data collection"""
+    return db["annotation_data"]
+
+
 async def shutdown_db_client():
     """Close MongoDB connection on application shutdown"""
     client.close()

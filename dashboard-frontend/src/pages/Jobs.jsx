@@ -1,10 +1,20 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
-import { Briefcase, Plus, Search, Trash2, FileText, BarChart, Users, ChevronRight } from 'lucide-react'
+import { Briefcase, Plus, Search, Trash2, FileText, BarChart, Users, ChevronRight, CheckSquare, Upload } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import JobForm from '@/components/JobForm'
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
@@ -17,6 +27,8 @@ const Jobs = () => {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [showJobForm, setShowJobForm] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [jobToDelete, setJobToDelete] = useState(null)
 
   useEffect(() => {
     fetchJobs()
@@ -62,17 +74,18 @@ const Jobs = () => {
     }
   }
 
-  const handleDeleteJob = async (jobId, jobTitle) => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete "${jobTitle}"? This will also delete all associated interviews.`
-      )
-    ) {
-      return
-    }
+  const handleDeleteJob = (jobId, jobTitle) => {
+    setJobToDelete({ id: jobId, title: jobTitle })
+    setShowDeleteDialog(true)
+  }
+
+  const confirmDeleteJob = async () => {
+    if (!jobToDelete) return
 
     try {
-      await axios.delete(`${API}/jobs/${jobId}`)
+      await axios.delete(`${API}/jobs/${jobToDelete.id}`)
+      setShowDeleteDialog(false)
+      setJobToDelete(null)
       fetchJobs()
     } catch (error) {
       console.error('Error deleting job:', error)
@@ -98,9 +111,9 @@ const Jobs = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-neutral-200 flex-shrink-0">
+      <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-neutral-200 overflow-y-auto">
         <div className="p-6">
           <h2 className="text-xl font-display font-bold text-neutral-900 mb-1">Verita</h2>
           <p className="text-xs text-neutral-600">AI Interview Platform</p>
@@ -136,11 +149,35 @@ const Jobs = () => {
             <span>Jobs</span>
             <ChevronRight className="w-4 h-4 ml-auto" />
           </a>
+
+          <div className="border-t border-neutral-200 my-3" />
+
+          <a
+            href="/annotation-data"
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
+          >
+            <Upload className="w-4 h-4" />
+            <span>Annotation Data</span>
+          </a>
+          <a
+            href="/annotation-tasks"
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
+          >
+            <CheckSquare className="w-4 h-4" />
+            <span>Annotation Tasks</span>
+          </a>
+          <a
+            href="/annotators"
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
+          >
+            <Users className="w-4 h-4" />
+            <span>Annotators</span>
+          </a>
         </nav>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
+      <main className="ml-64 overflow-y-auto">
         <div className="max-w-7xl mx-auto p-8">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
@@ -303,6 +340,27 @@ const Jobs = () => {
         onClose={() => setShowJobForm(false)}
         onSubmit={handleCreateJob}
       />
+
+      {/* Delete Job Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Job</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{jobToDelete?.title}"? This will also delete all associated interviews. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setJobToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteJob}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete Job
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

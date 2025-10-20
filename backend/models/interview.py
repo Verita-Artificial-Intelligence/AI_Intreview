@@ -25,6 +25,13 @@ AnalysisStatus = Literal[
     "failed",  # Analysis encountered an error
 ]
 
+# Acceptance status type definition
+AcceptanceStatus = Literal[
+    "pending",  # Not yet reviewed
+    "accepted",  # Candidate accepted for annotation work
+    "rejected",  # Candidate rejected
+]
+
 
 class Interview(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -48,6 +55,7 @@ class Interview(BaseModel):
     custom_questions: Optional[List[str]] = None
     custom_exercise_prompt: Optional[str] = None
     resume_text: Optional[str] = None
+    acceptance_status: AcceptanceStatus = "pending"
 
     @field_validator('interview_type', mode='before')
     @classmethod
