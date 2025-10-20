@@ -28,3 +28,9 @@ async def get_job(job_id: str):
 async def update_job_status(job_id: str, status_update: JobStatusUpdate):
     """Update job status"""
     return await JobService.update_job_status(job_id, status_update)
+
+
+@router.delete("/{job_id}")
+async def delete_job(job_id: str):
+    """Delete a job"""
+    return await JobService.delete_job(job_id)

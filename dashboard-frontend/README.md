@@ -24,8 +24,8 @@ This is the interviewer portal where hiring managers and recruiters can:
 This frontend uses the **Verita Design System** for consistent styling across the platform.
 
 ### Colors
-- **Brand:** Orange palette (#e85c24 primary)
-- **Accent:** Complementary orange
+- **Brand:** Light blue palette (#0ea5e9 primary)
+- **Accent:** Complementary light blue
 - **Neutral:** Grayscale for text and UI elements
 
 ### Typography

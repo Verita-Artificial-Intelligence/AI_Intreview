@@ -8,7 +8,6 @@ import {
   Briefcase,
   Award,
   Clock,
-  PlayCircle,
 } from 'lucide-react'
 import { pageHeader, containers, cardStyles } from '@/lib/design-system'
 
@@ -262,22 +261,6 @@ const AdminInterviewReview = () => {
               </div>
             </Card>
 
-            {/* Video Player */}
-            {interview.video_url && (
-              <Card className={`p-4 ${cardStyles.default}`}>
-                <div className="flex items-center gap-2 mb-3">
-                  <PlayCircle className="w-4 h-4 text-neutral-700" />
-                  <h3 className="text-sm font-bold text-neutral-900">Interview Recording</h3>
-                </div>
-                <div className="rounded-lg overflow-hidden bg-black">
-                  <video controls className="w-full">
-                    <source src={`${BACKEND_URL}${interview.video_url}`} type="video/mp4" />
-                    <source src={`${BACKEND_URL}${interview.video_url}`} type="video/webm" />
-                    Your browser does not support the video tag.
-                  </video>
-                </div>
-              </Card>
-            )}
           </div>
 
           {/* Right Column - Analysis & Transcript */}

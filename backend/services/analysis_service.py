@@ -46,7 +46,7 @@ class AnalysisService:
             analysis_prompt = get_analysis_prompt(
                 framework_name=framework_name,
                 candidate_name=candidate["name"],
-                candidate_position=candidate["position"],
+                candidate_position=interview.get("job_title", "Creative Professional"),
                 candidate_skills=candidate["skills"],
                 candidate_experience_years=candidate["experience_years"],
                 conversation=conversation,

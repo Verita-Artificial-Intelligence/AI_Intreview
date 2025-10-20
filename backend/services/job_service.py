@@ -54,3 +54,23 @@ class JobService:
         # Return updated job
         job.status = status_update.status
         return job
+
+    @staticmethod
+    async def delete_job(job_id: str):
+        """Delete a job and all associated interviews"""
+        from database import db
+        jobs_collection = get_jobs_collection()
+
+        # Verify job exists
+        await JobService.get_job(job_id)
+
+        # Delete all interviews for this job
+        await db.interviews.delete_many({"job_id": job_id})
+
+        # Delete the job
+        result = await jobs_collection.delete_one({"id": job_id})
+
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Job not found")
+
+        return {"success": True, "message": "Job and associated interviews deleted successfully"}

@@ -13,6 +13,7 @@ class Candidate(BaseModel):
     experience_years: int
     position: str
     bio: str
+    education: str = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -23,3 +24,4 @@ class CandidateCreate(BaseModel):
     experience_years: int
     position: str
     bio: str
+    education: str = ""

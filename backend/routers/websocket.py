@@ -101,15 +101,66 @@ async def websocket_endpoint(websocket: WebSocket):
                             interview_doc["job_id"] = job_id
                             interview_doc["job_title"] = job.get("title")
                             interview_doc["position"] = job.get("title")
+                            # ALWAYS set interview configuration (even if None to ensure clean state)
+                            interview_doc["interview_type"] = job.get("interview_type") or "standard"
+                            interview_doc["skills"] = job.get("skills") or None
+                            interview_doc["custom_questions"] = job.get("custom_questions") or None
+                            interview_doc["custom_exercise_prompt"] = job.get("custom_exercise_prompt") or None
+                            logger.info(f"Loaded job config: type={job.get('interview_type', 'standard')}, custom_questions={len(job.get('custom_questions') or [])}, skills={len(job.get('skills') or [])}")
 
                     await interviews_collection.insert_one(interview_doc)
                     logger.info(f"Created new interview document: {interview_id}")
-                elif interview_doc.get("status") == "completed":
-                    await websocket.send_json({
-                        "event": "notice",
-                        "msg": "Interview already completed. Starting a practice session; results won't be saved.",
-                    })
-                    can_persist = False
+                else:
+                    # Interview exists - check if applying to a different job
+                    current_job_id = interview_doc.get("job_id")
+
+                    if job_id:
+                        # ALWAYS load fresh job config (stateless approach)
+                        from datetime import datetime, timezone
+                        jobs_collection = get_jobs_collection()
+                        job = await jobs_collection.find_one({"id": job_id}, {"_id": 0})
+                        if job:
+                            # Check if job changed
+                            is_new_job = (job_id != current_job_id)
+
+                            logger.info(f"{'NEW JOB' if is_new_job else 'SAME JOB'} - Loading job config: type={job.get('interview_type', 'standard')}, custom_questions={len(job.get('custom_questions') or [])}, skills={len(job.get('skills') or [])}")
+
+                            update_data = {
+                                "job_id": job_id,
+                                "job_title": job.get("title"),
+                                "position": job.get("title"),
+                                # ALWAYS set interview configuration (even if None to clear old values)
+                                "interview_type": job.get("interview_type") or "standard",
+                                "skills": job.get("skills") or None,
+                                "custom_questions": job.get("custom_questions") or None,
+                                "custom_exercise_prompt": job.get("custom_exercise_prompt") or None
+                            }
+
+                            # If it's a new job, also reset interview state
+                            if is_new_job:
+                                update_data.update({
+                                    "status": "in_progress",
+                                    "transcript": [],
+                                    "created_at": datetime.now(timezone.utc),
+                                    "completed_at": None,
+                                    "summary": None,
+                                    "analysis_status": None,
+                                    "analysis_result": None
+                                })
+
+                            await interviews_collection.update_one(
+                                {"id": interview_id},
+                                {"$set": update_data}
+                            )
+                            interview_doc = await interviews_collection.find_one({"id": interview_id})
+                            logger.info(f"{'Reset' if is_new_job else 'Updated'} interview {interview_id} for job {job_id}: {job.get('title')}")
+
+                    if interview_doc.get("status") == "completed":
+                        await websocket.send_json({
+                            "event": "notice",
+                            "msg": "Interview already completed. Starting a practice session; results won't be saved.",
+                        })
+                        can_persist = False
             except Exception as e:
                 logger.error(f"Error checking/creating interview: {e}")
                 # If pre-check fails, proceed with defaults and avoid persistence
@@ -296,7 +347,7 @@ async def save_mixed_audio(session_id: str, interview_id: str, audio_buffer: Aud
 
 async def get_interview_instructions(interview_id: Optional[str]) -> str:
     """
-    Get interview-specific instructions from database.
+    Get interview-specific instructions based on interview type and configuration.
     Falls back to default if not found.
     """
     if not interview_id:
@@ -305,31 +356,30 @@ async def get_interview_instructions(interview_id: Optional[str]) -> str:
 
     try:
         interviews_collection = get_interviews_collection()
-        interview = await interviews_collection.find_one({"id": interview_id})
+        interview_doc = await interviews_collection.find_one({"id": interview_id})
 
-        if not interview:
+        if not interview_doc:
             logger.warning(f"Interview {interview_id} not found, using default instructions")
             return get_interviewer_system_prompt()
 
-        # Build custom instructions
-        candidate = interview.get("candidate", {})
-        role = interview.get("role", {})
+        # Always use type-specific configuration to include custom questions, skills, etc.
+        from services.interview_service import InterviewService
+        from models import Interview
+        from utils import parse_from_mongo
 
-        instructions = get_interviewer_system_prompt(
-            position=interview.get("position", "Software Engineer"),
-            candidate_name=candidate.get("name", "Candidate"),
-            candidate_skills=candidate.get("skills", []),
-            candidate_experience_years=candidate.get("experience_years", 0),
-            candidate_bio=candidate.get("bio", ""),
-            role_description=interview.get("role_description") or role.get("description", ""),
-            role_requirements=interview.get("role_requirements") or role.get("requirements", []),
-        )
+        interview = Interview(**parse_from_mongo(interview_doc))
+        instructions = InterviewService.get_interview_instructions(interview)
 
-        logger.info(f"Using custom instructions for interview {interview_id}")
+        interview_type = interview_doc.get("interview_type", "standard")
+        custom_questions_count = len(interview_doc.get("custom_questions", []))
+        skills_count = len(interview_doc.get("skills", []))
+        logger.info(f"Using {interview_type} interview instructions for interview {interview_id} (custom_questions: {custom_questions_count}, skills: {skills_count})")
+        logger.debug(f"Instructions preview: {instructions[:200]}...")
+
         return instructions
 
     except Exception as e:
-        logger.error(f"Error fetching interview: {e}")
+        logger.error(f"Error fetching interview instructions: {e}", exc_info=True)
         return get_interviewer_system_prompt()
 
 
@@ -440,28 +490,38 @@ async def forward_openai_to_client(
                         # Server VAD will automatically trigger response, no manual response.create needed
 
             elif event_type == "response.output_audio_transcript.delta":
-                # Streaming user transcription (GA)
+                # Streaming assistant audio transcription (GA)
                 text = event.get("delta", "")
                 if text:
+                    # Append to last assistant message if exists, otherwise create new
+                    if transcript and transcript[-1]["speaker"] == "assistant":
+                        transcript[-1]["text"] += text
+                    else:
+                        transcript.append({"speaker": "assistant", "text": text})
+
                     await websocket.send_json({
                         "event": "transcript",
-                        "speaker": "user",
+                        "speaker": "assistant",
                         "text": text,
                         "final": False
                     })
 
             elif event_type == "response.output_audio_transcript.done":
-                # Finalized user transcription (GA) -> advance turn
+                # Finalized assistant audio transcription (GA)
                 text = event.get("transcript", "")
                 if text:
-                    transcript.append({"speaker": "user", "text": text})
+                    # Replace or create assistant transcript entry
+                    if transcript and transcript[-1]["speaker"] == "assistant":
+                        transcript[-1]["text"] = text
+                    else:
+                        transcript.append({"speaker": "assistant", "text": text})
+
                     await websocket.send_json({
                         "event": "transcript",
-                        "speaker": "user",
+                        "speaker": "assistant",
                         "text": text,
                         "final": True
                     })
-                    # Server VAD will automatically trigger response, no manual response.create needed
 
             elif event_type == "response.output_text.delta":
                 # AI transcript

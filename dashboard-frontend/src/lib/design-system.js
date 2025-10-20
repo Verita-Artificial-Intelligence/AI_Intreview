@@ -8,29 +8,29 @@
 export const colors = {
   // Brand colors
   brand: {
-    50: '#fff7f3',
-    100: '#ffe9e0',
-    200: '#ffc7b3',
-    300: '#ffa380',
-    400: '#ff7a4d',
-    500: '#e85c24', // Primary brand color
-    600: '#cc471b',
-    700: '#a93916',
-    800: '#862e12',
-    900: '#6b240e',
+    50: '#f0f9ff',
+    100: '#e0f2fe',
+    200: '#bae6fd',
+    300: '#7dd3fc',
+    400: '#38bdf8',
+    500: '#0ea5e9', // Primary brand color - light blue
+    600: '#0284c7',
+    700: '#0369a1',
+    800: '#075985',
+    900: '#0c3d66',
   },
   // Accent colors
   accent: {
-    50: '#fffdfa',
-    100: '#fff4e6',
-    200: '#ffe0b3',
-    300: '#ffc47a',
-    400: '#ff9c33',
-    500: '#f57c00',
-    600: '#d36400',
-    700: '#a94e00',
-    800: '#7a3800',
-    900: '#4d2200',
+    50: '#f0f9ff',
+    100: '#e0f2fe',
+    200: '#bae6fd',
+    300: '#7dd3fc',
+    400: '#38bdf8',
+    500: '#0ea5e9',
+    600: '#0284c7',
+    700: '#0369a1',
+    800: '#075985',
+    900: '#0c3d66',
   },
   // Neutral/grayscale
   neutral: {
@@ -70,8 +70,8 @@ export const gradients = {
  * Use Tailwind gradient classes above when possible
  */
 export const cssGradients = {
-  primary: 'linear-gradient(135deg, #ff7a4d 0%, #cc471b 100%)',
-  accent: 'linear-gradient(135deg, #ff9c33 0%, #d36400 100%)',
+  primary: 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)',
+  accent: 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)',
   info: 'linear-gradient(135deg, #48dbfb 0%, #0abde3 100%)',
   success: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
   purple: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',

@@ -48,13 +48,13 @@ class ChatService:
 
         # Create AI response using OpenAI
         try:
-            system_message = get_interviewer_system_prompt(
-                position=candidate["position"],
-                candidate_name=candidate["name"],
-                candidate_skills=candidate["skills"],
-                candidate_experience_years=candidate["experience_years"],
-                candidate_bio=candidate["bio"],
-            )
+            # Use interview-specific instructions to include custom questions, types, etc.
+            from services.interview_service import InterviewService
+            from models import Interview
+            from utils import parse_from_mongo
+
+            interview_obj = Interview(**parse_from_mongo(interview))
+            system_message = InterviewService.get_interview_instructions(interview_obj)
 
             messages = [{"role": "system", "content": system_message}]
 

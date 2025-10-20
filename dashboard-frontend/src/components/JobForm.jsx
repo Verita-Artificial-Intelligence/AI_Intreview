@@ -10,26 +10,132 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Card } from '@/components/ui/card'
+import { User, Target, ListChecks, Paintbrush, X, Plus } from 'lucide-react'
+
+const INTERVIEW_TYPES = [
+  {
+    id: 'standard',
+    title: 'Standard interview',
+    description: 'This is a conversational interview to assess for any role (UX designer, filmmaker, art director, copywriter, and more)',
+    icon: User,
+  },
+  {
+    id: 'human_data',
+    title: 'Design critique & feedback exercise',
+    description: 'This is a conversational interview and a design feedback/critique exercise to assess creative direction and feedback skills',
+    icon: Target,
+  },
+  {
+    id: 'custom_questions',
+    title: 'Custom questions only',
+    description: 'In this interview, you get to add/edit up to 20 custom questions tailored to your role',
+    icon: ListChecks,
+  },
+  {
+    id: 'custom_exercise',
+    title: 'Custom portfolio/asset evaluation',
+    description: 'Add a prompt and get audio response—AI evaluates creative work based on your custom criteria.',
+    icon: Paintbrush,
+  },
+]
 
 const JobForm = ({ open, onClose, onSubmit }) => {
+  const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     position_type: '',
+    pay_per_hour: '',
+    interview_type: 'standard',
+    skills: [],
+    custom_questions: [],
+    custom_exercise_prompt: '',
   })
   const [loading, setLoading] = useState(false)
+
+  // Skills state
+  const [skillName, setSkillName] = useState('')
+  const [skillDescription, setSkillDescription] = useState('')
+
+  // Custom questions state
+  const [currentQuestion, setCurrentQuestion] = useState('')
 
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
+  const handleTypeSelect = (typeId) => {
+    setFormData((prev) => ({ ...prev, interview_type: typeId }))
+    setStep(3)
+  }
+
+  const addSkill = () => {
+    if (skillName.trim() && formData.skills.length < 5) {
+      setFormData((prev) => ({
+        ...prev,
+        skills: [...prev.skills, { name: skillName.trim(), description: skillDescription.trim() || null }],
+      }))
+      setSkillName('')
+      setSkillDescription('')
+    }
+  }
+
+  const removeSkill = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      skills: prev.skills.filter((_, i) => i !== index),
+    }))
+  }
+
+  const addQuestion = () => {
+    if (currentQuestion.trim() && formData.custom_questions.length < 20) {
+      setFormData((prev) => ({
+        ...prev,
+        custom_questions: [...prev.custom_questions, currentQuestion.trim()],
+      }))
+      setCurrentQuestion('')
+    }
+  }
+
+  const removeQuestion = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      custom_questions: prev.custom_questions.filter((_, i) => i !== index),
+    }))
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
     try {
-      await onSubmit(formData)
-      setFormData({ title: '', description: '', position_type: '' })
+      // Remove empty optional fields
+      const submitData = { ...formData }
+      if (submitData.skills.length === 0) delete submitData.skills
+      if (submitData.custom_questions.length === 0) delete submitData.custom_questions
+      if (!submitData.custom_exercise_prompt) delete submitData.custom_exercise_prompt
+
+      // Convert pay_per_hour to number or remove if empty
+      if (submitData.pay_per_hour) {
+        submitData.pay_per_hour = parseFloat(submitData.pay_per_hour)
+      } else {
+        delete submitData.pay_per_hour
+      }
+
+      await onSubmit(submitData)
+      // Reset form
+      setFormData({
+        title: '',
+        description: '',
+        position_type: '',
+        pay_per_hour: '',
+        interview_type: 'standard',
+        skills: [],
+        custom_questions: [],
+        custom_exercise_prompt: '',
+      })
+      setStep(1)
       onClose()
     } catch (error) {
       console.error('Error creating job:', error)
@@ -38,78 +144,302 @@ const JobForm = ({ open, onClose, onSubmit }) => {
     }
   }
 
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-display font-bold">
-            Create New Job
-          </DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4 py-4">
+  const handleBack = () => {
+    setStep(1)
+  }
+
+  const renderJobDetails = () => (
+    <>
+      <div className="space-y-4 py-4">
+        <div className="space-y-2">
+          <Label htmlFor="title" className="text-sm font-medium">
+            Job Title
+          </Label>
+          <Input
+            id="title"
+            name="title"
+            value={formData.title}
+            onChange={handleChange}
+            placeholder="e.g. UX/UI Designer, Motion Graphic Artist, Creative Director"
+            required
+            className="w-full"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="position_type" className="text-sm font-medium">
+            Position Type
+          </Label>
+          <Input
+            id="position_type"
+            name="position_type"
+            value={formData.position_type}
+            onChange={handleChange}
+            placeholder="e.g. Full-time, Contract, Project-based, Freelance"
+            required
+            className="w-full"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="pay_per_hour" className="text-sm font-medium">
+            Pay Per Hour (optional)
+          </Label>
+          <Input
+            id="pay_per_hour"
+            name="pay_per_hour"
+            type="number"
+            step="0.01"
+            min="0"
+            value={formData.pay_per_hour}
+            onChange={handleChange}
+            placeholder="e.g. 75.00"
+            className="w-full"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="description" className="text-sm font-medium">
+            Description
+          </Label>
+          <Textarea
+            id="description"
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            placeholder="Describe the role, responsibilities, and requirements..."
+            rows={5}
+            required
+            className="w-full resize-none"
+          />
+        </div>
+      </div>
+      <DialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onClose}
+          disabled={loading}
+          className="rounded-lg"
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          onClick={() => setStep(2)}
+          disabled={!formData.title || !formData.position_type || !formData.description}
+          className="rounded-lg bg-brand-500 hover:bg-brand-600 text-white"
+        >
+          Next: Interview Type
+        </Button>
+      </DialogFooter>
+    </>
+  )
+
+  const renderTypeSelection = () => (
+    <>
+      <div className="py-4">
+        <h3 className="text-sm font-medium mb-4">Select the interview type for this job</h3>
+        <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+          {INTERVIEW_TYPES.map((type) => {
+            const Icon = type.icon
+            const isSelected = formData.interview_type === type.id
+            return (
+              <Card
+                key={type.id}
+                onClick={() => handleTypeSelect(type.id)}
+                className={`p-4 cursor-pointer transition-all hover:shadow-md ${
+                  isSelected ? 'border-2 border-brand-500 bg-brand-50' : 'border border-neutral-200'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-lg ${isSelected ? 'bg-brand-100' : 'bg-neutral-100'}`}>
+                    <Icon className={`w-5 h-5 ${isSelected ? 'text-brand-600' : 'text-neutral-600'}`} />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-sm mb-1">{type.title}</h4>
+                    <p className="text-xs text-neutral-600">{type.description}</p>
+                  </div>
+                </div>
+              </Card>
+            )
+          })}
+        </div>
+      </div>
+      <DialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleBack}
+          disabled={loading}
+          className="rounded-lg"
+        >
+          Back
+        </Button>
+      </DialogFooter>
+    </>
+  )
+
+  const renderConfiguration = () => (
+    <>
+      <div className="py-4 space-y-6 max-h-[500px] overflow-y-auto pr-2">
+        {/* Skills */}
+        {formData.interview_type !== 'custom_exercise' && (
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">Skills to assess (optional, up to 5)</Label>
             <div className="space-y-2">
-              <Label htmlFor="title" className="text-sm font-medium">
-                Job Title
-              </Label>
-              <Input
-                id="title"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                placeholder="e.g. UX/UI Designer, Motion Graphic Artist, Creative Director"
-                required
-                className="w-full"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="position_type" className="text-sm font-medium">
-                Position Type
-              </Label>
-              <Input
-                id="position_type"
-                name="position_type"
-                value={formData.position_type}
-                onChange={handleChange}
-                placeholder="e.g. Full-time, Contract, Project-based, Freelance"
-                required
-                className="w-full"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description" className="text-sm font-medium">
-                Description
-              </Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                placeholder="Describe the role, responsibilities, and requirements..."
-                rows={5}
-                required
-                className="w-full resize-none"
-              />
+              {formData.skills.map((skill, index) => (
+                <div key={index} className="flex items-start gap-2 p-3 bg-neutral-50 rounded-lg">
+                  <div className="flex-1">
+                    <div className="font-medium text-sm">{skill.name}</div>
+                    {skill.description && (
+                      <div className="text-xs text-neutral-600 mt-1">{skill.description}</div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeSkill(index)}
+                    className="text-neutral-400 hover:text-red-500 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+              {formData.skills.length < 5 && (
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Skill name (e.g., Creative Direction)"
+                    value={skillName}
+                    onChange={(e) => setSkillName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
+                    className="w-full"
+                  />
+                  <Textarea
+                    placeholder="Description (optional)"
+                    value={skillDescription}
+                    onChange={(e) => setSkillDescription(e.target.value)}
+                    rows={2}
+                    className="w-full resize-none"
+                  />
+                  <Button
+                    type="button"
+                    onClick={addSkill}
+                    disabled={!skillName.trim()}
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Skill
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={loading}
-              className="rounded-lg"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="rounded-lg bg-brand-500 hover:bg-brand-600 text-white"
-            >
-              {loading ? 'Creating...' : 'Create Job'}
-            </Button>
-          </DialogFooter>
+        )}
+
+        {/* Custom Questions */}
+        {formData.interview_type === 'custom_questions' && (
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">Custom Questions (up to 20)</Label>
+            <div className="space-y-2">
+              {formData.custom_questions.map((question, index) => (
+                <div key={index} className="flex items-start gap-2 p-3 bg-neutral-50 rounded-lg">
+                  <span className="text-xs text-neutral-500 font-medium min-w-[20px]">{index + 1}.</span>
+                  <p className="flex-1 text-sm">{question}</p>
+                  <button
+                    type="button"
+                    onClick={() => removeQuestion(index)}
+                    className="text-neutral-400 hover:text-red-500 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+              {formData.custom_questions.length < 20 && (
+                <div className="space-y-2">
+                  <Textarea
+                    placeholder="Enter your question..."
+                    value={currentQuestion}
+                    onChange={(e) => setCurrentQuestion(e.target.value)}
+                    rows={3}
+                    className="w-full resize-none"
+                  />
+                  <Button
+                    type="button"
+                    onClick={addQuestion}
+                    disabled={!currentQuestion.trim()}
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Question
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Custom Exercise Prompt */}
+        {formData.interview_type === 'custom_exercise' && (
+          <div className="space-y-3">
+            <Label htmlFor="custom_exercise_prompt" className="text-sm font-medium">
+              Custom Exercise Prompt
+            </Label>
+            <Textarea
+              id="custom_exercise_prompt"
+              name="custom_exercise_prompt"
+              value={formData.custom_exercise_prompt}
+              onChange={handleChange}
+              placeholder="Describe the creative exercise or portfolio evaluation criteria..."
+              rows={6}
+              className="w-full resize-none"
+            />
+          </div>
+        )}
+      </div>
+      <DialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setStep(2)}
+          disabled={loading}
+          className="rounded-lg"
+        >
+          Back
+        </Button>
+        <Button
+          type="submit"
+          disabled={loading}
+          className="rounded-lg bg-brand-500 hover:bg-brand-600 text-white"
+        >
+          {loading ? 'Creating...' : 'Create Job'}
+        </Button>
+      </DialogFooter>
+    </>
+  )
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-display font-bold">
+            {step === 1 ? 'Create New Job' : step === 2 ? 'Select Interview Type' : 'Configure Interview'}
+          </DialogTitle>
+          <div className="flex gap-2 mt-4">
+            {[1, 2, 3].map((stepNum) => (
+              <div
+                key={stepNum}
+                className={`h-1 flex-1 rounded-full ${
+                  step >= stepNum ? 'bg-brand-500' : 'bg-neutral-200'
+                }`}
+              />
+            ))}
+          </div>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          {step === 1 && renderJobDetails()}
+          {step === 2 && renderTypeSelection()}
+          {step === 3 && renderConfiguration()}
         </form>
       </DialogContent>
     </Dialog>
