@@ -39,6 +39,7 @@ const AdminInterviewReview = () => {
   const [analysisError, setAnalysisError] = useState(null)
   const [showAcceptDialog, setShowAcceptDialog] = useState(false)
   const [showRejectDialog, setShowRejectDialog] = useState(false)
+  const [videoSources, setVideoSources] = useState([])
 
   useEffect(() => {
     fetchInterviewData()
@@ -46,9 +47,15 @@ const AdminInterviewReview = () => {
 
   const fetchInterviewData = async () => {
     try {
-      const [interviewRes, messagesRes] = await Promise.all([
+      const [interviewRes, messagesRes, reviewRes] = await Promise.all([
         axios.get(`${API}/interviews/${interviewId}`),
         axios.get(`${API}/interviews/${interviewId}/messages`),
+        axios
+          .get(`${API}/admin/review/${interviewId}`)
+          .catch((error) => {
+            console.warn('Review endpoint unavailable:', error.message)
+            return null
+          }),
       ])
 
       setInterview(interviewRes.data)
@@ -75,6 +82,36 @@ const AdminInterviewReview = () => {
         }
       }
       setCandidate(candidateData)
+
+      if (reviewRes?.data) {
+        const recordings = Array.isArray(reviewRes.data.recordings)
+          ? reviewRes.data.recordings
+          : []
+
+        const normalizedRecordings = recordings
+          .map((value) => {
+            if (!value) return null
+            if (value.startsWith('http://') || value.startsWith('https://')) {
+              return value
+            }
+            if (!BACKEND_URL) return value
+            const base = BACKEND_URL.endsWith('/') ? BACKEND_URL.slice(0, -1) : BACKEND_URL
+            const path = value.startsWith('/') ? value : `/${value}`
+            return `${base}${path}`
+          })
+          .filter(Boolean)
+
+        const uniqueRecordings = []
+        normalizedRecordings.forEach((url) => {
+          if (!uniqueRecordings.includes(url)) {
+            uniqueRecordings.push(url)
+          }
+        })
+
+        setVideoSources(uniqueRecordings)
+      } else {
+        setVideoSources([])
+      }
 
       // Check if analysis already exists
       if (interviewRes.data.analysis_result && interviewRes.data.analysis_status === 'completed') {
@@ -405,6 +442,31 @@ const AdminInterviewReview = () => {
                 </div>
               </div>
             </Card>
+
+            {videoSources.length > 0 && (
+              <Card className={`p-4 ${cardStyles.default}`}>
+                <h3 className="font-bold text-sm mb-3 text-neutral-900">Interview Recording</h3>
+                <div className="space-y-3">
+                  {videoSources.map((src, idx) => (
+                    <div key={idx}>
+                      {videoSources.length > 1 && (
+                        <p className="text-xs font-medium text-neutral-600 mb-1">
+                          Recording {idx + 1}
+                        </p>
+                      )}
+                      <video
+                        controls
+                        preload="metadata"
+                        className="w-full rounded-lg bg-black"
+                        src={src}
+                      >
+                        Your browser does not support the video tag.
+                      </video>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
 
           </div>
 
