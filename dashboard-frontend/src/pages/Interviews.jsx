@@ -1,40 +1,47 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import axios from 'axios'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Users, Briefcase, Clock, CheckCircle, Plus, Trash2, ChevronRight, BarChart, Search } from 'lucide-react'
-import InterviewCreationModal from '@/components/InterviewCreationModal'
-import {
-  cardStyles,
-  iconBackgrounds,
-  pageHeader,
-  containers,
-  getStatusClass,
-  getStatusLabel,
-} from '@/lib/design-system'
+import { Briefcase, Trash2, ChevronRight, Users, BarChart, X, Search } from 'lucide-react'
+import { cardStyles, containers, getStatusClass, getStatusLabel } from '@/lib/design-system'
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
 const API = `${BACKEND_URL}/api`
 
-const Dashboard = () => {
+const Interviews = () => {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [interviews, setInterviews] = useState([])
+  const [candidates, setCandidates] = useState([])
+  const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
-  const [selectedCandidateId, setSelectedCandidateId] = useState(null)
-  const [interviewModalOpen, setInterviewModalOpen] = useState(false)
-  const [selectedCandidate, setSelectedCandidate] = useState(null)
   const [interviewSearch, setInterviewSearch] = useState('')
+
+  const candidateFilter = searchParams.get('candidate')
+  const jobFilter = searchParams.get('job')
 
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [candidateFilter, jobFilter])
 
   const fetchData = async () => {
     try {
-      const interviewsRes = await axios.get(`${API}/interviews`)
+      // Build query params
+      const params = new URLSearchParams()
+      if (candidateFilter) params.append('candidate_id', candidateFilter)
+      if (jobFilter) params.append('job_id', jobFilter)
+      const queryString = params.toString() ? `?${params.toString()}` : ''
+
+      const [interviewsRes, candidatesRes, jobsRes] = await Promise.all([
+        axios.get(`${API}/interviews${queryString}`),
+        axios.get(`${API}/candidates`),
+        axios.get(`${API}/jobs`),
+      ])
       setInterviews(interviewsRes.data)
+      setCandidates(candidatesRes.data)
+      setJobs(jobsRes.data)
     } catch (error) {
       console.error('Error fetching data:', error)
     } finally {
@@ -42,27 +49,12 @@ const Dashboard = () => {
     }
   }
 
-  const displayedInterviews = (() => {
-    let filtered = selectedCandidateId
-      ? interviews.filter((i) => i.candidate_id === selectedCandidateId)
-      : interviews
+  const getCandidate = (candidateId) => {
+    return candidates.find((c) => c.id === candidateId)
+  }
 
-    if (interviewSearch.trim()) {
-      const searchLower = interviewSearch.toLowerCase()
-      filtered = filtered.filter(
-        (interview) =>
-          interview.candidate_name?.toLowerCase().includes(searchLower) ||
-          interview.job_title?.toLowerCase().includes(searchLower) ||
-          interview.position?.toLowerCase().includes(searchLower)
-      )
-    }
-
-    return filtered
-  })()
-
-  const handleInterviewCreated = (interview) => {
-    fetchData()
-    navigate(`/audio-interview/${interview.id}`, { state: { from: 'dashboard' } })
+  const getJob = (jobId) => {
+    return jobs.find((j) => j.id === jobId)
   }
 
   const handleDeleteInterview = async (interviewId) => {
@@ -79,26 +71,35 @@ const Dashboard = () => {
     }
   }
 
-  const stats = [
-    {
-      icon: <Briefcase className="w-4 h-4" />,
-      label: 'Total Interviews',
-      value: interviews.length,
-      bgClass: iconBackgrounds.brand,
-    },
-    {
-      icon: <Clock className="w-4 h-4" />,
-      label: 'In Progress',
-      value: interviews.filter((i) => i.status === 'in_progress').length,
-      bgClass: iconBackgrounds.yellow,
-    },
-    {
-      icon: <CheckCircle className="w-4 h-4" />,
-      label: 'Completed',
-      value: interviews.filter((i) => i.status === 'completed').length,
-      bgClass: iconBackgrounds.blue,
-    },
-  ]
+  const clearFilter = () => {
+    setSearchParams({})
+  }
+
+  const filteredCandidate = candidateFilter ? getCandidate(candidateFilter) : null
+  const filteredJob = jobFilter ? getJob(jobFilter) : null
+
+  const getPageTitle = () => {
+    if (filteredCandidate) return `Interviews - ${filteredCandidate.name}`
+    if (filteredJob) return `Interviews - ${filteredJob.title}`
+    return 'All Interviews'
+  }
+
+  const getPageDescription = () => {
+    if (filteredCandidate) return `Showing all interviews for ${filteredCandidate.name}`
+    if (filteredJob) return `Showing all interviews for ${filteredJob.title} position`
+    return 'View and manage all candidate interviews'
+  }
+
+  const displayedInterviews = (() => {
+    if (!interviewSearch.trim()) return interviews
+    const searchLower = interviewSearch.toLowerCase()
+    return interviews.filter(
+      (interview) =>
+        interview.candidate_name?.toLowerCase().includes(searchLower) ||
+        interview.job_title?.toLowerCase().includes(searchLower) ||
+        interview.position?.toLowerCase().includes(searchLower)
+    )
+  })()
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -112,11 +113,10 @@ const Dashboard = () => {
         <nav className="px-3">
           <a
             href="/"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm bg-brand-50 text-brand-600 font-medium mb-1"
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
           >
             <BarChart className="w-4 h-4" />
             <span>Dashboard</span>
-            <ChevronRight className="w-4 h-4 ml-auto" />
           </a>
           <a
             href="/candidates"
@@ -127,10 +127,11 @@ const Dashboard = () => {
           </a>
           <a
             href="/interviews"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors mb-1"
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm bg-brand-50 text-brand-600 font-medium mb-1"
           >
             <Briefcase className="w-4 h-4" />
             <span>Interviews</span>
+            <ChevronRight className="w-4 h-4 ml-auto" />
           </a>
           <a
             href="/jobs"
@@ -144,67 +145,32 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
-        {/* Header */}
-        <div className={pageHeader.wrapper}>
-          <div className={`${containers.lg} ${pageHeader.container}`}>
-            <div>
-              <h1 className={pageHeader.title}>Verita</h1>
-              <p className={pageHeader.subtitle}>
-                Discover and hire top creative talent with AI-powered interviews
-              </p>
+        <div className={`${containers.lg} mx-auto px-6 py-6`}>
+          {/* Header */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <h1 className="text-2xl font-display font-bold text-neutral-900">
+                {getPageTitle()}
+              </h1>
+              {(candidateFilter || jobFilter) && (
+                <Button
+                  onClick={clearFilter}
+                  variant="outline"
+                  className="h-8 text-xs rounded-lg"
+                >
+                  <X className="w-3 h-3 mr-1" />
+                  Clear Filter
+                </Button>
+              )}
             </div>
-            <Button
-              onClick={() => navigate('/jobs')}
-              data-testid="view-jobs-button"
-              className="rounded-lg font-medium bg-brand-500 hover:bg-brand-600 text-white"
-            >
-              <Briefcase className="w-4 h-4 mr-2" />
-              View Jobs
-            </Button>
-          </div>
-        </div>
-
-        <div className={`${containers.lg} mx-auto px-5 py-5`}>
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {stats.map((stat, index) => (
-            <Card key={index} className={`p-4 ${cardStyles.default}`}>
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${stat.bgClass}`}>
-                  <div className="w-4 h-4">{stat.icon}</div>
-                </div>
-                <div>
-                  <p className="text-xs text-neutral-600 font-medium">
-                    {stat.label}
-                  </p>
-                  <p className="text-xl font-bold mt-0.5 text-neutral-900">
-                    {stat.value}
-                  </p>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        {/* Interviews Section */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-display font-bold text-neutral-900">
-              {selectedCandidateId ? 'Candidate Interviews' : 'Recent Interviews'}
-            </h2>
-            {selectedCandidateId && (
-              <Button
-                onClick={() => setSelectedCandidateId(null)}
-                variant="outline"
-                className="h-8 text-xs rounded-lg"
-              >
-                Show All Interviews
-              </Button>
-            )}
+            <p className="text-sm text-neutral-600">
+              {getPageDescription()}
+            </p>
           </div>
 
+          {/* Search Bar */}
           {interviews.length > 0 && (
-            <div className="mb-4">
+            <div className="mb-6">
               <div className="relative max-w-md">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-4 h-4" />
                 <Input
@@ -218,20 +184,43 @@ const Dashboard = () => {
             </div>
           )}
 
+          {/* Interviews Grid */}
           {loading ? (
-            <p className="text-sm text-neutral-600">Loading...</p>
-          ) : displayedInterviews.length === 0 ? (
-            <Card className={`p-6 text-center ${cardStyles.default}`}>
-              <Briefcase className="w-8 h-8 mx-auto mb-2 text-neutral-300" />
+            <p className="text-sm text-neutral-600">Loading interviews...</p>
+          ) : interviews.length === 0 ? (
+            <Card className={`p-8 text-center ${cardStyles.default}`}>
+              <Briefcase className="w-12 h-12 mx-auto mb-3 text-neutral-300" />
+              <h3 className="text-lg font-display font-semibold mb-2 text-neutral-900">
+                No Interviews Yet
+              </h3>
               <p className="text-sm text-neutral-600">
-                {selectedCandidateId
-                  ? 'No interviews for this candidate yet.'
-                  : 'No interviews yet. Create a job posting to start interviewing!'}
+                {filteredCandidate
+                  ? `No interviews have been conducted with ${filteredCandidate.name} yet.`
+                  : filteredJob
+                  ? `No interviews have been conducted for the ${filteredJob.title} position yet.`
+                  : 'Start creating interviews from the candidates page.'}
               </p>
+            </Card>
+          ) : displayedInterviews.length === 0 ? (
+            <Card className={`p-8 text-center ${cardStyles.default}`}>
+              <Search className="w-12 h-12 mx-auto mb-3 text-neutral-300" />
+              <h3 className="text-lg font-display font-semibold mb-2 text-neutral-900">
+                No Results Found
+              </h3>
+              <p className="text-sm text-neutral-600 mb-3">
+                No interviews match your search. Try different keywords!
+              </p>
+              <Button
+                onClick={() => setInterviewSearch('')}
+                variant="outline"
+                className="rounded-lg"
+              >
+                Clear Search
+              </Button>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {displayedInterviews.slice(0, selectedCandidateId ? 100 : 6).map((interview) => (
+              {displayedInterviews.map((interview) => (
                 <Card
                   key={interview.id}
                   className="p-6 hover:shadow-lg transition-shadow relative group flex flex-col"
@@ -297,19 +286,8 @@ const Dashboard = () => {
           )}
         </div>
       </div>
-
-        <InterviewCreationModal
-          open={interviewModalOpen}
-          onClose={() => {
-            setInterviewModalOpen(false)
-            setSelectedCandidate(null)
-          }}
-          candidate={selectedCandidate}
-          onSuccess={handleInterviewCreated}
-        />
-      </div>
     </div>
   )
 }
 
-export default Dashboard
+export default Interviews

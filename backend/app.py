@@ -23,6 +23,15 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Add CORS middleware BEFORE including routers
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=True,
+    allow_origins=["*"],  # Allow all origins for development
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Event handlers for database connection
 @app.on_event("shutdown")
 async def shutdown_db():
@@ -42,15 +51,6 @@ app.include_router(uploads.router, prefix="/api", tags=["Uploads"])
 
 # Include WebSocket router (not under /api prefix)
 app.include_router(websocket.router, prefix="/ws", tags=["WebSocket"])
-
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=CORS_ORIGINS,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Configure logging
 logging.basicConfig(

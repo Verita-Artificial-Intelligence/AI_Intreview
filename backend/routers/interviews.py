@@ -1,12 +1,13 @@
-from fastapi import APIRouter, File, UploadFile, Form, Query
+from fastapi import APIRouter, File, UploadFile, Form, Query, Body
 from typing import List, Optional
 from models import Interview, InterviewCreate
 from services import InterviewService, AnalysisService
+from services.resume_service import ResumeService
 import logging
 import aiofiles
 from pathlib import Path
 import os
-from database import get_interviews_collection, get_candidates_collection
+from database import get_interviews_collection, get_candidates_collection, db
 from datetime import datetime
 
 router = APIRouter()
@@ -24,15 +25,53 @@ async def create_interview(interview_data: InterviewCreate):
 
 
 @router.get("", response_model=List[Interview])
-async def get_interviews():
-    """Get all interviews"""
-    return await InterviewService.get_interviews()
+async def get_interviews(
+    candidate_id: Optional[str] = Query(None, description="Filter by candidate ID"),
+    job_id: Optional[str] = Query(None, description="Filter by job ID")
+):
+    """Get all interviews with optional filtering by candidate_id and/or job_id"""
+    return await InterviewService.get_interviews(candidate_id=candidate_id, job_id=job_id)
 
 
 @router.get("/{interview_id}", response_model=Interview)
 async def get_interview(interview_id: str):
     """Get a specific interview by ID"""
     return await InterviewService.get_interview(interview_id)
+
+
+@router.delete("/{interview_id}")
+async def delete_interview(interview_id: str):
+    """Delete an interview"""
+    try:
+        await db.interviews.delete_one({"id": interview_id})
+        return {"success": True, "message": "Interview deleted successfully"}
+    except Exception as e:
+        logger.error(f"Error deleting interview: {e}")
+        return {"success": False, "error": str(e)}
+
+
+@router.patch("/{interview_id}/resume")
+async def update_interview_resume(interview_id: str, data: dict = Body(...)):
+    """Update interview with candidate's resume text"""
+    try:
+        resume_text = data.get("resume_text", "")
+        if not resume_text:
+            return {"success": False, "error": "Resume text is required"}
+
+        interviews_collection = get_interviews_collection()
+        result = await interviews_collection.update_one(
+            {"id": interview_id},
+            {"$set": {"resume_text": resume_text}}
+        )
+
+        if result.modified_count == 0:
+            return {"success": False, "error": "Interview not found or no update needed"}
+
+        logger.info(f"Updated interview {interview_id} with resume text")
+        return {"success": True, "message": "Resume updated successfully"}
+    except Exception as e:
+        logger.error(f"Error updating resume: {e}")
+        return {"success": False, "error": str(e)}
 
 
 @router.post("/{interview_id}/complete")
@@ -70,6 +109,41 @@ async def analyze_interview(interview_id: str, framework: str = Query("behaviora
     except Exception as e:
         logger.error(f"Error analyzing interview: {e}")
         return {"error": str(e)}
+
+
+@router.post("/upload/resume")
+async def upload_resume(resume: UploadFile = File(...)):
+    """
+    Upload and extract text from a resume file.
+    Supports PDF, TXT, DOC, and DOCX formats.
+    Returns extracted text that can be used when creating an interview.
+    """
+    try:
+        # Extract text from resume
+        resume_text = await ResumeService.extract_text_from_upload(resume)
+
+        if not resume_text:
+            return {
+                "success": False,
+                "error": "Failed to extract text from resume. Please check the file format and try again."
+            }
+
+        # Sanitize and truncate if needed
+        sanitized_text = ResumeService.sanitize_resume_text(resume_text)
+
+        return {
+            "success": True,
+            "resume_text": sanitized_text,
+            "filename": resume.filename,
+            "length": len(sanitized_text)
+        }
+
+    except Exception as e:
+        logger.error(f"Error processing resume upload: {e}", exc_info=True)
+        return {
+            "success": False,
+            "error": "An unexpected error occurred while processing the resume."
+        }
 
 
 @router.post("/upload/video")

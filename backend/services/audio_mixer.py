@@ -157,11 +157,20 @@ class AudioMixer:
 
         # Create AudioClip from array
         def make_frame(t):
-            # t is time in seconds, return audio samples for that time
-            idx = int(t * self.sample_rate)
-            if idx >= len(audio_array):
-                return np.array([0.0])
-            # Return single value per call (MoviePy handles mono/stereo)
-            return np.array([audio_array[idx]])
+            # t can be a scalar or an array of times
+            # Handle both cases for MoviePy compatibility
+            if isinstance(t, np.ndarray):
+                # Vectorized operation for array input
+                indices = (t * self.sample_rate).astype(int)
+                # Clip indices to valid range
+                indices = np.clip(indices, 0, len(audio_array) - 1)
+                # Return the audio samples at those indices
+                return audio_array[indices].reshape(-1, 1)
+            else:
+                # Scalar input
+                idx = int(t * self.sample_rate)
+                if idx >= len(audio_array):
+                    return np.array([0.0])
+                return np.array([audio_array[idx]])
 
         return AudioClip(make_frame, duration=total_duration, fps=self.sample_rate)

@@ -34,7 +34,14 @@ const JobCard = ({ job, onStatusToggle }) => {
               {isOpen ? 'Open' : 'Closed'}
             </Badge>
           </div>
-          <p className="text-xs text-neutral-600 mb-2">{job.position_type}</p>
+          <p className="text-xs text-neutral-600 mb-2">
+            {job.position_type}
+            {job.pay_per_hour && (
+              <span className="ml-2 text-brand-600 font-semibold">
+                ${job.pay_per_hour}/hr
+              </span>
+            )}
+          </p>
           <p className="text-xs text-neutral-700 line-clamp-2 mb-3">
             {job.description}
           </p>

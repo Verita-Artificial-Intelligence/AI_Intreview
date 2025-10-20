@@ -1,17 +1,18 @@
 from fastapi import HTTPException
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import datetime, timezone
 import logging
 import json
 import re
 from openai import AsyncOpenAI
-from models import Interview, InterviewCreate, ChatMessage
+from models import Interview, InterviewCreate, ChatMessage, SkillDefinition
 from utils import prepare_for_mongo, parse_from_mongo
 from database import db, get_jobs_collection, get_candidates_collection
 from config import OPENAI_API_KEY
 from prompts.chat import get_initial_greeting
 from prompts.interview_summary import get_summary_prompt, SUMMARY_SYSTEM_PROMPT
 from prompts.interview_analysis import get_analysis_prompt, SYSTEM_PROMPT
+from prompts.interview_types import get_interview_type_config
 
 openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 logger = logging.getLogger(__name__)
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 class InterviewService:
     @staticmethod
     async def create_interview(interview_data: InterviewCreate) -> Interview:
-        """Create a new interview and initialize with greeting message"""
+        """Create a new interview - inherits configuration from job if job_id is provided"""
         # Get candidate
         candidate = await db.candidates.find_one(
             {"id": interview_data.candidate_id}, {"_id": 0}
@@ -28,8 +29,13 @@ class InterviewService:
         if not candidate:
             raise HTTPException(status_code=404, detail="Candidate not found")
 
-        # Get job details if job_id is provided
+        # Get job details and interview configuration if job_id is provided
         job_title = None
+        interview_type = interview_data.interview_type
+        skills = interview_data.skills
+        custom_questions = interview_data.custom_questions
+        custom_exercise_prompt = interview_data.custom_exercise_prompt
+
         if interview_data.job_id:
             jobs_collection = get_jobs_collection()
             job = await jobs_collection.find_one(
@@ -37,7 +43,13 @@ class InterviewService:
             )
             if job:
                 job_title = job.get("title")
+                # Inherit interview configuration from job
+                interview_type = job.get("interview_type", "standard")
+                skills = job.get("skills")
+                custom_questions = job.get("custom_questions")
+                custom_exercise_prompt = job.get("custom_exercise_prompt")
 
+        # Create interview with inherited or provided configuration
         interview = Interview(
             candidate_id=interview_data.candidate_id,
             candidate_name=candidate["name"],
@@ -45,16 +57,35 @@ class InterviewService:
             job_id=interview_data.job_id,
             job_title=job_title,
             status="in_progress",
+            interview_type=interview_type,
+            skills=skills,
+            custom_questions=custom_questions,
+            custom_exercise_prompt=custom_exercise_prompt,
+            resume_text=interview_data.resume_text,  # Resume is per-candidate
         )
 
         doc = prepare_for_mongo(interview.model_dump())
         await db.interviews.insert_one(doc)
 
-        # Create initial AI message
+        # Create initial AI message using type-specific greeting
+        # Convert skills to dict format for prompt generation
+        skills_dict = [skill.dict() if isinstance(skill, SkillDefinition) else skill
+                      for skill in (skills or [])]
+
+        greeting_config = get_interview_type_config(
+            interview_type=interview_type,
+            candidate_name=candidate["name"],
+            position=job_title or "Creative Professional",
+            skills=skills_dict,
+            resume_text=interview_data.resume_text,
+            custom_questions=custom_questions,
+            custom_exercise_prompt=custom_exercise_prompt
+        )
+
         system_msg = ChatMessage(
             interview_id=interview.id,
             role="assistant",
-            content=get_initial_greeting(candidate["position"]),
+            content=greeting_config["initial_greeting"],
         )
         msg_doc = prepare_for_mongo(system_msg.model_dump())
         await db.messages.insert_one(msg_doc)
@@ -62,10 +93,35 @@ class InterviewService:
         return interview
 
     @staticmethod
-    async def get_interviews() -> List[Interview]:
-        """Get all interviews sorted by creation date"""
+    def get_interview_instructions(interview: Interview) -> str:
+        """Get the system instructions for an interview based on its type and configuration"""
+        skills_dict = [skill.dict() if isinstance(skill, SkillDefinition) else skill
+                      for skill in (interview.skills or [])]
+
+        config = get_interview_type_config(
+            interview_type=interview.interview_type,
+            candidate_name=interview.candidate_name,
+            position=interview.job_title or "Creative Professional",
+            skills=skills_dict,
+            resume_text=interview.resume_text,
+            custom_questions=interview.custom_questions,
+            custom_exercise_prompt=interview.custom_exercise_prompt
+        )
+
+        return config["system_instructions"]
+
+    @staticmethod
+    async def get_interviews(candidate_id: str = None, job_id: str = None) -> List[Interview]:
+        """Get all interviews sorted by creation date with optional filtering"""
+        # Build filter query
+        filter_query = {}
+        if candidate_id:
+            filter_query["candidate_id"] = candidate_id
+        if job_id:
+            filter_query["job_id"] = job_id
+
         interviews = (
-            await db.interviews.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+            await db.interviews.find(filter_query, {"_id": 0}).sort("created_at", -1).to_list(100)
         )
         return [Interview(**parse_from_mongo(i)) for i in interviews]
 
@@ -249,7 +305,7 @@ class InterviewService:
             analysis_prompt = get_analysis_prompt(
                 framework_name=framework_name,
                 candidate_name=candidate["name"],
-                candidate_position=candidate["position"],
+                candidate_position=interview_doc.get("job_title", "Creative Professional"),
                 candidate_skills=candidate.get("skills", []),
                 candidate_experience_years=candidate.get("experience_years", 0),
                 conversation=conversation

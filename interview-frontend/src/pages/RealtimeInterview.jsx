@@ -61,7 +61,7 @@ export default function RealtimeInterview() {
 
   // Auto-start interview once services are initialized
   useEffect(() => {
-    if (isInitialized && status === 'idle') {
+    if (isInitialized) {
       handleStartInterview();
     }
   }, [isInitialized]);
@@ -118,6 +118,13 @@ export default function RealtimeInterview() {
    * Start interview session.
    */
   const handleStartInterview = async () => {
+    // Guard: only start if we're in a startable state (idle or error from previous session)
+    // Don't start if already connecting, connected, or actively running
+    if (status !== 'idle' && status !== 'error') {
+      console.log('Interview already in progress, status:', status);
+      return;
+    }
+
     try {
       setStatus('connecting');
       reset();
