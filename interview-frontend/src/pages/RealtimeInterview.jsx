@@ -41,6 +41,8 @@ export default function RealtimeInterview() {
   // State
   const [isInitialized, setIsInitialized] = useState(false);
   const [mediaStream, setMediaStream] = useState(null);
+  const [isMuted, setIsMuted] = useState(false);
+  const mutedRef = useRef(false);
 
   // Initialize services on mount
   useEffect(() => {
@@ -180,6 +182,20 @@ export default function RealtimeInterview() {
 
     wsClient.on('answer_end', () => {
       console.log('Answer ended');
+      // When AI finishes an answer and we're not ended, go back to listening
+      if (useInterviewStore.getState().status !== 'ended') {
+        setStatus('listening');
+      }
+    });
+
+    wsClient.on('conversation_ended', () => {
+      console.log('Conversation ended by AI');
+      // Stop mic & audio, set ended state
+      stopMicrophone();
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.stop();
+      }
+      setStatus('ended');
     });
 
     wsClient.on('notice', (message) => {
@@ -198,8 +214,11 @@ export default function RealtimeInterview() {
 
     wsClient.on('disconnected', () => {
       console.log('WebSocket disconnected');
-      setStatus('error');
-      setError('Connection lost');
+      // If we already ended gracefully, don't mark as error
+      if (useInterviewStore.getState().status !== 'ended') {
+        setStatus('error');
+        setError('Connection lost');
+      }
     });
   };
 
@@ -209,12 +228,17 @@ export default function RealtimeInterview() {
   const startMicrophone = () => {
     if (!audioCaptureRef.current || !wsClientRef.current) return;
 
-    setMicActive(true);
+    // Mic is considered active when we are sending (not muted)
+    setMicActive(!mutedRef.current);
     setStatus('listening');
 
     audioCaptureRef.current.start((seq, audioB64) => {
-      // Send all audio chunks to server - OpenAI handles VAD
-      if (wsClientRef.current && wsClientRef.current.isConnected()) {
+      // Only send audio when not muted; OpenAI handles VAD
+      if (
+        !mutedRef.current &&
+        wsClientRef.current &&
+        wsClientRef.current.isConnected()
+      ) {
         wsClientRef.current.send({
           event: 'mic_chunk',
           seq,
@@ -242,11 +266,11 @@ export default function RealtimeInterview() {
    * Toggle microphone on/off.
    */
   const handleToggleMic = () => {
-    if (audioCaptureRef.current?.isActive()) {
-      stopMicrophone();
-    } else {
-      startMicrophone();
-    }
+    // Toggle mute without stopping capture; preserve VAD flow
+    const nextMuted = !mutedRef.current;
+    mutedRef.current = nextMuted;
+    setIsMuted(nextMuted);
+    setMicActive(!nextMuted);
   };
 
   /**
@@ -331,6 +355,7 @@ export default function RealtimeInterview() {
             sessionId={useInterviewStore((state) => state.sessionId)}
             interviewId={interviewId}
             stream={mediaStream}
+            status={status}
           />
         </div>
       </div>
@@ -340,6 +365,7 @@ export default function RealtimeInterview() {
         onEndInterview={handleEndInterview}
         onInterrupt={handleInterrupt}
         onToggleMic={handleToggleMic}
+        onEndTurn={handleUserTurnEnd}
       />
     </div>
   );
@@ -348,7 +374,7 @@ export default function RealtimeInterview() {
 /**
  * User video feed component with recording.
  */
-function UserVideoFeed({ sessionId, interviewId, stream }) {
+function UserVideoFeed({ sessionId, interviewId, stream, status }) {
   const videoRef = useRef(null);
   const videoRecorderRef = useRef(new VideoRecorder());
   const [isRecording, setIsRecording] = useState(false);
@@ -379,6 +405,14 @@ function UserVideoFeed({ sessionId, interviewId, stream }) {
       }
     };
   }, [stream, sessionId, interviewId, isRecording]);
+
+  // Stop recording when conversation ends
+  useEffect(() => {
+    if (status === 'ended' && isRecording) {
+      videoRecorderRef.current.stopRecording();
+      setIsRecording(false);
+    }
+  }, [status, isRecording]);
 
   return (
     <div className="relative w-full h-full bg-black/80">
