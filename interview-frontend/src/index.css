@@ -2,31 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @layer base {
   :root {
-    /* Legacy semantic colors for component compatibility */
+    /* Mercor-inspired color system */
     --background: 0 0% 100%;
     --foreground: 0 0% 10%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 10%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 10%;
-    --primary: 200 96% 48%; /* brand-500 light blue */
+    --primary: 239 84% 67%; /* brand-500 indigo */
     --primary-foreground: 0 0% 100%;
     --secondary: 0 0% 96%;
     --secondary-foreground: 0 0% 10%;
-    --muted: 0 0% 94%;
-    --muted-foreground: 0 0% 46%;
-    --accent: 200 96% 48%; /* accent-500 light blue */
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 239 84% 67%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 90%;
     --input: 0 0% 90%;
-    --ring: 200 96% 48%;
-    --radius: 0.5rem;
+    --ring: 239 84% 67%;
+    --radius: 0.75rem;
   }
 }
 
@@ -34,21 +34,137 @@
   * {
     @apply border-border;
   }
-  body {
-    @apply bg-background text-neutral-900 font-sans;
+  
+  html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    @apply font-display;
+  
+  body {
+    @apply bg-neutral-50 text-neutral-900 font-sans;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-semibold tracking-tight;
   }
 }
 
+@layer components {
+  /* Smooth transitions for interactive elements */
+  .transition-smooth {
+    @apply transition-all duration-200 ease-in-out;
+  }
+  
+  /* Card hover effect */
+  .card-hover {
+    @apply transition-all duration-250 ease-out;
+  }
+  
+  .card-hover:hover {
+    @apply shadow-card-hover -translate-y-0.5;
+  }
+  
+  /* Button animations */
+  .btn-animate {
+    @apply transition-all duration-200 ease-out;
+  }
+  
+  .btn-animate:hover {
+    @apply shadow-button-hover -translate-y-0.5;
+  }
+  
+  .btn-animate:active {
+    @apply translate-y-0 shadow-button;
+  }
+  
+  /* Input focus ring */
+  .input-focus {
+    @apply transition-all duration-200;
+  }
+  
+  .input-focus:focus {
+    @apply ring-2 ring-brand-500 ring-offset-2 border-brand-500;
+  }
+  
+  /* Fade in animation */
+  .fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+  
+  /* Slide in from bottom */
+  .slide-up {
+    animation: fade-in-up 0.4s ease-out;
+  }
+  
+  /* Scale in effect */
+  .scale-in {
+    animation: scale-in 0.2s ease-out;
+  }
+  
+  /* Loading shimmer effect */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.5) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite linear;
+  }
+  
+  /* Glassmorphism effect */
+  .glass {
+    @apply bg-white/80 backdrop-blur-xl border border-white/20;
+  }
+  
+  /* Smooth scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-neutral-100 rounded-full;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-neutral-300 rounded-full hover:bg-neutral-400;
+  }
+}
+
+@layer utilities {
+  /* Text gradient utility */
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  }
+  
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* React Three Fiber specific styles */
+@layer utilities {
+  .canvas-container {
+    @apply relative w-full h-full;
+  }
+  
+  .canvas-container canvas {
+    @apply outline-none;
+  }
+}
+
+/* Debug wrapper for React dev tools */
 @layer base {
   [data-debug-wrapper='true'] {
     display: contents !important;

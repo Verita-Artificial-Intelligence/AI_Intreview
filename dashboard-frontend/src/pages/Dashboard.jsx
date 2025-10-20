@@ -1,30 +1,17 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Users, Briefcase, Clock, CheckCircle, Plus, Trash2, Search, Eye, Star } from 'lucide-react'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { Users, Briefcase, Clock, CheckCircle, Trash2, ChevronRight, BarChart, Search } from 'lucide-react'
 import InterviewCreationModal from '@/components/InterviewCreationModal'
-import Sidebar from '@/components/Sidebar'
+import PageHeader from '@/components/PageHeader'
 import {
-  cardStyles,
-  iconBackgrounds,
-  pageHeader,
-  containers,
   getStatusClass,
   getStatusLabel,
+  pageContainer,
+  searchBar,
 } from '@/lib/design-system'
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
@@ -38,22 +25,10 @@ const Dashboard = () => {
   const [interviewModalOpen, setInterviewModalOpen] = useState(false)
   const [selectedCandidate, setSelectedCandidate] = useState(null)
   const [interviewSearch, setInterviewSearch] = useState('')
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [interviewToDelete, setInterviewToDelete] = useState(null)
-  const [annotatorStats, setAnnotatorStats] = useState([])
-  const [annotatorSearch, setAnnotatorSearch] = useState('')
-  const [completionFilter, setCompletionFilter] = useState('all')
-  const [performanceFilter, setPerformanceFilter] = useState('all')
-  const [annotatorLoading, setAnnotatorLoading] = useState(false)
 
   useEffect(() => {
     fetchData()
-    fetchAnnotatorStats()
   }, [])
-
-  useEffect(() => {
-    fetchAnnotatorStats()
-  }, [annotatorSearch, completionFilter, performanceFilter])
 
   const fetchData = async () => {
     try {
@@ -63,23 +38,6 @@ const Dashboard = () => {
       console.error('Error fetching data:', error)
     } finally {
       setLoading(false)
-    }
-  }
-
-  const fetchAnnotatorStats = async () => {
-    try {
-      setAnnotatorLoading(true)
-      const params = new URLSearchParams()
-      if (annotatorSearch.trim()) params.append('search', annotatorSearch)
-      if (completionFilter !== 'all') params.append('completion_filter', completionFilter)
-      if (performanceFilter !== 'all') params.append('performance_filter', performanceFilter)
-
-      const response = await axios.get(`${API}/annotations/annotators/stats?${params.toString()}`)
-      setAnnotatorStats(response.data)
-    } catch (error) {
-      console.error('Error fetching annotator stats:', error)
-    } finally {
-      setAnnotatorLoading(false)
     }
   }
 
@@ -106,18 +64,13 @@ const Dashboard = () => {
     navigate(`/audio-interview/${interview.id}`, { state: { from: 'dashboard' } })
   }
 
-  const handleDeleteInterview = (interviewId, candidateName) => {
-    setInterviewToDelete({ id: interviewId, name: candidateName })
-    setShowDeleteDialog(true)
-  }
-
-  const confirmDeleteInterview = async () => {
-    if (!interviewToDelete) return
+  const handleDeleteInterview = async (interviewId) => {
+    if (!window.confirm('Are you sure you want to delete this interview?')) {
+      return
+    }
 
     try {
-      await axios.delete(`${API}/interviews/${interviewToDelete.id}`)
-      setShowDeleteDialog(false)
-      setInterviewToDelete(null)
+      await axios.delete(`${API}/interviews/${interviewId}`)
       fetchData()
     } catch (error) {
       console.error('Error deleting interview:', error)
@@ -130,338 +83,220 @@ const Dashboard = () => {
       icon: <Briefcase className="w-5 h-5" />,
       label: 'Total Interviews',
       value: interviews.length,
-      bgClass: iconBackgrounds.brand,
+      bgClass: 'bg-brand-100 text-brand-600',
     },
     {
       icon: <Clock className="w-5 h-5" />,
       label: 'In Progress',
       value: interviews.filter((i) => i.status === 'in_progress').length,
-      bgClass: iconBackgrounds.yellow,
+      bgClass: 'bg-yellow-100 text-yellow-600',
     },
     {
       icon: <CheckCircle className="w-5 h-5" />,
       label: 'Completed',
       value: interviews.filter((i) => i.status === 'completed').length,
-      bgClass: iconBackgrounds.blue,
+      bgClass: 'bg-green-100 text-green-600',
     },
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Sidebar />
+    <div className="flex min-h-screen bg-neutral-50">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white border-r border-neutral-200 flex-shrink-0">
+        <div className="px-6 py-6 border-b border-neutral-100/60 shadow-sm">
+          <h2 className="text-xl font-display font-bold text-neutral-900 mb-1">Verita</h2>
+          <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">AI Interview Platform</p>
+        </div>
+
+        <nav className="p-4">
+          <a
+            href="/"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm bg-brand-600 text-white font-medium mb-2 shadow-sm transition-all duration-200"
+          >
+            <BarChart className="w-4 h-4" />
+            <span>Dashboard</span>
+            <ChevronRight className="w-4 h-4 ml-auto" />
+          </a>
+          <a
+            href="/candidates"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-neutral-700 hover:bg-neutral-100 transition-all duration-200 mb-2"
+          >
+            <Users className="w-4 h-4" />
+            <span>Candidates</span>
+          </a>
+          <a
+            href="/interviews"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-neutral-700 hover:bg-neutral-100 transition-all duration-200 mb-2"
+          >
+            <Briefcase className="w-4 h-4" />
+            <span>Interviews</span>
+          </a>
+          <a
+            href="/jobs"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-neutral-700 hover:bg-neutral-100 transition-all duration-200"
+          >
+            <Briefcase className="w-4 h-4" />
+            <span>Jobs</span>
+          </a>
+        </nav>
+      </aside>
 
       {/* Main Content */}
-      <main className="ml-64 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className={pageContainer.wrapper}>
         {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-neutral-900 mb-1">
-                Dashboard
-              </h1>
-              <p className="text-sm text-gray-500">
-                Discover and hire top creative talent with AI-powered interviews
-              </p>
-            </div>
-            <Button
-              onClick={() => navigate('/jobs')}
-              data-testid="view-jobs-button"
-              className="rounded-lg font-medium bg-blue-500 hover:bg-blue-600 text-white h-10 px-5 shadow-sm hover:shadow transition-shadow"
-            >
-              <Briefcase className="w-4 h-4 mr-2" />
-              View Jobs
-            </Button>
+        <PageHeader
+          variant="boxed"
+          title="Dashboard"
+          subtitle="Discover and hire top creative talent with AI-powered interviews"
+        />
+
+        <div className={pageContainer.container}>
+          {/* Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 animate-fade-in-up">
+            {stats.map((stat, index) => (
+              <Card 
+                key={index} 
+                className="p-6 cursor-pointer group"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`p-3 rounded-xl ${stat.bgClass} transition-transform duration-200 group-hover:scale-110`}>
+                    {stat.icon}
+                  </div>
+                  <div>
+                    <p className="text-sm text-neutral-600 font-medium mb-1">
+                      {stat.label}
+                    </p>
+                    <p className="text-3xl font-bold text-neutral-900">
+                      {stat.value}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
-        </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {stats.map((stat, index) => (
-            <Card key={index} className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow p-6">
-              <div className="flex items-start gap-4">
-                <div className={`p-2.5 rounded-lg ${stat.bgClass} flex-shrink-0`}>
-                  {stat.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1">
-                    {stat.label}
-                  </p>
-                  <p className="text-2xl font-semibold text-neutral-900">
-                    {stat.value}
-                  </p>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        {/* Interviews Section */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold text-neutral-900 mb-0.5">
+          {/* Interviews Section */}
+          <div className="animate-fade-in-up" style={{ animationDelay: '300ms' }}>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-display font-bold text-neutral-900">
                 {selectedCandidateId ? 'Candidate Interviews' : 'Recent Interviews'}
               </h2>
-              <p className="text-sm text-gray-600">
-                View and manage candidate interview results
-              </p>
+              {selectedCandidateId && (
+                <Button
+                  onClick={() => setSelectedCandidateId(null)}
+                  variant="outline"
+                  className="rounded-xl"
+                >
+                  Show All Interviews
+                </Button>
+              )}
             </div>
-            {selectedCandidateId && (
-              <Button
-                onClick={() => setSelectedCandidateId(null)}
-                variant="outline"
-                className="h-9 text-sm rounded-lg border-gray-300 hover:bg-gray-50"
-              >
-                Show All Interviews
-              </Button>
+
+            {interviews.length > 0 && (
+              <div className={searchBar.wrapper}>
+                <div className={searchBar.container}>
+                  <Search className={searchBar.icon} />
+                  <Input
+                    type="text"
+                    placeholder="Search by candidate, job title, or position..."
+                    value={interviewSearch}
+                    onChange={(e) => setInterviewSearch(e.target.value)}
+                    className={searchBar.input}
+                  />
+                </div>
+              </div>
             )}
-          </div>
 
-          {interviews.length > 0 && (
-            <div className="mb-4">
-              <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  type="text"
-                  placeholder="Search by candidate, job title, or position..."
-                  value={interviewSearch}
-                  onChange={(e) => setInterviewSearch(e.target.value)}
-                  className="pl-9 h-10 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 text-sm"
-                />
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-8 h-8 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin" />
               </div>
-            </div>
-          )}
+            ) : displayedInterviews.length === 0 ? (
+              <Card className="p-12 text-center border-2">
+                <Briefcase className="w-12 h-12 mx-auto mb-4 text-neutral-300" />
+                <p className="text-base text-neutral-600">
+                  {selectedCandidateId
+                    ? 'No interviews for this candidate yet.'
+                    : 'No interviews yet. Create a job posting to start interviewing!'}
+                </p>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {displayedInterviews.slice(0, selectedCandidateId ? 100 : 6).map((interview, index) => (
+                  <Card
+                    key={interview.id}
+                    className="p-6 relative group flex flex-col animate-fade-in-up"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <button
+                      onClick={() => handleDeleteInterview(interview.id)}
+                      className="absolute top-4 right-4 p-2 rounded-lg text-neutral-400 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10"
+                      title="Delete interview"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
 
-          {loading ? (
-            <p className="text-sm text-gray-600">Loading...</p>
-          ) : displayedInterviews.length === 0 ? (
-            <Card className="p-8 text-center bg-white border border-gray-200 rounded-lg shadow-sm">
-              <Briefcase className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-              <p className="text-sm text-gray-600">
-                {selectedCandidateId
-                  ? 'No interviews for this candidate yet.'
-                  : 'No interviews yet. Create a job posting to start interviewing!'}
-              </p>
-            </Card>
-          ) : (
-            <Card className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-gray-50">
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-600 uppercase tracking-wider">Candidate</th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-600 uppercase tracking-wider">Job/Position</th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-600 uppercase tracking-wider">Status</th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-600 uppercase tracking-wider">Date</th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-600 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {displayedInterviews.map((interview) => (
-                      <tr key={interview.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white bg-gradient-to-br from-blue-400 to-blue-600 flex-shrink-0">
-                              {interview.candidate_name?.charAt(0).toUpperCase() || 'U'}
-                            </div>
-                            <span className="font-medium text-sm text-gray-900">
-                              {interview.candidate_name || 'Unknown'}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-sm text-gray-700">
+                    <div className="flex items-start gap-4 mb-4 flex-1">
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center text-base font-bold text-white bg-gradient-to-br from-brand-500 to-brand-600 shadow-sm flex-shrink-0">
+                        {interview.candidate_name?.charAt(0).toUpperCase() || 'U'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-base text-neutral-900 truncate mb-1">
+                          {interview.candidate_name || 'Unknown'}
+                        </h3>
+                        <p className="text-sm text-neutral-600 truncate">
                           {interview.job_title || interview.position || 'General Interview'}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatusClass(interview.status)}`}>
-                            {getStatusLabel(interview.status)}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-sm text-gray-600">
-                          {new Date(interview.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            {interview.status === 'completed' && (
-                              <Button
-                                onClick={() => navigate(`/admin/review/${interview.id}`)}
-                                variant="ghost"
-                                size="sm"
-                                className="h-9 px-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md text-sm"
-                              >
-                                <Eye className="w-4 h-4 mr-1.5" />
-                                View
-                              </Button>
-                            )}
-                            <button
-                              onClick={() => handleDeleteInterview(interview.id, interview.candidate_name)}
-                              className="p-1.5 text-red-600 hover:text-red-700 rounded hover:bg-red-50 transition-colors"
-                              title="Delete interview"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-          )}
-        </div>
-
-        {/* Annotator Performance Section */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold text-neutral-900 mb-0.5">
-                Annotator Performance
-              </h2>
-              <p className="text-sm text-gray-600">
-                Monitor annotator task completion and quality ratings
-              </p>
-            </div>
-            <Button
-              onClick={() => navigate('/annotators')}
-              variant="outline"
-              className="h-9 text-sm rounded-lg border-gray-300 hover:bg-gray-50"
-            >
-              View All Annotators
-            </Button>
-          </div>
-
-          {/* Search and Filters */}
-          <div className="mb-4 flex gap-3 flex-wrap">
-            <div className="flex-1 min-w-64">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  type="text"
-                  placeholder="Search by annotator name..."
-                  value={annotatorSearch}
-                  onChange={(e) => setAnnotatorSearch(e.target.value)}
-                  className="pl-9 h-10 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 text-sm"
-                />
-              </div>
-            </div>
-            <Select value={completionFilter} onValueChange={setCompletionFilter}>
-              <SelectTrigger className="w-40 h-10 rounded-lg text-sm">
-                <SelectValue placeholder="Completion" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Completion</SelectItem>
-                <SelectItem value="100">100% Complete</SelectItem>
-                <SelectItem value="75">75% - 99%</SelectItem>
-                <SelectItem value="50">50% - 74%</SelectItem>
-                <SelectItem value="0">Below 50%</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={performanceFilter} onValueChange={setPerformanceFilter}>
-              <SelectTrigger className="w-40 h-10 rounded-lg text-sm">
-                <SelectValue placeholder="Performance" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Performance</SelectItem>
-                <SelectItem value="excellent">Excellent (4.5+)</SelectItem>
-                <SelectItem value="good">Good (3.5-4.5)</SelectItem>
-                <SelectItem value="fair">Fair (2.5-3.5)</SelectItem>
-                <SelectItem value="poor">Poor (&lt;2.5)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Annotator Stats Grid */}
-          {annotatorLoading ? (
-            <p className="text-sm text-gray-600">Loading annotator stats...</p>
-          ) : annotatorStats.length === 0 ? (
-            <Card className="p-8 text-center bg-white border border-gray-200 rounded-lg shadow-sm">
-              <Users className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-              <p className="text-sm text-gray-600">
-                {annotatorSearch || completionFilter !== 'all' || performanceFilter !== 'all'
-                  ? 'No annotators found matching your filters'
-                  : 'No annotators yet. Assign annotation tasks to see performance metrics.'}
-              </p>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {annotatorStats.map((annotator) => (
-                <Card key={annotator.annotator_id} className="p-5 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold text-white bg-gradient-to-br from-blue-400 to-blue-600 flex-shrink-0">
-                      {annotator.name?.charAt(0).toUpperCase() || 'U'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-sm text-gray-900 truncate">
-                        {annotator.name}
-                      </h3>
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <Star className={`w-3.5 h-3.5 ${annotator.avg_rating >= 4 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
-                        <span className="text-xs text-gray-600">
-                          {annotator.avg_rating > 0 ? `${annotator.avg_rating}/5` : 'No ratings'}
-                        </span>
+                        </p>
                       </div>
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Tasks:</span>
-                      <span className="font-medium text-gray-900">
-                        {annotator.completed_tasks}/{annotator.total_tasks}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Completion:</span>
-                      <span className="font-medium text-gray-900">
-                        {annotator.completion_rate}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
-                      <div
-                        className="bg-blue-500 h-1.5 rounded-full transition-all"
-                        style={{ width: `${annotator.completion_rate}%` }}
-                      />
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
-        </div>
-      </main>
 
-      <InterviewCreationModal
-        open={interviewModalOpen}
-        onClose={() => {
-          setInterviewModalOpen(false)
-          setSelectedCandidate(null)
-        }}
-        candidate={selectedCandidate}
-        onSuccess={handleInterviewCreated}
-      />
+                    <div className="flex items-center justify-between mb-4">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusClass(interview.status)}`}
+                      >
+                        {getStatusLabel(interview.status)}
+                      </span>
+                      <p className="text-xs text-neutral-500">
+                        {new Date(interview.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
 
-      {/* Delete Interview Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Interview</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete the interview for {interviewToDelete?.name || 'this candidate'}? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setInterviewToDelete(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDeleteInterview}
-              className="bg-red-500 hover:bg-red-600"
-            >
-              Delete Interview
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+                    {interview.status === 'completed' && (
+                      <>
+                        {interview.summary && (
+                          <div className="mt-2 p-3 bg-neutral-50 rounded-lg mb-3">
+                            <p className="text-xs text-neutral-700 line-clamp-3">
+                              {interview.summary}
+                            </p>
+                          </div>
+                        )}
+                        <Button
+                          onClick={() => navigate(`/admin/review/${interview.id}`)}
+                          variant="outline"
+                          className="w-full rounded-xl font-medium border-2 border-brand-600 text-brand-600 hover:bg-brand-50"
+                        >
+                          View Results
+                        </Button>
+                      </>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <InterviewCreationModal
+          open={interviewModalOpen}
+          onClose={() => {
+            setInterviewModalOpen(false)
+            setSelectedCandidate(null)
+          }}
+          candidate={selectedCandidate}
+          onSuccess={handleInterviewCreated}
+        />
+      </div>
     </div>
   )
 }

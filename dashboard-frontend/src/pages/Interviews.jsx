@@ -4,9 +4,9 @@ import axios from 'axios'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Briefcase, Trash2, X, Search } from 'lucide-react'
-import Sidebar from '@/components/Sidebar'
-import { cardStyles, containers, getStatusClass, getStatusLabel } from '@/lib/design-system'
+import { Briefcase, Trash2, ChevronRight, Users, BarChart, X, Search } from 'lucide-react'
+import PageHeader from '@/components/PageHeader'
+import { cardStyles, pageContainer, searchBar, getStatusClass, getStatusLabel } from '@/lib/design-system'
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
 const API = `${BACKEND_URL}/api`
@@ -76,18 +76,14 @@ const Interviews = () => {
     setSearchParams({})
   }
 
-  const filteredCandidate = candidateFilter ? getCandidate(candidateFilter) : null
-  const filteredJob = jobFilter ? getJob(jobFilter) : null
+  const filteredCandidate = candidateFilter && candidateFilter !== 'null' ? getCandidate(candidateFilter) : null
+  const filteredJob = jobFilter && jobFilter !== 'null' ? getJob(jobFilter) : null
 
   const getPageTitle = () => {
-    if (filteredCandidate) return `Interviews - ${filteredCandidate.name}`
-    if (filteredJob) return `Interviews - ${filteredJob.title}`
     return 'All Interviews'
   }
 
   const getPageDescription = () => {
-    if (filteredCandidate) return `Showing all interviews for ${filteredCandidate.name}`
-    if (filteredJob) return `Showing all interviews for ${filteredJob.title} position`
     return 'View and manage all candidate interviews'
   }
 
@@ -103,45 +99,78 @@ const Interviews = () => {
   })()
 
   return (
-    <div className="min-h-screen bg-white">
-      <Sidebar />
+    <div className="flex min-h-screen bg-neutral-50">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white border-r border-neutral-200 flex-shrink-0">
+        <div className="px-6 py-6 border-b border-neutral-100/60 shadow-sm">
+          <h2 className="text-xl font-display font-bold text-neutral-900 mb-1">Verita</h2>
+          <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">AI Interview Platform</p>
+        </div>
+
+        <nav className="p-4">
+          <a
+            href="/"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-neutral-700 hover:bg-neutral-100 transition-all duration-200 mb-2"
+          >
+            <BarChart className="w-4 h-4" />
+            <span>Dashboard</span>
+          </a>
+          <a
+            href="/candidates"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-neutral-700 hover:bg-neutral-100 transition-all duration-200"
+          >
+            <Users className="w-4 h-4" />
+            <span>Candidates</span>
+          </a>
+          <a
+            href="/interviews"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm bg-brand-600 text-white font-medium mb-2 shadow-sm transition-all duration-200"
+          >
+            <Briefcase className="w-4 h-4" />
+            <span>Interviews</span>
+            <ChevronRight className="w-4 h-4 ml-auto" />
+          </a>
+          <a
+            href="/jobs"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-neutral-700 hover:bg-neutral-100 transition-all duration-200"
+          >
+            <Briefcase className="w-4 h-4" />
+            <span>Jobs</span>
+          </a>
+        </nav>
+      </aside>
 
       {/* Main Content */}
-      <main className="ml-64 overflow-y-auto bg-white">
-        <div className={`${containers.lg} mx-auto px-8 py-12`}>
-          {/* Header */}
-          <div className="mb-12">
-            <div className="flex items-center justify-between mb-3">
-              <h1 className="text-5xl font-bold text-neutral-900 tracking-tight leading-tight">
-                {getPageTitle()}
-              </h1>
-              {(candidateFilter || jobFilter) && (
-                <Button
-                  onClick={clearFilter}
-                  variant="outline"
-                  className="h-11 rounded-lg"
-                >
-                  <X className="w-4 h-4 mr-2" />
-                  Clear Filter
-                </Button>
-              )}
-            </div>
-            <p className="text-lg text-neutral-600 font-light">
-              {getPageDescription()}
-            </p>
-          </div>
+      <div className={pageContainer.wrapper}>
+        {/* Header */}
+        <PageHeader
+          variant="boxed"
+          title={getPageTitle()}
+          subtitle={getPageDescription()}
+          action={(candidateFilter || jobFilter) && (
+            <Button
+              onClick={clearFilter}
+              variant="outline"
+              className="rounded-xl"
+            >
+              <X className="w-4 h-4 mr-1" />
+              Clear Filter
+            </Button>
+          )}
+        />
 
+        <div className={pageContainer.container}>
           {/* Search Bar */}
           {interviews.length > 0 && (
-            <div className="mb-8">
-              <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-5 h-5" />
+            <div className={searchBar.wrapper}>
+              <div className={searchBar.container}>
+                <Search className={searchBar.icon} />
                 <Input
                   type="text"
                   placeholder="Search by candidate, job title, or position..."
                   value={interviewSearch}
                   onChange={(e) => setInterviewSearch(e.target.value)}
-                  className="pl-10 h-11 rounded-lg border-neutral-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 text-base"
+                  className={searchBar.input}
                 />
               </div>
             </div>
@@ -149,14 +178,13 @@ const Interviews = () => {
 
           {/* Interviews Grid */}
           {loading ? (
-            <p className="text-sm text-neutral-600">Loading interviews...</p>
+            <div className="flex items-center justify-center py-12">
+              <div className="w-8 h-8 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin" />
+            </div>
           ) : interviews.length === 0 ? (
-            <Card className={`p-8 text-center ${cardStyles.default}`}>
-              <Briefcase className="w-12 h-12 mx-auto mb-3 text-neutral-300" />
-              <h3 className="text-lg font-display font-semibold mb-2 text-neutral-900">
-                No Interviews Yet
-              </h3>
-              <p className="text-sm text-neutral-600">
+            <Card className="p-12 text-center border-2">
+              <Briefcase className="w-12 h-12 mx-auto mb-4 text-neutral-300" />
+              <p className="text-base text-neutral-600">
                 {filteredCandidate
                   ? `No interviews have been conducted with ${filteredCandidate.name} yet.`
                   : filteredJob
@@ -165,8 +193,8 @@ const Interviews = () => {
               </p>
             </Card>
           ) : displayedInterviews.length === 0 ? (
-            <Card className={`p-8 text-center ${cardStyles.default}`}>
-              <Search className="w-12 h-12 mx-auto mb-3 text-neutral-300" />
+            <Card className="p-12 text-center border-2">
+              <Search className="w-12 h-12 mx-auto mb-4 text-neutral-300" />
               <h3 className="text-lg font-display font-semibold mb-2 text-neutral-900">
                 No Results Found
               </h3>
@@ -176,87 +204,66 @@ const Interviews = () => {
               <Button
                 onClick={() => setInterviewSearch('')}
                 variant="outline"
-                className="rounded-lg"
+                className="rounded-xl"
               >
                 Clear Search
               </Button>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {displayedInterviews.map((interview) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {displayedInterviews.map((interview, index) => (
                 <Card
                   key={interview.id}
-                  className="p-6 hover:shadow-lg transition-shadow relative group flex flex-col"
+                  className="p-6 relative group flex flex-col animate-fade-in-up"
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <button
                     onClick={() => handleDeleteInterview(interview.id)}
-                    className="absolute top-3 right-3 p-1.5 rounded-lg text-neutral-400 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                    className="absolute top-4 right-4 p-2 rounded-lg text-neutral-400 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10"
                     title="Delete interview"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
 
-                  <div className="flex items-start gap-3 mb-4 flex-1">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white bg-gradient-to-br from-brand-400 to-brand-600 flex-shrink-0">
+                  <div className="flex items-start gap-4 mb-4 flex-1">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-base font-bold text-white bg-gradient-to-br from-brand-500 to-brand-600 shadow-sm flex-shrink-0">
                       {interview.candidate_name?.charAt(0).toUpperCase() || 'U'}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-base text-neutral-900 truncate mb-1">
-                            {interview.candidate_name || 'Unknown'}
-                          </h3>
-                          <p className="text-sm text-neutral-600 truncate">
-                            {interview.job_title || interview.position || 'General Interview'}
-                          </p>
-                        </div>
-                      </div>
+                      <h3 className="font-semibold text-base text-neutral-900 truncate mb-1">
+                        {interview.candidate_name || 'Unknown'}
+                      </h3>
+                      <p className="text-sm text-neutral-600 truncate">
+                        {interview.job_title || interview.position || 'General Interview'}
+                      </p>
                     </div>
                   </div>
+
                   <div className="flex items-center justify-between mb-4">
-                    <div className="flex gap-2">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${getStatusClass(interview.status)}`}
-                      >
-                        {getStatusLabel(interview.status)}
-                      </span>
-                      {interview.acceptance_status && (
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                            interview.acceptance_status === 'accepted'
-                              ? 'bg-green-100 text-green-700 border border-green-300'
-                              : interview.acceptance_status === 'rejected'
-                              ? 'bg-red-100 text-red-700 border border-red-300'
-                              : 'bg-gray-100 text-gray-700 border border-gray-300'
-                          }`}
-                        >
-                          {interview.acceptance_status === 'accepted'
-                            ? 'Accepted'
-                            : interview.acceptance_status === 'rejected'
-                            ? 'Rejected'
-                            : 'Pending Review'}
-                        </span>
-                      )}
-                    </div>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusClass(interview.status)}`}
+                    >
+                      {getStatusLabel(interview.status)}
+                    </span>
                     <p className="text-xs text-neutral-500">
                       {new Date(interview.created_at).toLocaleDateString()}
                     </p>
                   </div>
+
                   {interview.status === 'completed' && (
                     <>
                       {interview.summary && (
-                        <div className="mt-2 p-2 bg-neutral-50 rounded-lg mb-2">
-                          <p className="text-[10px] text-neutral-700 line-clamp-3">
+                        <div className="mt-2 p-3 bg-neutral-50 rounded-lg mb-3">
+                          <p className="text-xs text-neutral-700 line-clamp-3">
                             {interview.summary}
                           </p>
                         </div>
                       )}
                       <Button
-                        onClick={() =>
-                          navigate(`/admin/review/${interview.id}`)
-                        }
+                        onClick={() => navigate(`/admin/review/${interview.id}`)}
                         data-testid={`view-results-${interview.id}`}
-                        className="w-full h-7 text-xs rounded-lg font-medium border-2 border-brand-500 text-brand-600 hover:bg-brand-50 bg-white"
+                        variant="outline"
+                        className="w-full rounded-xl font-medium border-2 border-brand-600 text-brand-600 hover:bg-brand-50"
                       >
                         View Results
                       </Button>
@@ -267,7 +274,7 @@ const Interviews = () => {
             </div>
           )}
         </div>
-      </main>
+      </div>
     </div>
   )
 }

@@ -4,10 +4,10 @@ import axios from 'axios'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Users, Search, Mail, Award, PlayCircle, Trash2 } from 'lucide-react'
+import { Users, Search, Mail, Award, PlayCircle, Trash2, ChevronRight, Briefcase, BarChart } from 'lucide-react'
 import InterviewCreationModal from '@/components/InterviewCreationModal'
-import Sidebar from '@/components/Sidebar'
-import { cardStyles, containers } from '@/lib/design-system'
+import PageHeader from '@/components/PageHeader'
+import { cardStyles, pageContainer, searchBar } from '@/lib/design-system'
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
 const API = `${BACKEND_URL}/api`
@@ -69,33 +69,68 @@ const Candidates = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <Sidebar />
+    <div className="flex min-h-screen bg-neutral-50">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white border-r border-neutral-200 flex-shrink-0">
+        <div className="px-6 py-6 border-b border-neutral-100/60 shadow-sm">
+          <h2 className="text-xl font-display font-bold text-neutral-900 mb-1">Verita</h2>
+          <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">AI Interview Platform</p>
+        </div>
+
+        <nav className="p-4">
+          <a
+            href="/"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-neutral-700 hover:bg-neutral-100 transition-all duration-200 mb-2"
+          >
+            <BarChart className="w-4 h-4" />
+            <span>Dashboard</span>
+          </a>
+          <a
+            href="/candidates"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm bg-brand-600 text-white font-medium mb-2 shadow-sm transition-all duration-200"
+          >
+            <Users className="w-4 h-4" />
+            <span>Candidates</span>
+            <ChevronRight className="w-4 h-4 ml-auto" />
+          </a>
+          <a
+            href="/interviews"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-neutral-700 hover:bg-neutral-100 transition-all duration-200 mb-2"
+          >
+            <Briefcase className="w-4 h-4" />
+            <span>Interviews</span>
+          </a>
+          <a
+            href="/jobs"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-neutral-700 hover:bg-neutral-100 transition-all duration-200"
+          >
+            <Briefcase className="w-4 h-4" />
+            <span>Jobs</span>
+          </a>
+        </nav>
+      </aside>
 
       {/* Main Content */}
-      <main className="ml-64 overflow-y-auto bg-white">
-        <div className={`${containers.lg} mx-auto px-8 py-12`}>
-          {/* Header */}
-          <div className="mb-12">
-            <h1 className="text-5xl font-bold text-neutral-900 mb-3 tracking-tight leading-tight">
-              Candidate Marketplace
-            </h1>
-            <p className="text-lg text-neutral-600 font-light">
-              Browse and manage your candidate pool
-            </p>
-          </div>
+      <div className={pageContainer.wrapper}>
+        {/* Header */}
+        <PageHeader
+          variant="boxed"
+          title="Candidate Marketplace"
+          subtitle="Browse and manage your candidate pool"
+        />
 
+        <div className={pageContainer.container}>
           {/* Search */}
           {candidates.length > 0 && (
-            <div className="mb-8">
-              <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-5 h-5" />
+            <div className={searchBar.wrapper}>
+              <div className={searchBar.container}>
+                <Search className={searchBar.icon} />
                 <Input
                   type="text"
                   placeholder="Search by name, position, or skills..."
                   value={candidateSearch}
                   onChange={(e) => setCandidateSearch(e.target.value)}
-                  className="pl-10 h-11 rounded-lg border-neutral-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 text-base"
+                  className={searchBar.input}
                 />
               </div>
             </div>
@@ -103,20 +138,19 @@ const Candidates = () => {
 
           {/* Candidates Grid */}
           {loading ? (
-            <p className="text-sm text-neutral-600">Loading candidates...</p>
+            <div className="flex items-center justify-center py-12">
+              <div className="w-8 h-8 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin" />
+            </div>
           ) : candidates.length === 0 ? (
-            <Card className={`p-8 text-center ${cardStyles.default}`}>
-              <Users className="w-12 h-12 mx-auto mb-3 text-neutral-300" />
-              <h3 className="text-lg font-display font-semibold mb-2 text-neutral-900">
-                No Candidates Yet
-              </h3>
-              <p className="text-sm text-neutral-600">
-                Candidates will appear here when they apply to your job postings.
+            <Card className="p-12 text-center border-2">
+              <Users className="w-12 h-12 mx-auto mb-4 text-neutral-300" />
+              <p className="text-base text-neutral-600">
+                No candidates yet. Candidates will appear here when they apply to your job postings.
               </p>
             </Card>
           ) : filteredCandidates.length === 0 ? (
-            <Card className={`p-8 text-center ${cardStyles.default}`}>
-              <Search className="w-12 h-12 mx-auto mb-3 text-neutral-300" />
+            <Card className="p-12 text-center border-2">
+              <Search className="w-12 h-12 mx-auto mb-4 text-neutral-300" />
               <h3 className="text-lg font-display font-semibold mb-2 text-neutral-900">
                 No Results Found
               </h3>
@@ -126,30 +160,34 @@ const Candidates = () => {
               <Button
                 onClick={() => setCandidateSearch('')}
                 variant="outline"
-                className="rounded-lg"
+                className="rounded-xl"
               >
                 Clear Search
               </Button>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredCandidates.map((candidate) => {
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredCandidates.map((candidate, index) => {
                 const interviewCount = getCandidateInterviewCount(candidate.id)
 
                 return (
-                  <Card key={candidate.id} className={`p-5 ${cardStyles.default} flex flex-col`}>
-                    <div className="flex items-start gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-full flex items-center justify-center text-base font-bold text-white bg-gradient-to-br from-brand-400 to-brand-600 flex-shrink-0">
+                  <Card 
+                    key={candidate.id} 
+                    className="p-6 relative group flex flex-col animate-fade-in-up"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <div className="flex items-start gap-4 mb-4 flex-1">
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center text-base font-bold text-white bg-gradient-to-br from-brand-500 to-brand-600 shadow-sm flex-shrink-0">
                         {candidate.name?.charAt(0).toUpperCase() || 'U'}
                       </div>
-                      <div className="flex-1 min-w-0 pr-6">
-                        <h3 className="font-display font-semibold text-base text-neutral-900 truncate">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-base text-neutral-900 truncate mb-1">
                           {candidate.name}
                         </h3>
-                        <p className="text-sm text-neutral-600 mb-1">
+                        <p className="text-sm text-neutral-600 truncate">
                           {candidate.position}
                         </p>
-                        <div className="flex items-center gap-2 text-xs text-neutral-500">
+                        <div className="flex items-center gap-2 text-xs text-neutral-500 mt-1">
                           <Mail className="w-3 h-3" />
                           <span className="truncate">{candidate.email}</span>
                         </div>
@@ -157,7 +195,7 @@ const Candidates = () => {
                     </div>
 
                     <div className="mb-4 flex-1">
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-3">
                         <Award className="w-4 h-4 text-neutral-500" />
                         <span className="text-xs font-medium text-neutral-700">
                           {candidate.experience_years} years experience
@@ -168,13 +206,13 @@ const Candidates = () => {
                           {candidate.skills.slice(0, 3).map((skill, idx) => (
                             <span
                               key={idx}
-                              className="px-2 py-1 bg-neutral-100 text-neutral-700 text-[10px] font-medium rounded-full"
+                              className="px-2 py-1 bg-neutral-100 text-neutral-700 text-xs font-medium rounded-full"
                             >
                               {skill}
                             </span>
                           ))}
                           {candidate.skills.length > 3 && (
-                            <span className="px-2 py-1 bg-neutral-100 text-neutral-600 text-[10px] font-medium rounded-full">
+                            <span className="px-2 py-1 bg-neutral-100 text-neutral-600 text-xs font-medium rounded-full">
                               +{candidate.skills.length - 3}
                             </span>
                           )}
@@ -183,32 +221,43 @@ const Candidates = () => {
                     </div>
 
                     {candidate.bio && (
-                      <p className="text-sm text-neutral-700 mb-4 line-clamp-2">
-                        {candidate.bio}
-                      </p>
-                    )}
-
-                    {interviewCount > 0 && (
-                      <div className="flex flex-col gap-2">
-                        <span className="text-xs text-neutral-600">
-                          {interviewCount} {interviewCount === 1 ? 'interview' : 'interviews'}
-                        </span>
-                        <Button
-                          onClick={() => handleViewInterviews(candidate.id)}
-                          variant="outline"
-                          className="w-full h-8 text-xs rounded-lg font-medium border border-brand-500 text-brand-600 hover:bg-brand-50"
-                        >
-                          View All
-                        </Button>
+                      <div className="mt-2 p-3 bg-neutral-50 rounded-lg mb-4">
+                        <p className="text-xs text-neutral-700 line-clamp-3">
+                          {candidate.bio}
+                        </p>
                       </div>
                     )}
+
+                    <div className="flex items-center justify-between mt-auto">
+                      <span className="text-xs text-neutral-600">
+                        {interviewCount} {interviewCount === 1 ? 'interview' : 'interviews'}
+                      </span>
+                      <div className="flex gap-2">
+                        {interviewCount > 0 && (
+                          <Button
+                            onClick={() => handleViewInterviews(candidate.id)}
+                            variant="outline"
+                            className="h-8 text-xs rounded-xl font-medium border border-brand-500 text-brand-600 hover:bg-brand-50"
+                          >
+                            View All
+                          </Button>
+                        )}
+                        <Button
+                          onClick={() => handleCreateInterview(candidate)}
+                          className="h-8 text-xs rounded-xl font-medium bg-brand-600 hover:bg-brand-700"
+                        >
+                          <PlayCircle className="w-3 h-3 mr-1" />
+                          Interview
+                        </Button>
+                      </div>
+                    </div>
                   </Card>
                 )
               })}
             </div>
           )}
         </div>
-      </main>
+      </div>
 
       <InterviewCreationModal
         open={interviewModalOpen}

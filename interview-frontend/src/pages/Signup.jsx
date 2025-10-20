@@ -29,7 +29,7 @@ const Signup = () => {
       if (isProfileComplete) {
         navigate('/')
       } else {
-        navigate('/onboarding')
+        navigate('/profile-setup')
       }
     }
   }, [isAuthenticated, isProfileComplete, authLoading, navigate])
@@ -41,8 +41,8 @@ const Signup = () => {
 
     try {
       await signup(formData.email, formData.password)
-      // After successful signup, redirect to onboarding
-      navigate('/onboarding')
+      // After successful signup, redirect to profile setup
+      navigate('/profile-setup')
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to create account')
     } finally {

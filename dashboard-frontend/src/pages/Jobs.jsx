@@ -1,22 +1,13 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
-import { Briefcase, Plus, Search, Trash2, FileText } from 'lucide-react'
+import { Briefcase, Plus, Search, Trash2, FileText, BarChart, Users, ChevronRight } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
-import Sidebar from '@/components/Sidebar'
 import JobForm from '@/components/JobForm'
+import PageHeader from '@/components/PageHeader'
+import { pageContainer, searchBar } from '@/lib/design-system'
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
 const API = `${BACKEND_URL}/api`
@@ -28,10 +19,6 @@ const Jobs = () => {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [showJobForm, setShowJobForm] = useState(false)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [jobToDelete, setJobToDelete] = useState(null)
-  const [showStatusDialog, setShowStatusDialog] = useState(false)
-  const [statusTransition, setStatusTransition] = useState(null)
 
   useEffect(() => {
     fetchJobs()
@@ -77,18 +64,17 @@ const Jobs = () => {
     }
   }
 
-  const handleDeleteJob = (jobId, jobTitle) => {
-    setJobToDelete({ id: jobId, title: jobTitle })
-    setShowDeleteDialog(true)
-  }
-
-  const confirmDeleteJob = async () => {
-    if (!jobToDelete) return
+  const handleDeleteJob = async (jobId, jobTitle) => {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete "${jobTitle}"? This will also delete all associated interviews.`
+      )
+    ) {
+      return
+    }
 
     try {
-      await axios.delete(`${API}/jobs/${jobToDelete.id}`)
-      setShowDeleteDialog(false)
-      setJobToDelete(null)
+      await axios.delete(`${API}/jobs/${jobId}`)
       fetchJobs()
     } catch (error) {
       console.error('Error deleting job:', error)
@@ -113,148 +99,127 @@ const Jobs = () => {
     return labels[type] || type
   }
 
-  const getStatusBadge = (status) => {
-    const badges = {
-      pending: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Pending' },
-      in_progress: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'In Progress' },
-      completed: { bg: 'bg-green-100', text: 'text-green-800', label: 'Completed' },
-      archived: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Archived' },
-    }
-    return badges[status] || badges.pending
-  }
-
-  const getNextStatus = (currentStatus) => {
-    const transitions = {
-      pending: 'in_progress',
-      in_progress: 'completed',
-      completed: 'archived',
-      archived: null,
-    }
-    return transitions[currentStatus]
-  }
-
-  const getNextStatusLabel = (currentStatus) => {
-    const labels = {
-      pending: 'Move to In Progress',
-      in_progress: 'Mark as Completed',
-      completed: 'Archive Job',
-      archived: null,
-    }
-    return labels[currentStatus]
-  }
-
-  const getStatusTransitionMessage = (currentStatus, nextStatus) => {
-    const messages = {
-      in_progress: {
-        title: 'Move Job to In Progress?',
-        message: '⚠️ You will no longer be able to add new annotation data. Annotators will be able to start working on assigned tasks. Are you sure?',
-      },
-      completed: {
-        title: 'Mark Job as Completed?',
-        message: 'All annotation work for this job will be marked as complete. Make sure all tasks are finished.',
-      },
-      archived: {
-        title: 'Archive This Job?',
-        message: 'This job will be moved to archived jobs. You can view it later in the archived section.',
-      },
-    }
-    return messages[nextStatus] || { title: 'Change Status?', message: 'Are you sure?' }
-  }
-
-  const handleStatusChange = async (job) => {
-    const nextStatus = getNextStatus(job.status)
-    if (!nextStatus) return
-
-    // If moving to completed, check if all tasks are done
-    if (nextStatus === 'completed') {
-      try {
-        const response = await axios.get(`${API}/jobs/${job.id}/can-complete`)
-        if (!response.data.can_complete) {
-          alert(`Cannot mark as completed: ${response.data.reason}`)
-          return
-        }
-      } catch (error) {
-        console.error('Error checking job completion:', error)
-        alert('Failed to check if job can be completed')
-        return
-      }
-    }
-
-    setStatusTransition({
-      job,
-      nextStatus,
-      ...getStatusTransitionMessage(job.status, nextStatus),
-    })
-    setShowStatusDialog(true)
-  }
-
-  const confirmStatusChange = async () => {
-    if (!statusTransition) return
-
-    try {
-      await axios.put(`${API}/jobs/${statusTransition.job.id}/status`, {
-        status: statusTransition.nextStatus,
-      })
-      setShowStatusDialog(false)
-      setStatusTransition(null)
-      fetchJobs()
-    } catch (error) {
-      console.error('Error updating job status:', error)
-      alert(error.response?.data?.detail || 'Failed to update job status')
-    }
-  }
+  const stats = [
+    {
+      icon: <Briefcase className="w-5 h-5" />,
+      label: 'Total Jobs',
+      value: jobs.length,
+      bgClass: 'bg-brand-100 text-brand-600',
+    },
+    {
+      icon: <FileText className="w-5 h-5" />,
+      label: 'Open Positions',
+      value: jobs.filter(job => job.status === 'open').length,
+      bgClass: 'bg-green-100 text-green-600',
+    },
+    {
+      icon: <Users className="w-5 h-5" />,
+      label: 'Active Interviews',
+      value: jobs.length, // You might want to add actual interview count logic here
+      bgClass: 'bg-blue-100 text-blue-600',
+    },
+  ]
 
   return (
-    <div className="min-h-screen bg-white">
-      <Sidebar />
+    <div className="flex min-h-screen bg-neutral-50">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white border-r border-neutral-200 flex-shrink-0">
+        <div className="px-6 py-6 border-b border-neutral-100/60 shadow-sm">
+          <h2 className="text-xl font-display font-bold text-neutral-900 mb-1">Verita</h2>
+          <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">AI Interview Platform</p>
+        </div>
+
+        <nav className="p-4">
+          <a
+            href="/"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-neutral-700 hover:bg-neutral-100 transition-all duration-200 mb-2"
+          >
+            <BarChart className="w-4 h-4" />
+            <span>Dashboard</span>
+          </a>
+          <a
+            href="/candidates"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-neutral-700 hover:bg-neutral-100 transition-all duration-200"
+          >
+            <Users className="w-4 h-4" />
+            <span>Candidates</span>
+          </a>
+          <a
+            href="/interviews"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-neutral-700 hover:bg-neutral-100 transition-all duration-200"
+          >
+            <Briefcase className="w-4 h-4" />
+            <span>Interviews</span>
+          </a>
+          <a
+            href="/jobs"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm bg-brand-600 text-white font-medium mb-2 shadow-sm transition-all duration-200"
+          >
+            <Briefcase className="w-4 h-4" />
+            <span>Jobs</span>
+            <ChevronRight className="w-4 h-4 ml-auto" />
+          </a>
+        </nav>
+      </aside>
 
       {/* Main Content */}
-      <main className="ml-64 overflow-y-auto bg-white">
-        <div className="max-w-7xl mx-auto px-8 py-12">
-          {/* Header */}
-          <div className="mb-12">
-            <h1 className="text-5xl font-bold text-neutral-900 mb-3 tracking-tight leading-tight">
-              Job Openings
-            </h1>
-            <p className="text-lg text-neutral-600 font-light">
-              Manage your open positions and interview configurations
-            </p>
-          </div>
+      <div className={pageContainer.wrapper}>
+        {/* Header */}
+        <PageHeader
+          variant="boxed"
+          title="Job Openings"
+          subtitle="Manage your open positions and interview configurations"
+        />
 
-          {/* Create Job Button */}
-          <div className="mb-8">
-            <Button
-              onClick={() => setShowJobForm(true)}
-              className="bg-brand-500 hover:bg-brand-600 text-white rounded-lg h-12 px-6"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Create Job
-            </Button>
+        <div className={pageContainer.container}>
+          {/* Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 animate-fade-in-up">
+            {stats.map((stat, index) => (
+              <Card 
+                key={index} 
+                className="p-6 cursor-pointer group"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`p-3 rounded-xl ${stat.bgClass} transition-transform duration-200 group-hover:scale-110`}>
+                    {stat.icon}
+                  </div>
+                  <div>
+                    <p className="text-sm text-neutral-600 font-medium mb-1">
+                      {stat.label}
+                    </p>
+                    <p className="text-3xl font-bold text-neutral-900">
+                      {stat.value}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
 
           {/* Search */}
-          <div className="mb-8">
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-5 h-5" />
+          <div className={searchBar.wrapper}>
+            <div className={searchBar.container}>
+              <Search className={searchBar.icon} />
               <Input
                 type="text"
                 placeholder="Search jobs by title, type, or description..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-11 rounded-lg border-neutral-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 text-base"
+                className={searchBar.input}
               />
             </div>
           </div>
 
           {/* Jobs Grid */}
           {loading ? (
-            <div className="text-center py-12">
-              <p className="text-neutral-600">Loading jobs...</p>
+            <div className="flex items-center justify-center py-12">
+              <div className="w-8 h-8 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin" />
             </div>
           ) : filteredJobs.length === 0 ? (
-            <div className="text-center py-12">
-              <Briefcase className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
-              <p className="text-neutral-600 mb-4">
+            <Card className="p-12 text-center border-2">
+              <Briefcase className="w-12 h-12 mx-auto mb-4 text-neutral-300" />
+              <p className="text-base text-neutral-600 mb-4">
                 {searchQuery
                   ? 'No jobs found matching your search'
                   : 'No jobs yet'}
@@ -263,53 +228,54 @@ const Jobs = () => {
                 <Button
                   onClick={() => setShowJobForm(true)}
                   variant="outline"
-                  className="rounded-lg"
+                  className="rounded-xl"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Create Your First Job
                 </Button>
               )}
-            </div>
+            </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredJobs.map((job) => (
+              {filteredJobs.map((job, index) => (
                 <Card
                   key={job.id}
-                  className="p-6 hover:shadow-lg transition-shadow relative group flex flex-col"
+                  className="p-6 relative group flex flex-col animate-fade-in-up"
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
                   {/* Delete Button */}
                   <button
                     onClick={() => handleDeleteJob(job.id, job.title)}
-                    className="absolute top-3 right-3 p-2 text-neutral-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg hover:bg-red-50"
+                    className="absolute top-4 right-4 p-2 rounded-lg text-neutral-400 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all duration-200 z-10"
                     title="Delete job"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
 
                   {/* Job Details */}
-                  <div className="mb-4 flex-1">
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="p-2 bg-brand-100 rounded-lg">
-                        <Briefcase className="w-5 h-5 text-brand-600" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg text-neutral-900 mb-1">
-                          {job.title}
-                        </h3>
-                        <p className="text-sm text-neutral-600">
-                          {job.position_type}
-                        </p>
-                      </div>
+                  <div className="flex items-start gap-4 mb-4 flex-1">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-base font-bold text-white bg-gradient-to-br from-brand-500 to-brand-600 shadow-sm flex-shrink-0">
+                      {job.title?.charAt(0).toUpperCase() || 'J'}
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-base text-neutral-900 truncate mb-1">
+                        {job.title}
+                      </h3>
+                      <p className="text-sm text-neutral-600 truncate">
+                        {job.position_type}
+                      </p>
+                    </div>
+                  </div>
 
-                    <p className="text-sm text-neutral-600 line-clamp-3 mb-4">
+                  <div className="mb-4 flex-1">
+                    <p className="text-sm text-neutral-700 line-clamp-3 mb-4">
                       {job.description}
                     </p>
 
                     {/* Interview Type Badge */}
                     <div className="flex items-center gap-2 mb-4">
-                      <FileText className="w-4 h-4 text-neutral-400" />
-                      <span className="text-xs text-neutral-600">
+                      <FileText className="w-4 h-4 text-neutral-500" />
+                      <span className="text-xs font-medium text-neutral-700">
                         {getInterviewTypeLabel(job.interview_type)}
                       </span>
                     </div>
@@ -324,13 +290,13 @@ const Jobs = () => {
                           {job.skills.slice(0, 3).map((skill, idx) => (
                             <span
                               key={idx}
-                              className="px-2 py-1 bg-neutral-100 text-neutral-700 rounded text-xs"
+                              className="px-2 py-1 bg-neutral-100 text-neutral-700 text-xs font-medium rounded-full"
                             >
                               {skill.name}
                             </span>
                           ))}
                           {job.skills.length > 3 && (
-                            <span className="px-2 py-1 bg-neutral-100 text-neutral-700 rounded text-xs">
+                            <span className="px-2 py-1 bg-neutral-100 text-neutral-600 text-xs font-medium rounded-full">
                               +{job.skills.length - 3} more
                             </span>
                           )}
@@ -339,46 +305,33 @@ const Jobs = () => {
                     )}
 
                     {/* Status Badge */}
-                    <div className="mb-4">
-                      {(() => {
-                        const badge = getStatusBadge(job.status)
-                        return (
-                          <span
-                            className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}
-                          >
-                            {badge.label}
-                          </span>
-                        )
-                      })()}
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          job.status === 'open'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-neutral-100 text-neutral-700'
+                        }`}
+                      >
+                        {job.status === 'open' ? 'Open' : 'Closed'}
+                      </span>
                     </div>
                   </div>
 
                   {/* Actions */}
-                  <div className="space-y-2">
-                    <Button
-                      onClick={() => handleViewInterviews(job.id)}
-                      variant="outline"
-                      size="sm"
-                      className="w-full rounded-lg"
-                    >
-                      View Interviews
-                    </Button>
-                    {getNextStatus(job.status) && (
-                      <Button
-                        onClick={() => handleStatusChange(job)}
-                        size="sm"
-                        className="w-full rounded-lg bg-brand-500 hover:bg-brand-600 text-white"
-                      >
-                        {getNextStatusLabel(job.status)}
-                      </Button>
-                    )}
-                  </div>
+                  <Button
+                    onClick={() => handleViewInterviews(job.id)}
+                    variant="outline"
+                    className="w-full rounded-xl font-medium border-2 border-brand-600 text-brand-600 hover:bg-brand-50"
+                  >
+                    View Interviews
+                  </Button>
                 </Card>
               ))}
             </div>
           )}
         </div>
-      </main>
+      </div>
 
       {/* Job Form Modal */}
       <JobForm
@@ -386,50 +339,6 @@ const Jobs = () => {
         onClose={() => setShowJobForm(false)}
         onSubmit={handleCreateJob}
       />
-
-      {/* Delete Job Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Job</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{jobToDelete?.title}"? This will also delete all associated interviews. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setJobToDelete(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDeleteJob}
-              className="bg-red-500 hover:bg-red-600"
-            >
-              Delete Job
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Status Transition Dialog */}
-      <AlertDialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{statusTransition?.title}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {statusTransition?.message}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setStatusTransition(null)}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmStatusChange}
-              className="bg-brand-500 hover:bg-brand-600"
-            >
-              Continue
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }
