@@ -10,6 +10,7 @@ from . import (
     profile,
     websocket,
     uploads,
+    admin,
 )
 
 __all__ = [
