@@ -40,6 +40,7 @@ const AdminInterviewReview = () => {
   const [showAcceptDialog, setShowAcceptDialog] = useState(false)
   const [showRejectDialog, setShowRejectDialog] = useState(false)
   const [videoSources, setVideoSources] = useState([])
+  const [transcriptUnavailable, setTranscriptUnavailable] = useState(false)
 
   useEffect(() => {
     fetchInterviewData()
@@ -47,19 +48,35 @@ const AdminInterviewReview = () => {
 
   const fetchInterviewData = async () => {
     try {
-      const [interviewRes, messagesRes, reviewRes] = await Promise.all([
-        axios.get(`${API}/interviews/${interviewId}`),
-        axios.get(`${API}/interviews/${interviewId}/messages`),
-        axios
-          .get(`${API}/admin/review/${interviewId}`)
-          .catch((error) => {
-            console.warn('Review endpoint unavailable:', error.message)
+      setTranscriptUnavailable(false)
+
+      const interviewPromise = axios.get(`${API}/interviews/${interviewId}`)
+      const messagesPromise = axios
+        .get(`${API}/interviews/${interviewId}/messages`)
+        .then((res) => res.data)
+        .catch((error) => {
+          if (error.response?.status === 404) {
+            console.warn('Transcript not yet available for interview:', interviewId)
+            setTranscriptUnavailable(true)
             return null
-          }),
+          }
+          throw error
+        })
+      const reviewPromise = axios
+        .get(`${API}/admin/review/${interviewId}`)
+        .catch((error) => {
+          console.warn('Review endpoint unavailable:', error.message)
+          return null
+        })
+
+      const [interviewRes, messagesData, reviewRes] = await Promise.all([
+        interviewPromise,
+        messagesPromise,
+        reviewPromise,
       ])
 
       setInterview(interviewRes.data)
-      setMessages(messagesRes.data)
+      setMessages(Array.isArray(messagesData) ? messagesData : [])
 
       // Try to fetch full candidate data, fall back to interview data if not available
       let candidateData
@@ -127,6 +144,9 @@ const AdminInterviewReview = () => {
         setVideoSources([])
       }
 
+      const transcriptHasEntries = Array.isArray(interviewRes.data?.transcript) && interviewRes.data.transcript.length > 0
+      const messagesHaveEntries = Array.isArray(messagesData) && messagesData.length > 0
+
       // Check if analysis already exists
       if (interviewRes.data.analysis_result && interviewRes.data.analysis_status === 'completed') {
         setAnalysis(interviewRes.data.analysis_result)
@@ -134,10 +154,12 @@ const AdminInterviewReview = () => {
         setAnalysis({ processing: true })
       } else if (interviewRes.data.analysis_status === 'failed') {
         setAnalysis({ failed: true })
-      } else {
+      } else if (transcriptHasEntries || messagesHaveEntries) {
         // No analysis exists - automatically generate it
         console.log('No analysis found, automatically generating...')
-        generateAnalysis(messagesRes.data, candidateData)
+        generateAnalysis(messagesData || [], candidateData)
+      } else {
+        setAnalysis(null)
       }
     } catch (error) {
       console.error('Error fetching interview data:', error)
@@ -676,7 +698,7 @@ const AdminInterviewReview = () => {
             </Card>
 
             {/* Interview Transcript */}
-            {interview.transcript && interview.transcript.length > 0 && (
+            {interview.transcript && interview.transcript.length > 0 ? (
               <Card className={`p-4 ${cardStyles.default}`}>
                 <h3 className="text-base font-bold mb-3 text-neutral-900">Interview Transcript</h3>
                 <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
@@ -695,7 +717,17 @@ const AdminInterviewReview = () => {
                   ))}
                 </div>
               </Card>
-            )}
+            ) : transcriptUnavailable ? (
+              <Card className={`p-4 ${cardStyles.default}`}>
+                <div className="flex flex-col items-center text-center py-10">
+                  <Clock className="w-10 h-10 text-brand-500 mb-4" />
+                  <h3 className="text-base font-bold text-neutral-900 mb-1">Transcript Not Ready Yet</h3>
+                  <p className="text-sm text-neutral-600 max-w-sm">
+                    We&apos;re still preparing the interview transcript. Try refreshing this page in a few moments to view the full conversation.
+                  </p>
+                </div>
+              </Card>
+            ) : null}
             </>
             )}
           </div>
