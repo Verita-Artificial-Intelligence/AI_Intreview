@@ -69,11 +69,11 @@ const Candidates = () => {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-100">
       <Sidebar />
 
       {/* Main Content */}
-      <main className="ml-64 overflow-y-auto bg-neutral-50">
+      <main className="ml-64 overflow-y-auto bg-neutral-100">
         <div className={`${containers.lg} mx-auto px-8 py-12`}>
           {/* Header */}
           <div className="mb-12">
@@ -105,7 +105,7 @@ const Candidates = () => {
           {loading ? (
             <p className="text-sm text-neutral-600">Loading candidates...</p>
           ) : candidates.length === 0 ? (
-            <Card className={`p-8 text-center ${cardStyles.default} bg-white border border-neutral-200 shadow-lg`}>
+            <Card className={`p-8 text-center ${cardStyles.default} bg-white/95 border border-neutral-300 shadow-xl shadow-blue-100`}>
               <Users className="w-12 h-12 mx-auto mb-3 text-neutral-300" />
               <h3 className="text-lg font-display font-semibold mb-2 text-neutral-900">
                 No Candidates Yet
@@ -115,7 +115,7 @@ const Candidates = () => {
               </p>
             </Card>
           ) : filteredCandidates.length === 0 ? (
-            <Card className={`p-8 text-center ${cardStyles.default} bg-white border border-neutral-200 shadow-lg`}>
+            <Card className={`p-8 text-center ${cardStyles.default} bg-white/95 border border-neutral-300 shadow-xl shadow-blue-100`}>
               <Search className="w-12 h-12 mx-auto mb-3 text-neutral-300" />
               <h3 className="text-lg font-display font-semibold mb-2 text-neutral-900">
                 No Results Found
@@ -139,7 +139,7 @@ const Candidates = () => {
                 return (
                   <Card
                     key={candidate.id}
-                    className={`group relative overflow-hidden p-6 ${cardStyles.default} flex flex-col bg-white border border-neutral-200/80 shadow-lg hover:shadow-xl hover:border-brand-200 transition-all`}
+                    className={`group relative overflow-hidden p-6 ${cardStyles.default} flex flex-col bg-white shadow-xl shadow-blue-100/80 border border-neutral-300 hover:border-brand-300 hover:shadow-2xl hover:shadow-blue-200 transition-all`}
                   >
                     <div className="flex items-start gap-3 mb-4">
                       <div className="w-12 h-12 rounded-full flex items-center justify-center text-base font-bold text-white bg-gradient-to-br from-brand-400 to-brand-600 flex-shrink-0">
