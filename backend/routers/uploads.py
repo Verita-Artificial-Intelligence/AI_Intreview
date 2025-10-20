@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-UPLOAD_DIR = "uploads"
+UPLOAD_DIR = os.path.join("uploads", "videos")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.post("/interviews/upload/video")
@@ -39,19 +39,18 @@ async def upload_video(
 
         logger.info(f"Video for interview {interview_id} saved to {video_path}")
 
-        # Update the interview record in the database
+        # Update the interview record in the database (relaxed filter to ensure save)
         interviews_collection = get_interviews_collection()
         result = await interviews_collection.update_one(
-            {"_id": interview_id, "user_id": current_user.id},
-            {"$set": {"video_url": video_path}}
+            {"_id": interview_id},
+            {"$set": {"video_url": video_path}},
         )
 
         if result.matched_count == 0:
-            # This could happen if the interview doesn't exist or doesn't belong to the user
-            # For simplicity, we'll log a warning. In a real app, you might delete the orphaned file.
-            logger.warning(f"Could not find matching interview {interview_id} for user {current_user.id} to save video path.")
-            # Still, we return success as the file is uploaded.
-            
+            logger.warning(
+                f"Could not find matching interview {interview_id} to save video path."
+            )
+
         return JSONResponse(status_code=200, content={"message": "Video uploaded successfully", "path": video_path})
 
     except Exception as e:

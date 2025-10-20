@@ -53,8 +53,9 @@ class RealtimeService:
             self.ws = await websockets.connect(
                 url,
                 additional_headers=headers,
-                ping_interval=20,
-                ping_timeout=10,
+                ping_interval=10,
+                ping_timeout=30,
+                close_timeout=5,
             )
 
             self.connected = True
@@ -88,6 +89,20 @@ class RealtimeService:
                         }
                     }
                 },
+                "tools": [
+                    {
+                        "type": "function",
+                        "name": "end_conversation",
+                        "description": "End the interview when appropriate and wrap up politely.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "reason": {"type": "string", "description": "Why the conversation is ending."}
+                            },
+                            "required": []
+                        }
+                    }
+                ],
             },
         }
         await self.send_event(config)
