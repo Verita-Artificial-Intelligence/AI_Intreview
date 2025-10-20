@@ -1,8 +1,8 @@
-from fastapi import APIRouter, File, UploadFile, Form, Query, Body
+from fastapi import APIRouter, File, UploadFile, Form, Query, Body, HTTPException
 from typing import List, Optional
 from models import Interview, InterviewCreate
 from models.annotation import AnnotationTask
-from services import InterviewService, AnalysisService
+from services import InterviewService
 from services.resume_service import ResumeService
 from services.annotation_service import AnnotationService
 import logging
@@ -10,7 +10,7 @@ import aiofiles
 from pathlib import Path
 import os
 from database import get_interviews_collection, get_candidates_collection, db
-from datetime import datetime
+from datetime import datetime, timedelta
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -164,17 +164,27 @@ async def complete_interview(interview_id: str):
 async def get_interview_messages(interview_id: str):
     """Get interview transcript as messages"""
     interview = await InterviewService.get_interview(interview_id)
-    if not interview or not interview.transcript:
-        return []
+    if not interview:
+        raise HTTPException(status_code=404, detail="Interview not found")
 
-    # Convert transcript format: {speaker: "user"/"assistant", text: "..."}
+    if not interview.transcript:
+        raise HTTPException(status_code=404, detail="Interview has no transcript data")
+
+    # Convert transcript format: {speaker: "user"/"assistant", text: "...", timestamp: ...}
     # to message format: {role: "user"/"assistant", content: "...", timestamp: ...}
     messages = []
     for i, entry in enumerate(interview.transcript):
+        # Use entry timestamp if available, otherwise increment from created_at
+        if "timestamp" in entry and entry["timestamp"]:
+            timestamp = entry["timestamp"]
+        else:
+            # Increment by 1 second for each message
+            timestamp = (interview.created_at + timedelta(seconds=i)).isoformat()
+
         messages.append({
             "role": entry.get("speaker", "user"),
             "content": entry.get("text", ""),
-            "timestamp": interview.created_at.isoformat() if i == 0 else interview.created_at.isoformat()
+            "timestamp": timestamp
         })
 
     return messages
@@ -186,9 +196,12 @@ async def analyze_interview(interview_id: str, framework: str = Query("behaviora
     try:
         analysis = await InterviewService.analyze_interview(interview_id, framework)
         return analysis
+    except HTTPException:
+        # Re-raise HTTPExceptions (404, 500, etc.) as-is
+        raise
     except Exception as e:
         logger.error(f"Error analyzing interview: {e}")
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
 
 @router.post("/upload/resume")

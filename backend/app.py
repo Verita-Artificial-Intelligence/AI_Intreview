@@ -10,9 +10,7 @@ from routers import (
     profile,
     interviews,
     candidates,
-    analysis,
     audio,
-    chat,
     websocket,
     uploads,
     jobs,
@@ -52,9 +50,7 @@ app.include_router(jobs.router, prefix="/api/jobs", tags=["Jobs"])
 app.include_router(annotations.router, prefix="/api/annotations", tags=["Annotations"])
 app.include_router(annotation_data.router, prefix="/api/annotation-data", tags=["Annotation Data"])
 app.include_router(earnings.router, prefix="/api/earnings", tags=["Earnings"])
-app.include_router(analysis.router, prefix="/api/analysis", tags=["Analysis"])
 app.include_router(audio.router, prefix="/api/audio", tags=["Audio"])
-app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
 app.include_router(uploads.router, prefix="/api", tags=["Uploads"])
 
 # Include WebSocket router (not under /api prefix)

@@ -10,7 +10,6 @@ from utils import prepare_for_mongo, parse_from_mongo
 from database import db, get_jobs_collection, get_candidates_collection
 from config import OPENAI_API_KEY
 from prompts.chat import get_initial_greeting
-from prompts.interview_summary import get_summary_prompt, SUMMARY_SYSTEM_PROMPT
 from prompts.interview_analysis import get_analysis_prompt, SYSTEM_PROMPT
 from prompts.interview_types import get_interview_type_config
 
@@ -135,91 +134,25 @@ class InterviewService:
 
     @staticmethod
     async def complete_interview(interview_id: str):
-        """Mark interview as completed and optionally generate summary"""
+        """Mark interview as completed and set analysis status to pending"""
         interview = await db.interviews.find_one({"id": interview_id})
         if not interview:
             raise HTTPException(status_code=404, detail="Interview not found")
 
-        # Check if interview has a transcript (new realtime system)
-        has_transcript = "transcript" in interview and interview["transcript"]
+        # Mark as completed and set analysis status to pending
+        # Analysis will be generated on-demand when viewing results
+        await db.interviews.update_one(
+            {"id": interview_id},
+            {
+                "$set": {
+                    "status": "completed",
+                    "completed_at": datetime.now(timezone.utc).isoformat(),
+                    "analysis_status": "pending",
+                }
+            },
+        )
 
-        # For realtime interviews with transcript, mark as completed and set analysis to pending
-        if has_transcript:
-            await db.interviews.update_one(
-                {"id": interview_id},
-                {
-                    "$set": {
-                        "status": "completed",
-                        "completed_at": datetime.now(timezone.utc).isoformat(),
-                        "analysis_status": "pending",
-                    }
-                },
-            )
-            return {"message": "Interview completed", "status": "completed"}
-
-        # For old chat-based system, generate summary from messages
-        messages = await db.messages.find(
-            {"interview_id": interview_id}, {"_id": 0}
-        ).to_list(1000)
-
-        if not messages:
-            # No messages or transcript - just mark as completed without analysis
-            await db.interviews.update_one(
-                {"id": interview_id},
-                {
-                    "$set": {
-                        "status": "completed",
-                        "completed_at": datetime.now(timezone.utc).isoformat(),
-                        "analysis_status": None,
-                    }
-                },
-            )
-            return {"message": "Interview completed", "status": "completed"}
-
-        # Generate summary using AI for chat-based interviews
-        try:
-            conversation = "\n".join([f"{m['role']}: {m['content']}" for m in messages])
-            summary_prompt = get_summary_prompt(conversation)
-
-            completion = await openai_client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": SUMMARY_SYSTEM_PROMPT},
-                    {"role": "user", "content": summary_prompt},
-                ],
-            )
-
-            summary = completion.choices[0].message.content
-
-            # Update interview
-            await db.interviews.update_one(
-                {"id": interview_id},
-                {
-                    "$set": {
-                        "status": "completed",
-                        "completed_at": datetime.now(timezone.utc).isoformat(),
-                        "summary": summary,
-                        "analysis_status": "pending",
-                    }
-                },
-            )
-
-            return {"message": "Interview completed", "summary": summary, "status": "completed"}
-
-        except Exception as e:
-            logging.error(f"Summary generation error: {str(e)}")
-            # Complete without summary if AI fails
-            await db.interviews.update_one(
-                {"id": interview_id},
-                {
-                    "$set": {
-                        "status": "completed",
-                        "completed_at": datetime.now(timezone.utc).isoformat(),
-                        "analysis_status": "pending",
-                    }
-                },
-            )
-            return {"message": "Interview completed", "status": "completed"}
+        return {"message": "Interview completed", "status": "completed"}
 
     @staticmethod
     async def analyze_interview(interview_id: str, framework: str = "behavioral") -> Dict[str, Any]:

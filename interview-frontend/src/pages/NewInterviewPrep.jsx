@@ -84,8 +84,9 @@ const NewInterviewPrep = () => {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop())
     }
-    // Generate interview ID and navigate to realtime interview page
-    const interviewId = user?.interview_id || uuidv4()
+    // Always generate a NEW interview ID for each job application
+    // This ensures each job has its own separate interview record
+    const interviewId = uuidv4()
     // Pass jobId as query parameter if available
     const url = jobId
       ? `/realtime-interview/${interviewId}?jobId=${jobId}`

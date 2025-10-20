@@ -35,6 +35,8 @@ const AdminInterviewReview = () => {
   const [messages, setMessages] = useState([])
   const [analysis, setAnalysis] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [analysisError, setAnalysisError] = useState(null)
   const [showAcceptDialog, setShowAcceptDialog] = useState(false)
   const [showRejectDialog, setShowRejectDialog] = useState(false)
 
@@ -94,14 +96,20 @@ const AdminInterviewReview = () => {
   }
 
   const generateAnalysis = async (msgs, cand) => {
+    setAnalyzing(true)
+    setAnalysisError(null)
     try {
       const response = await axios.post(
         `${API}/interviews/${interviewId}/analyze?framework=behavioral`
       )
       setAnalysis(response.data)
+      setAnalysisError(null)
     } catch (error) {
       console.error('Error generating analysis:', error)
+      setAnalysisError(error.response?.data?.detail || error.message || 'Failed to generate analysis')
       setAnalysis(null)
+    } finally {
+      setAnalyzing(false)
     }
   }
 
@@ -134,7 +142,7 @@ const AdminInterviewReview = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500 mx-auto mb-3"></div>
-          <p className="text-sm text-neutral-600">Analyzing interview...</p>
+          <p className="text-sm text-neutral-600">Loading interview...</p>
         </div>
       </div>
     )
@@ -148,8 +156,8 @@ const AdminInterviewReview = () => {
     )
   }
 
-  // Show processing state
-  if (analysis?.processing) {
+  // Show analyzing state while generating analysis
+  if (analyzing || analysis?.processing) {
     return (
       <div className="min-h-screen bg-background">
         <div className={pageHeader.wrapper}>
@@ -168,21 +176,18 @@ const AdminInterviewReview = () => {
         <div className="flex items-center justify-center py-20">
           <div className="text-center max-w-md">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500 mx-auto mb-4"></div>
-            <h2 className="text-xl font-bold mb-2 text-neutral-900">Analysis in Progress</h2>
+            <h2 className="text-xl font-bold mb-2 text-neutral-900">Analyzing Interview</h2>
             <p className="text-neutral-600">
-              Our AI is analyzing the interview responses. This usually takes a few minutes. Please check back soon.
+              Our AI is analyzing the interview responses. This usually takes 10-30 seconds...
             </p>
-            <Button onClick={() => window.location.reload()} variant="outline" className="mt-6">
-              Refresh Page
-            </Button>
           </div>
         </div>
       </div>
     )
   }
 
-  // Show failed state
-  if (analysis?.failed) {
+  // Show error state
+  if (analysisError || analysis?.failed) {
     return (
       <div className="min-h-screen bg-background">
         <div className={pageHeader.wrapper}>
@@ -201,11 +206,48 @@ const AdminInterviewReview = () => {
         <div className="flex items-center justify-center py-20">
           <div className="text-center max-w-md">
             <h2 className="text-xl font-bold mb-2 text-neutral-900">Analysis Failed</h2>
-            <p className="text-neutral-600 mb-6">
-              We encountered an error while analyzing this interview. Please try again or contact support.
+            <p className="text-neutral-600 mb-2">
+              We encountered an error while analyzing this interview.
             </p>
+            {analysisError && (
+              <p className="text-xs text-red-600 mb-4 font-mono bg-red-50 p-2 rounded">
+                {analysisError}
+              </p>
+            )}
             <Button onClick={() => generateAnalysis(messages, candidate)} variant="outline">
               Retry Analysis
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // If no analysis data yet, show empty state
+  if (!analysis) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className={pageHeader.wrapper}>
+          <div className={`${containers.lg} ${pageHeader.container}`}>
+            <Button
+              onClick={() => navigate('/')}
+              variant="outline"
+              size="sm"
+              className="rounded-lg"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </div>
+        </div>
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center max-w-md">
+            <h2 className="text-xl font-bold mb-2 text-neutral-900">No Analysis Available</h2>
+            <p className="text-neutral-600 mb-6">
+              This interview hasn't been analyzed yet. Generate an analysis to view results.
+            </p>
+            <Button onClick={() => generateAnalysis(messages, candidate)} className="bg-brand-500 hover:bg-brand-600">
+              Generate Analysis
             </Button>
           </div>
         </div>
