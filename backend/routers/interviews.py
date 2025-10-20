@@ -179,7 +179,7 @@ async def combine_video_and_audio(video_path: Path, audio_path: Path, output_pat
         True if successful, False otherwise
     """
     try:
-        from moviepy.editor import VideoFileClip, AudioFileClip
+        from moviepy import VideoFileClip, AudioFileClip
         import asyncio
 
         # MoviePy is synchronous, run in thread pool to avoid blocking
