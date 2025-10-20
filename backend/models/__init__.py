@@ -3,6 +3,7 @@ from .candidate import Candidate, CandidateCreate
 from .interview import Interview, InterviewCreate
 from .chat import ChatMessage, ChatRequest
 from .audio import TTSRequest, TTSResponse, STTResponse
+from .job import Job, JobCreate, JobStatusUpdate
 from .websocket import (
     StartSessionMessage,
     MicChunkMessage,
@@ -33,6 +34,9 @@ __all__ = [
     "TTSRequest",
     "TTSResponse",
     "STTResponse",
+    "Job",
+    "JobCreate",
+    "JobStatusUpdate",
     "StartSessionMessage",
     "MicChunkMessage",
     "UserTurnEndMessage",

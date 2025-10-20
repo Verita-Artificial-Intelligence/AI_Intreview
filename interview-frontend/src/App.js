@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import ProfileSetup from './pages/ProfileSetup'
+import Marketplace from './pages/Marketplace'
 import NewInterviewPrep from './pages/NewInterviewPrep'
 import Interview from './pages/Interview'
 import RealtimeInterview from './pages/RealtimeInterview'
@@ -17,7 +18,7 @@ function App() {
         <AuthProvider>
           <Routes>
             {/* Public routes */}
-            <Route path="/" element={<Signup />} />
+            <Route path="/signup" element={<Signup />} />
             <Route path="/login" element={<Login />} />
 
             {/* Protected routes - require authentication */}
@@ -31,6 +32,15 @@ function App() {
             />
 
             {/* Protected routes - require authentication and profile completion */}
+            {/* Marketplace is the home page */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute requireProfile={true}>
+                  <Marketplace />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/interview-prep"
               element={

@@ -5,6 +5,7 @@ from .chat_service import ChatService
 from .audio_service import AudioService
 from .analysis_service import AnalysisService
 from .profile_service import ProfileService
+from .job_service import JobService
 
 __all__ = [
     "AuthService",
@@ -14,4 +15,5 @@ __all__ = [
     "AudioService",
     "AnalysisService",
     "ProfileService",
+    "JobService",
 ]

@@ -27,7 +27,7 @@ const Signup = () => {
     // Only redirect if authenticated AND auth state is fully loaded
     if (isAuthenticated && !authLoading) {
       if (isProfileComplete) {
-        navigate('/interview-prep')
+        navigate('/')
       } else {
         navigate('/profile-setup')
       }
@@ -58,7 +58,7 @@ const Signup = () => {
             Create Your Account
           </h1>
           <p className="text-sm text-neutral-600">
-            Join Verita to start your AI interview
+            Discover creative opportunities and showcase your work
           </p>
         </div>
 

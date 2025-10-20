@@ -16,6 +16,16 @@ def get_interviews_collection():
     return db["interviews"]
 
 
+def get_jobs_collection():
+    """Get jobs collection"""
+    return db["jobs"]
+
+
+def get_candidates_collection():
+    """Get candidates collection"""
+    return db["candidates"]
+
+
 async def shutdown_db_client():
     """Close MongoDB connection on application shutdown"""
     client.close()
