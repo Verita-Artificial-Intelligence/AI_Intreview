@@ -111,7 +111,7 @@ export const StatusIndicator: React.FC = () => {
     if (status === 'speaking' || isAIPlaying) {
       return {
         label: 'Speaking',
-        color: 'bg-orange-500',
+        color: 'bg-pink-500',
         pulse: true,
       };
     }

@@ -80,6 +80,20 @@ export class AudioPlayer {
       // Create source node
       const source = this.audioContext.createBufferSource();
       source.buffer = audioBuffer;
+
+      // Check AudioContext state
+      if (this.audioContext.state === 'suspended') {
+        console.warn('AudioContext suspended, resuming...');
+        await this.audioContext.resume();
+      }
+
+      console.log('Playing AI audio chunk:', {
+        duration: audioBuffer.duration,
+        contextState: this.audioContext.state,
+        nextStartTime: this.nextStartTime,
+      });
+
+      // Connect to speakers only (audio mixing now handled server-side)
       source.connect(this.audioContext.destination);
 
       // Schedule playback
@@ -225,4 +239,5 @@ export class AudioPlayer {
   getAudioContextTime(): number {
     return this.audioContext?.currentTime || 0;
   }
+
 }

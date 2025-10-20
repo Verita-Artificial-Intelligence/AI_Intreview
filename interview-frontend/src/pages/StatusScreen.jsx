@@ -1,29 +1,88 @@
 import { useState, useEffect } from 'react'
-import { CheckCircle, Clock, XCircle, Loader2 } from 'lucide-react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { CheckCircle, Clock, XCircle, Loader2, ArrowLeft, Briefcase } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import axios from 'axios'
+import { cardStyles } from '@/lib/design-system'
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
+const API = `${BACKEND_URL}/api`
 
 const StatusScreen = () => {
-  const { fetchInterviewStatus, user } = useAuth()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const selectedInterviewId = searchParams.get('interviewId')
+  const { fetchInterviewStatus, user, token } = useAuth()
   const [status, setStatus] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [interviews, setInterviews] = useState([])
+  const [selectedInterview, setSelectedInterview] = useState(null)
 
   // Extract first name from full name
   const firstName = user?.name?.split(' ')[0] || ''
 
   useEffect(() => {
-    const loadStatus = async () => {
+    loadData()
+  }, [])
+
+  useEffect(() => {
+    // If there's a selected interview ID, show that one
+    if (selectedInterviewId && interviews.length > 0) {
+      const interview = interviews.find(i => i.id === selectedInterviewId)
+      if (interview) {
+        setSelectedInterview(interview)
+        setStatus(interview.status)
+      }
+    }
+  }, [selectedInterviewId, interviews])
+
+  const loadData = async () => {
+    try {
+      // Fetch user's interviews
+      const response = await axios.get(`${API}/interviews`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const userInterviews = response.data.filter(
+        (interview) => interview.candidate_id === user?.id
+      )
+      setInterviews(userInterviews)
+
+      // If no specific interview selected, use the most recent
+      if (!selectedInterviewId && userInterviews.length > 0) {
+        const mostRecent = userInterviews[0]
+        setSelectedInterview(mostRecent)
+        setStatus(mostRecent.status)
+      } else if (selectedInterviewId) {
+        const interview = userInterviews.find(i => i.id === selectedInterviewId)
+        if (interview) {
+          setSelectedInterview(interview)
+          setStatus(interview.status)
+        }
+      } else {
+        // Fallback to old method if no interviews
+        const statusData = await fetchInterviewStatus()
+        setStatus(statusData?.status)
+      }
+    } catch (error) {
+      console.error('Error loading data:', error)
+      // Fallback to old method
       try {
         const statusData = await fetchInterviewStatus()
         setStatus(statusData?.status)
-      } catch (error) {
-        console.error('Error loading status:', error)
-      } finally {
-        setLoading(false)
+      } catch (err) {
+        console.error('Error loading status:', err)
       }
+    } finally {
+      setLoading(false)
     }
+  }
 
-    loadStatus()
-  }, [])
+  const handleSelectInterview = (interview) => {
+    navigate(`/status?interviewId=${interview.id}`)
+  }
 
   const getStatusConfig = () => {
     switch (status) {
@@ -111,6 +170,16 @@ const StatusScreen = () => {
       {/* Header */}
       <div className="bg-white border-b border-neutral-200">
         <div className="max-w-2xl mx-auto px-6 py-5">
+          <div className="mb-4">
+            <Button
+              onClick={() => navigate('/')}
+              variant="ghost"
+              className="rounded-lg text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100 -ml-2"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Opportunities
+            </Button>
+          </div>
           <div className="flex items-start gap-3">
             <div
               className={`flex-shrink-0 w-11 h-11 ${config.iconBg} flex items-center justify-center border-2 ${config.accentColor}`}
@@ -124,6 +193,11 @@ const StatusScreen = () => {
                   : config.title}
               </h1>
               <p className="text-base text-neutral-600">{config.subtitle}</p>
+              {selectedInterview?.job_title && (
+                <p className="text-sm text-neutral-500 mt-1">
+                  Position: {selectedInterview.job_title}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -192,6 +266,67 @@ const StatusScreen = () => {
               Check your email for detailed information about the next phase of
               the hiring process.
             </p>
+          </div>
+        )}
+
+        {/* My Applications */}
+        {interviews.length > 0 && (
+          <div className="mt-8 pt-6 border-t border-neutral-200">
+            <h2 className="text-base font-display font-bold mb-3 text-neutral-900">
+              My Applications
+            </h2>
+            <div className="space-y-3">
+              {interviews.map((interview) => (
+                <Card
+                  key={interview.id}
+                  onClick={() => handleSelectInterview(interview)}
+                  className={`p-4 cursor-pointer transition-all hover:shadow-md ${
+                    selectedInterview?.id === interview.id
+                      ? 'border-2 border-brand-500 bg-brand-50/30'
+                      : cardStyles.default
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-brand-50 text-brand-500">
+                      <Briefcase className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <h3 className="font-semibold text-sm text-neutral-900 truncate">
+                          {interview.job_title || interview.position || 'General Interview'}
+                        </h3>
+                        <Badge
+                          className={`text-[10px] ${
+                            interview.status === 'completed' || interview.status === 'under_review'
+                              ? 'bg-brand-50 text-brand-600 border-brand-200'
+                              : interview.status === 'approved'
+                              ? 'bg-green-50 text-green-600 border-green-200'
+                              : interview.status === 'rejected'
+                              ? 'bg-red-50 text-red-600 border-red-200'
+                              : 'bg-neutral-100 text-neutral-600 border-neutral-200'
+                          }`}
+                        >
+                          {interview.status === 'in_progress'
+                            ? 'In Progress'
+                            : interview.status === 'completed'
+                            ? 'Under Review'
+                            : interview.status === 'under_review'
+                            ? 'Under Review'
+                            : interview.status === 'approved'
+                            ? 'Approved'
+                            : interview.status === 'rejected'
+                            ? 'Not Selected'
+                            : 'Pending'}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-neutral-500">
+                        Interviewed {new Date(interview.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
 

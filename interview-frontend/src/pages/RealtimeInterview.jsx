@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { AvatarCanvas } from '../components/avatar/AvatarCanvas.tsx';
 import { InterviewControls } from '../components/interview/InterviewControls.tsx';
@@ -21,6 +21,8 @@ const WS_URL = BACKEND_URL.replace('http', 'ws');
 export default function RealtimeInterview() {
   const navigate = useNavigate();
   const { interviewId } = useParams();
+  const [searchParams] = useSearchParams();
+  const jobId = searchParams.get('jobId');
   const { token } = useAuth();
 
   // Store
@@ -40,6 +42,7 @@ export default function RealtimeInterview() {
   const wsClientRef = useRef(null);
   const audioCaptureRef = useRef(null);
   const audioPlayerRef = useRef(null);
+  const videoRecorderRef = useRef(null);
 
   // State
   const [isInitialized, setIsInitialized] = useState(false);
@@ -133,11 +136,16 @@ export default function RealtimeInterview() {
       await wsClient.connect();
 
       // Send start message
-      wsClient.send({
+      const startMessage = {
         event: 'start',
         session_id: sessionId,
         interview_id: interviewId,
-      });
+      };
+      // Include job_id if available
+      if (jobId) {
+        startMessage.job_id = jobId;
+      }
+      wsClient.send(startMessage);
 
       console.log('Interview started:', sessionId);
     } catch (error) {
@@ -274,6 +282,11 @@ export default function RealtimeInterview() {
     mutedRef.current = nextMuted;
     setIsMuted(nextMuted);
     setMicActive(!nextMuted);
+
+    // If muting, explicitly end the user's turn to avoid VAD stalls
+    if (nextMuted && wsClientRef.current && wsClientRef.current.isConnected()) {
+      wsClientRef.current.send({ event: 'user_turn_end' });
+    }
   };
 
   /**
@@ -307,11 +320,24 @@ export default function RealtimeInterview() {
    * End interview session.
    */
   const handleEndInterview = async () => {
+    console.log('Ending interview...');
+
+    // First, set status to ended to trigger recording stop
+    setStatus('ended');
+
+    // Send end message to server
     if (wsClientRef.current && wsClientRef.current.isConnected()) {
       wsClientRef.current.send({
         event: 'end',
         reason: 'user_ended',
       });
+    }
+
+    // Wait for recording to stop and upload
+    if (videoRecorderRef.current) {
+      console.log('Waiting for video recording to finish uploading...');
+      await videoRecorderRef.current.waitForUpload();
+      console.log('Video upload complete');
     }
 
     cleanup();
@@ -376,6 +402,8 @@ export default function RealtimeInterview() {
             interviewId={interviewId}
             stream={mediaStream}
             status={status}
+            audioPlayer={audioPlayerRef.current}
+            videoRecorderRef={videoRecorderRef}
           />
         </div>
       </div>
@@ -394,10 +422,16 @@ export default function RealtimeInterview() {
 /**
  * User video feed component with recording.
  */
-function UserVideoFeed({ sessionId, interviewId, stream, status }) {
+function UserVideoFeed({ sessionId, interviewId, stream, status, audioPlayer, videoRecorderRef }) {
   const videoRef = useRef(null);
-  const videoRecorderRef = useRef(new VideoRecorder());
   const [isRecording, setIsRecording] = useState(false);
+
+  // Initialize video recorder
+  useEffect(() => {
+    if (!videoRecorderRef.current) {
+      videoRecorderRef.current = new VideoRecorder();
+    }
+  }, [videoRecorderRef]);
 
   useEffect(() => {
     if (stream && videoRef.current) {
@@ -406,33 +440,44 @@ function UserVideoFeed({ sessionId, interviewId, stream, status }) {
     // No cleanup needed here for the stream, parent component handles it
   }, [stream]);
 
-  // Start recording when session is ready
+  // Start recording when session is ready (video-only, audio mixed server-side)
   useEffect(() => {
     if (stream && sessionId && !isRecording) {
+      console.log('Starting video-only recording:', {
+        hasVideoStream: !!stream,
+        hasSessionId: !!sessionId,
+      });
+
       videoRecorderRef.current
         .startRecording(stream, sessionId, interviewId)
         .then(() => {
           setIsRecording(true);
+          console.log('✓ Video-only recording started (audio mixed server-side)');
         })
         .catch((error) => {
-          console.error('Failed to start recording:', error);
+          console.error('Failed to start video recording:', error);
         });
     }
+  }, [stream, sessionId, interviewId]);
 
+  // Cleanup recording on unmount
+  useEffect(() => {
     return () => {
       if (isRecording) {
+        console.log('Component unmounting, stopping recording');
         videoRecorderRef.current.stopRecording();
       }
     };
-  }, [stream, sessionId, interviewId, isRecording]);
+  }, [isRecording]);
 
   // Stop recording when conversation ends
   useEffect(() => {
     if (status === 'ended' && isRecording) {
+      console.log('Status changed to ended, stopping recording');
       videoRecorderRef.current.stopRecording();
       setIsRecording(false);
     }
-  }, [status, isRecording]);
+  }, [status, isRecording, videoRecorderRef]);
 
   return (
     <div className="relative w-full h-full bg-black/80">

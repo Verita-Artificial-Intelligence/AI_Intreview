@@ -242,14 +242,6 @@ const InterviewPrep = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Go back
           </Button>
-          <Button
-            onClick={() => navigate('/marketplace')}
-            variant="outline"
-            size="sm"
-            className="rounded-lg"
-          >
-            View listing
-          </Button>
         </div>
       </div>
 

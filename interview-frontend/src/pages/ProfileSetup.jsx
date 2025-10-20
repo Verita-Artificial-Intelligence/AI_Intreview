@@ -55,8 +55,8 @@ const ProfileSetup = () => {
         ...formData,
         experience_years: parseInt(formData.experience_years),
       })
-      // Profile complete - redirect to interview prep
-      navigate('/interview-prep')
+      // Profile complete - redirect to marketplace
+      navigate('/')
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to complete profile')
     } finally {
@@ -72,7 +72,7 @@ const ProfileSetup = () => {
             Complete Your Profile
           </h1>
           <p className="text-sm text-neutral-600">
-            Tell us about yourself to get started with your interview
+            Tell us about your creative background to discover opportunities
           </p>
         </div>
 

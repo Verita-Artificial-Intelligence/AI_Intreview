@@ -33,30 +33,8 @@ const Login = () => {
         return
       }
 
-      // Check interview status
-      const status = await fetchInterviewStatus()
-      if (!status) {
-        navigate('/profile-setup')
-        return
-      }
-
-      // Route based on interview status
-      switch (status.status) {
-        case 'not_started':
-          navigate('/interview-prep')
-          break
-        case 'in_progress':
-          navigate('/interview')
-          break
-        case 'completed':
-        case 'under_review':
-        case 'approved':
-        case 'rejected':
-          navigate('/status')
-          break
-        default:
-          navigate('/interview-prep')
-      }
+      // Redirect to marketplace (home page)
+      navigate('/')
     }
 
     // Only redirect if authenticated AND auth state is fully loaded
@@ -68,7 +46,6 @@ const Login = () => {
     isAuthenticated,
     authLoading,
     isProfileComplete,
-    fetchInterviewStatus,
     navigate,
   ])
 
@@ -106,7 +83,7 @@ const Login = () => {
             Welcome Back
           </h1>
           <p className="text-sm text-neutral-600">
-            Sign in to continue your interview
+            Sign in to explore creative opportunities
           </p>
         </div>
 
@@ -178,7 +155,7 @@ const Login = () => {
           <p className="text-xs text-neutral-600">
             Don't have an account?{' '}
             <Link
-              to="/"
+              to="/signup"
               className="text-brand-500 hover:text-brand-600 font-medium"
             >
               Sign up

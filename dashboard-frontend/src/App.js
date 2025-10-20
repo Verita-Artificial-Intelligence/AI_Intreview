@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
-import Marketplace from './pages/Marketplace'
 import InterviewPage from './pages/InterviewPage'
 import AudioInterviewPage from './pages/AudioInterviewPage'
 import InterviewPrep from './pages/InterviewPrep'
@@ -11,7 +10,6 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Dashboard />} />
-        <Route path="/marketplace" element={<Marketplace />} />
         <Route
           path="/interview-prep/:interviewId"
           element={<InterviewPrep />}

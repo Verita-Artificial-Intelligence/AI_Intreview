@@ -33,8 +33,8 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({ className }) => {
           height: '280px',
           borderRadius: '50%',
           background: isAIPlaying
-            ? 'radial-gradient(circle, rgba(232, 92, 36, 0.15) 0%, rgba(232, 92, 36, 0) 70%)'
-            : 'radial-gradient(circle, rgba(232, 92, 36, 0.05) 0%, rgba(232, 92, 36, 0) 70%)',
+            ? 'radial-gradient(circle, rgba(236, 72, 153, 0.15) 0%, rgba(236, 72, 153, 0) 70%)'
+            : 'radial-gradient(circle, rgba(236, 72, 153, 0.05) 0%, rgba(236, 72, 153, 0) 70%)',
           filter: 'blur(40px)',
           transition: 'all 0.6s ease-in-out',
         }}
@@ -46,10 +46,10 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({ className }) => {
           width: '200px',
           height: '200px',
           borderRadius: '50%',
-          background: 'linear-gradient(135deg, #e85c24 0%, #d94817 50%, #c93d0f 100%)',
+          background: 'linear-gradient(135deg, #ec4899 0%, #db2777 50%, #be185d 100%)',
           boxShadow: isAIPlaying
-            ? '0 0 80px rgba(232, 92, 36, 0.8), 0 0 150px rgba(201, 61, 15, 0.5)'
-            : '0 8px 32px rgba(232, 92, 36, 0.25)',
+            ? '0 0 80px rgba(236, 72, 153, 0.8), 0 0 150px rgba(190, 24, 93, 0.5)'
+            : '0 8px 32px rgba(236, 72, 153, 0.25)',
           animation: isAIPlaying ? 'speakingPulse 1.2s ease-in-out infinite' : 'none',
         }}
       />

@@ -1,22 +1,37 @@
 import { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { CheckCircle, Mic, Video, AlertCircle, Loader2 } from 'lucide-react'
+import { CheckCircle, Mic, Video, AlertCircle, Loader2, Briefcase } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { v4 as uuidv4 } from 'uuid'
+import axios from 'axios'
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
+const API = `${BACKEND_URL}/api`
 
 const NewInterviewPrep = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const [searchParams] = useSearchParams()
+  const jobId = searchParams.get('jobId')
   const videoRef = useRef(null)
   const [stream, setStream] = useState(null)
   const [cameraReady, setCameraReady] = useState(false)
   const [micReady, setMicReady] = useState(false)
   const [error, setError] = useState('')
   const [requestingPermissions, setRequestingPermissions] = useState(false)
+  const [job, setJob] = useState(null)
+  const [loadingJob, setLoadingJob] = useState(false)
 
   // Extract first name from full name
   const firstName = user?.name?.split(' ')[0] || ''
+
+  // Fetch job details if jobId is present
+  useEffect(() => {
+    if (jobId) {
+      fetchJob()
+    }
+  }, [jobId])
 
   // Auto-request permissions on mount
   useEffect(() => {
@@ -28,6 +43,18 @@ const NewInterviewPrep = () => {
       }
     }
   }, [])
+
+  const fetchJob = async () => {
+    setLoadingJob(true)
+    try {
+      const response = await axios.get(`${API}/jobs/${jobId}`)
+      setJob(response.data)
+    } catch (error) {
+      console.error('Error fetching job:', error)
+    } finally {
+      setLoadingJob(false)
+    }
+  }
 
   const requestMediaPermissions = async () => {
     setRequestingPermissions(true)
@@ -59,11 +86,39 @@ const NewInterviewPrep = () => {
     }
     // Generate interview ID and navigate to realtime interview page
     const interviewId = user?.interview_id || uuidv4()
-    navigate(`/realtime-interview/${interviewId}`)
+    // Pass jobId as query parameter if available
+    const url = jobId
+      ? `/realtime-interview/${interviewId}?jobId=${jobId}`
+      : `/realtime-interview/${interviewId}`
+    navigate(url)
   }
 
   return (
     <div className="min-h-screen bg-neutral-50">
+      {/* Job Info Banner */}
+      {job && (
+        <div className="bg-brand-50 border-b border-brand-200">
+          <div className="max-w-3xl mx-auto px-6 py-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-lg bg-brand-500 text-white">
+                <Briefcase className="w-4 h-4" />
+              </div>
+              <div className="flex-1">
+                <h2 className="font-display font-semibold text-base text-neutral-900 mb-0.5">
+                  {job.title}
+                </h2>
+                <p className="text-sm text-neutral-700 mb-1">
+                  {job.position_type}
+                </p>
+                <p className="text-xs text-neutral-600 line-clamp-2">
+                  {job.description}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white border-b border-neutral-200">
         <div className="max-w-3xl mx-auto px-6 py-5">
@@ -191,11 +246,10 @@ const NewInterviewPrep = () => {
                   </div>
                   <div>
                     <p className="text-neutral-900 font-medium text-sm mb-0.5">
-                      Conversation about your creative work
+                      Discuss your creative portfolio
                     </p>
                     <p className="text-neutral-600 text-xs leading-relaxed">
-                      We'll discuss your portfolio, creative process, and the
-                      tools you use
+                      Share your best work, creative process, and design/creative approach
                     </p>
                   </div>
                 </div>
@@ -206,10 +260,10 @@ const NewInterviewPrep = () => {
                   </div>
                   <div>
                     <p className="text-neutral-900 font-medium text-sm mb-0.5">
-                      20-30 minute discussion
+                      20-30 minute conversation
                     </p>
                     <p className="text-neutral-600 text-xs leading-relaxed">
-                      Take your time to share examples from your work
+                      Deep dive into your projects, inspiration, and creative experience
                     </p>
                   </div>
                 </div>
@@ -220,11 +274,10 @@ const NewInterviewPrep = () => {
                   </div>
                   <div>
                     <p className="text-neutral-900 font-medium text-sm mb-0.5">
-                      Show your authentic self
+                      Express your creative vision
                     </p>
                     <p className="text-neutral-600 text-xs leading-relaxed">
-                      Be honest about your process and the creative work you're
-                      most proud of
+                      Be authentic about your artistic style and the projects you're proud of
                     </p>
                   </div>
                 </div>
@@ -235,11 +288,10 @@ const NewInterviewPrep = () => {
                   </div>
                   <div>
                     <p className="text-neutral-900 font-medium text-sm mb-0.5">
-                      AI analysis and review
+                      AI assessment
                     </p>
                     <p className="text-neutral-600 text-xs leading-relaxed">
-                      Your responses will be analyzed to assess your skills and
-                      experience
+                      Your work and responses evaluated to match with creative roles
                     </p>
                   </div>
                 </div>
@@ -255,36 +307,35 @@ const NewInterviewPrep = () => {
                 <div className="flex items-start gap-2">
                   <span className="text-brand-500 text-xs mt-0.5">•</span>
                   <p className="text-xs text-neutral-700 leading-relaxed">
-                    Find a quiet space with good lighting
+                    Set up in good lighting with a professional background
                   </p>
                 </div>
                 <div className="w-full h-px bg-neutral-200" />
                 <div className="flex items-start gap-2">
                   <span className="text-brand-500 text-xs mt-0.5">•</span>
                   <p className="text-xs text-neutral-700 leading-relaxed">
-                    Have specific examples of your work ready to discuss
+                    Have your portfolio or key projects accessible to reference
                   </p>
                 </div>
                 <div className="w-full h-px bg-neutral-200" />
                 <div className="flex items-start gap-2">
                   <span className="text-brand-500 text-xs mt-0.5">•</span>
                   <p className="text-xs text-neutral-700 leading-relaxed">
-                    Speak naturally and take pauses to think
+                    Speak naturally about your creative process and inspiration
                   </p>
                 </div>
                 <div className="w-full h-px bg-neutral-200" />
                 <div className="flex items-start gap-2">
                   <span className="text-brand-500 text-xs mt-0.5">•</span>
                   <p className="text-xs text-neutral-700 leading-relaxed">
-                    Mention specific tools or techniques you use
+                    Share the design tools and software you specialize in
                   </p>
                 </div>
                 <div className="w-full h-px bg-neutral-200" />
                 <div className="flex items-start gap-2">
                   <span className="text-brand-500 text-xs mt-0.5">•</span>
                   <p className="text-xs text-neutral-700 leading-relaxed">
-                    We want to understand your real experience, not a perfect
-                    performance
+                    Let your passion and authentic creative vision shine through
                   </p>
                 </div>
               </div>
