@@ -6,11 +6,13 @@ from services import InterviewService
 from services.resume_service import ResumeService
 from services.annotation_service import AnnotationService
 import logging
-import aiofiles
-from pathlib import Path
 import os
-from database import get_interviews_collection, get_candidates_collection, db
+import subprocess
 from datetime import datetime, timedelta
+from pathlib import Path
+
+import aiofiles
+from database import get_interviews_collection, get_candidates_collection, db
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -346,45 +348,66 @@ async def combine_video_and_audio(video_path: Path, audio_path: Path, output_pat
         True if successful, False otherwise
     """
     try:
-        from moviepy import VideoFileClip, AudioFileClip
+        if not video_path.exists():
+            logger.warning(f"Video source missing while combining audio: {video_path}")
+            return False
+
+        size = video_path.stat().st_size
+        if size <= 0:
+            logger.warning(f"Video source empty while combining audio: {video_path}")
+            return False
+
+        with video_path.open("rb") as src_file:
+            header = src_file.read(4)
+        if header != b"\x1A\x45\xDF\xA3":
+            logger.warning(f"Video source {video_path} missing EBML header; skipping mix and keeping original recording.")
+            return False
+    except Exception as e:
+        logger.warning(f"Unable to validate uploaded video before mixing: {e}")
+        return False
+
+    try:
         import asyncio
+        import subprocess
 
-        # MoviePy is synchronous, run in thread pool to avoid blocking
-        def _combine():
-            # Load video and audio
-            video = VideoFileClip(str(video_path))
-            audio = AudioFileClip(str(audio_path))
+        ffmpeg_cmd = [
+            "ffmpeg",
+            "-y",  # overwrite output
+            "-i", str(video_path),
+            "-i", str(audio_path),
+            "-map", "0:v:0",  # use video from original recording
+            "-map", "1:a:0",  # replace audio with mixed track
+            "-c:v", "libx264",
+            "-preset", "medium",
+            "-crf", "20",
+            "-c:a", "aac",
+            "-b:a", "128k",
+            "-movflags", "+faststart",
+            str(output_path),
+        ]
 
-            # Set audio on video
-            video_with_audio = video.set_audio(audio)
-
-            # Write output as MP4 with H.264/AAC for web compatibility
-            video_with_audio.write_videofile(
-                str(output_path),
-                codec='libx264',  # H.264 video codec (universal browser support)
-                audio_codec='aac',  # AAC audio codec (universal browser support)
-                audio_bitrate='128k',
-                preset='medium',  # Balance between speed and quality
-                ffmpeg_params=['-movflags', '+faststart'],  # Enable streaming/progressive download
-                logger=None  # Suppress MoviePy logs
+        def _run_ffmpeg():
+            result = subprocess.run(
+                ffmpeg_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
             )
-
-            # Close clips to free resources
-            video_with_audio.close()
-            video.close()
-            audio.close()
-
+            if result.returncode != 0:
+                raise RuntimeError(result.stderr)
             return True
 
-        # Run in thread pool to avoid blocking event loop
         loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(None, _combine)
+        await loop.run_in_executor(None, _run_ffmpeg)
 
         logger.info(f"Video and audio combined successfully: {output_path}")
-        return result
+        return True
 
     except FileNotFoundError:
-        logger.error("FFmpeg not found. MoviePy requires FFmpeg to be installed.")
+        logger.error("FFmpeg executable not found. Ensure ffmpeg is installed and in PATH.")
+        return False
+    except RuntimeError as e:
+        logger.warning(f"FFmpeg failed to merge audio with video: {e}")
         return False
     except Exception as e:
         logger.error(f"Error combining video and audio: {e}", exc_info=True)

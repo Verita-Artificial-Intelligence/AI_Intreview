@@ -1,6 +1,6 @@
 /**
  * Video recorder service for capturing and uploading interview recordings.
- * Captures user video + user audio + AI audio mixed together.
+ * Captures user video with microphone audio; server mixing still adds AI audio.
  */
 
 import { getAuthToken } from '../utils/auth.js';
@@ -18,23 +18,27 @@ export class VideoRecorder {
     sessionId: string,
     interviewId: string
   ): Promise<void> {
-    console.log('=== Starting Video Recording (Video-Only) ===');
+    console.log('=== Starting Video Recording (with microphone audio) ===');
 
-    // Get video from user camera
+    // Collect available media tracks from the shared stream
     const videoTracks = userStream.getVideoTracks();
-    console.log('Video tracks:', videoTracks.length);
+    const audioTracks = userStream.getAudioTracks();
+    console.log('Media tracks:', {
+      video: videoTracks.length,
+      audio: audioTracks.length,
+    });
 
-    // Create video-only stream (audio mixing handled server-side)
-    this.combinedStream = new MediaStream(videoTracks);
+    // Create combined stream so microphone audio is embedded in the recording
+    this.combinedStream = new MediaStream([...videoTracks, ...audioTracks]);
 
-    console.log('Video-only stream created:', {
+    console.log('Combined stream created:', {
       videoTracks: this.combinedStream.getVideoTracks().length,
       audioTracks: this.combinedStream.getAudioTracks().length,
       totalTracks: this.combinedStream.getTracks().length,
     });
 
-    // Choose codec (video-only, no audio codec needed)
-    let mimeType = 'video/webm; codecs=vp8';
+    // Choose codec (video + microphone audio)
+    let mimeType = 'video/webm; codecs=vp8,opus';
     if (!MediaRecorder.isTypeSupported(mimeType)) {
       mimeType = 'video/webm';
       console.log('Falling back to default webm');

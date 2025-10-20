@@ -18,6 +18,7 @@ from services.audio_mixer import AudioMixer
 from database import get_interviews_collection
 from prompts.chat import get_interviewer_system_prompt
 from pathlib import Path
+from websockets.exceptions import ConnectionClosed, ConnectionClosedError, ConnectionClosedOK
 
 logger = logging.getLogger(__name__)
 
@@ -441,7 +442,10 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
             # Ignore other client events - OpenAI handles turn detection
 
     except WebSocketDisconnect:
-        pass
+        try:
+            await realtime.close()
+        except Exception:
+            pass
     except Exception as e:
         logger.error(f"Error forwarding to OpenAI: {e}")
         raise
@@ -452,6 +456,35 @@ async def forward_openai_to_client(
 ):
     """Forward events from OpenAI to client and buffer AI audio."""
     ai_seq = 0
+    client_closed = False
+
+    async def safe_send(payload: dict) -> bool:
+        nonlocal client_closed
+        if client_closed:
+            return False
+        try:
+            await websocket.send_json(payload)
+            return True
+        except (WebSocketDisconnect, ConnectionClosed, ConnectionClosedError, ConnectionClosedOK) as exc:
+            if not client_closed:
+                logger.info(f"Client WebSocket closed while sending event; stopping forwarder: {exc}")
+            client_closed = True
+            try:
+                await realtime.close()
+            except Exception:
+                pass
+            return False
+        except RuntimeError as exc:
+            if "WebSocket is not connected" in str(exc):
+                if not client_closed:
+                    logger.info("Client WebSocket no longer connected (runtime error); stopping forwarder.")
+                client_closed = True
+                try:
+                    await realtime.close()
+                except Exception:
+                    pass
+                return False
+            raise
 
     try:
         async for event in realtime.iter_events():
@@ -485,12 +518,13 @@ async def forward_openai_to_client(
                     if text:
                         transcript.append({"speaker": "user", "text": text})
                         logger.info(f"USER transcript added: '{text[:50]}...' (total entries: {len(transcript)})")
-                        await websocket.send_json({
+                        if not await safe_send({
                             "event": "transcript",
                             "speaker": "user",
                             "text": text,
                             "final": True
-                        })
+                        }):
+                            return
                         # Server VAD will automatically trigger response, no manual response.create needed
                 # Case 2: GA message item containing user content entries
                 elif item_type == "message" and item_role == "user":
@@ -509,12 +543,13 @@ async def forward_openai_to_client(
                     if extracted_text:
                         transcript.append({"speaker": "user", "text": extracted_text})
                         logger.info(f"USER transcript added: '{extracted_text[:50]}...' (total entries: {len(transcript)})")
-                        await websocket.send_json({
+                        if not await safe_send({
                             "event": "transcript",
                             "speaker": "user",
                             "text": extracted_text,
                             "final": True
-                        })
+                        }):
+                            return
                         # Server VAD will automatically trigger response, no manual response.create needed
                     else:
                         logger.warning(f"  user message had NO extractable text! content: {content}")
@@ -530,12 +565,13 @@ async def forward_openai_to_client(
                     transcript.append({"speaker": "user", "text": transcript_text})
                     logger.info(f"USER transcript added (from .completed event): '{transcript_text[:50]}...' (total entries: {len(transcript)})")
 
-                    await websocket.send_json({
+                    if not await safe_send({
                         "event": "transcript",
                         "speaker": "user",
                         "text": transcript_text,
                         "final": True
-                    })
+                    }):
+                        return
 
             elif event_type == "conversation.item.input_audio_transcription.delta":
                 # User audio transcription streaming delta
@@ -551,12 +587,13 @@ async def forward_openai_to_client(
                     else:
                         transcript.append({"speaker": "user", "text": delta})
 
-                    await websocket.send_json({
+                    if not await safe_send({
                         "event": "transcript",
                         "speaker": "user",
                         "text": delta,
                         "final": False
-                    })
+                    }):
+                        return
 
             elif event_type == "conversation.item.input_audio_transcription.failed":
                 # User audio transcription failed
@@ -574,12 +611,13 @@ async def forward_openai_to_client(
                     else:
                         transcript.append({"speaker": "assistant", "text": text})
 
-                    await websocket.send_json({
+                    if not await safe_send({
                         "event": "transcript",
                         "speaker": "assistant",
                         "text": text,
                         "final": False
-                    })
+                    }):
+                        return
 
             elif event_type == "response.output_audio_transcript.done":
                 # Finalized assistant audio transcription (GA)
@@ -590,12 +628,13 @@ async def forward_openai_to_client(
                     transcript.append({"speaker": "assistant", "text": text})
                     logger.info(f"ASSISTANT transcript added: '{text[:50]}...' (total entries: {len(transcript)})")
 
-                    await websocket.send_json({
+                    if not await safe_send({
                         "event": "transcript",
                         "speaker": "assistant",
                         "text": text,
                         "final": True
-                    })
+                    }):
+                        return
 
             elif event_type == "response.output_text.delta":
                 # AI transcript
@@ -607,18 +646,20 @@ async def forward_openai_to_client(
                     else:
                         transcript.append({"speaker": "assistant", "text": text})
 
-                    await websocket.send_json({
+                    if not await safe_send({
                         "event": "transcript",
                         "speaker": "assistant",
                         "text": text,
                         "final": False
-                    })
+                    }):
+                        return
 
             elif event_type == "response.output_text.done":
                 # Assistant finished text output segment
-                await websocket.send_json({
+                if not await safe_send({
                     "event": "answer_end"
-                })
+                }):
+                    return
 
             elif event_type == "response.output_audio.delta":
                 # AI audio chunk
@@ -630,28 +671,32 @@ async def forward_openai_to_client(
                     ai_seq += 1
 
                 # Still send to client for playback (lip sync)
-                await websocket.send_json({
+                if not await safe_send({
                     "event": "tts_chunk",
                     "audio_b64": audio_b64,
                     "is_final": False
-                })
+                }):
+                    return
 
             elif event_type == "response.output_audio.done":
                 # AI finished speaking
-                await websocket.send_json({
+                if not await safe_send({
                     "event": "tts_chunk",
                     "audio_b64": "",
                     "is_final": True
-                })
-                await websocket.send_json({
+                }):
+                    return
+                if not await safe_send({
                     "event": "answer_end"
-                })
+                }):
+                    return
 
             elif event_type == "response.completed":
                 # Model signaled response is fully completed (catch-all)
-                await websocket.send_json({
+                if not await safe_send({
                     "event": "answer_end"
-                })
+                }):
+                    return
 
             elif event_type == "response.function_call.arguments.delta":
                 # Accumulate function call args if needed (not used here)
@@ -663,10 +708,11 @@ async def forward_openai_to_client(
                 if tool_name == "end_conversation":
                     reason = event.get("arguments", {}).get("reason", "")
                     # Tell client conversation ended
-                    await websocket.send_json({
+                    if not await safe_send({
                         "event": "conversation_ended",
                         "reason": reason,
-                    })
+                    }):
+                        return
                     # Gracefully stop: cancel model responses and break loops
                     await realtime.send_event({"type": "response.cancel"})
                     break
@@ -674,18 +720,22 @@ async def forward_openai_to_client(
             elif event_type == "error":
                 # OpenAI error
                 error = event.get("error", {})
-                await websocket.send_json({
+                if not await safe_send({
                     "event": "error",
                     "code": "OPENAI_ERROR",
                     "message": error.get("message", "Unknown error")
-                })
+                }):
+                    return
 
             # Pass through other events for debugging
             else:
                 logger.debug(f"OpenAI event: {event_type}")
 
     except WebSocketDisconnect:
-        pass
+        try:
+            await realtime.close()
+        except Exception:
+            pass
     except Exception as e:
         logger.error(f"Error forwarding to client: {e}")
         raise
