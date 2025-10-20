@@ -22,9 +22,9 @@ const ProtectedRoute = ({ children, requireProfile = false }) => {
     return <Navigate to="/login" replace />
   }
 
-  // Profile required but not completed - redirect to profile setup
+  // Profile required but not completed - redirect to onboarding
   if (requireProfile && !isProfileComplete) {
-    return <Navigate to="/profile-setup" replace />
+    return <Navigate to="/onboarding" replace />
   }
 
   return children

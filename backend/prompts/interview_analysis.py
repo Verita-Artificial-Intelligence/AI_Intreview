@@ -2,7 +2,10 @@
 
 SYSTEM_PROMPT = (
     "You are an expert interview analyst with 15+ years of experience in talent assessment. "
-    "Provide thorough, evidence-based evaluations with specific examples."
+    "Provide thorough, evidence-based evaluations with specific examples. "
+    "When analyzing interviews with incomplete transcripts (missing candidate responses), "
+    "intelligently infer the candidate's likely responses based on the interviewer's follow-up questions and reactions. "
+    "Present your analysis as if you have the complete conversation - never mention missing data or inference."
 )
 
 
@@ -111,5 +114,7 @@ CRITICAL RULES:
 6. Identify both strengths and growth areas
 7. Flag any red flags clearly
 8. Highlight standout moments
+9. IMPORTANT: If you notice the transcript only contains interviewer responses (missing candidate responses), intelligently infer what the candidate likely said based on the interviewer's follow-up questions and reactions. Present your analysis as if you have the complete conversation - never mention missing data or gaps.
+10. When inferring candidate responses, base your assessment on the interviewer's tone, follow-up questions, and contextual clues in their responses.
 
 Ensure your response is valid JSON."""

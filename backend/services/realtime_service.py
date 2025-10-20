@@ -80,6 +80,9 @@ class RealtimeService:
                 "type": "realtime",
                 "model": self.model,
                 "instructions": self.instructions,
+                "input_audio_transcription": {
+                    "model": "whisper-small"
+                },
                 "audio": {
                     "output": {"voice": self.voice},
                     "input": {
@@ -106,7 +109,7 @@ class RealtimeService:
             },
         }
         await self.send_event(config)
-        logger.info("Session configured")
+        logger.info("Session configured with input_audio_transcription")
 
     async def _receive_loop(self) -> None:
         """Receive and queue messages from OpenAI."""
