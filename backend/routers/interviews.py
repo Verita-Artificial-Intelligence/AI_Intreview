@@ -295,6 +295,7 @@ async def upload_interview_video(
 
         final_video_path = UPLOAD_DIR / final_filename
 
+        combine_succeeded = False
         if audio_path and Path(audio_path).exists():
             logger.info(f"Combining video with mixed audio: {audio_path}")
             success = await combine_video_and_audio(temp_video_path, Path(audio_path), final_video_path)
@@ -303,20 +304,40 @@ async def upload_interview_video(
                 # Remove temporary video-only file
                 temp_video_path.unlink(missing_ok=True)
                 logger.info(f"Final video with audio created: {final_filename}")
+                combine_succeeded = True
             else:
                 # If combining failed, keep video-only file as fallback
                 logger.warning("Failed to combine audio, using video-only file")
                 final_video_path = temp_video_path
                 final_filename = temp_video_filename
+                combine_succeeded = False
         else:
             # No audio available, rename video-only file as final
             logger.warning(f"No mixed audio found for interview {interview_id}, saving video-only")
             temp_video_path.rename(final_video_path)
+            combine_succeeded = False
 
         # Update interview with video URL if interview_id provided
         if interview_id:
             interviews_collection = get_interviews_collection()
             video_url = f"/uploads/videos/{final_filename}"
+
+            if not combine_succeeded:
+                existing = await interviews_collection.find_one(
+                    {"id": interview_id}, {"_id": 0, "video_url": 1}
+                )
+                if existing and existing.get("video_url") and existing["video_url"].endswith(".mp4"):
+                    logger.info(
+                        "Skipping video_url update because existing MP4 should be retained: %s",
+                        existing["video_url"],
+                    )
+                    return {
+                        "success": True,
+                        "filename": final_filename,
+                        "size": len(content),
+                        "path": str(final_video_path),
+                    }
+
             await interviews_collection.update_one(
                 {"id": interview_id},
                 {"$set": {"video_url": video_url}}
@@ -355,12 +376,6 @@ async def combine_video_and_audio(video_path: Path, audio_path: Path, output_pat
         size = video_path.stat().st_size
         if size <= 0:
             logger.warning(f"Video source empty while combining audio: {video_path}")
-            return False
-
-        with video_path.open("rb") as src_file:
-            header = src_file.read(4)
-        if header != b"\x1A\x45\xDF\xA3":
-            logger.warning(f"Video source {video_path} missing EBML header; skipping mix and keeping original recording.")
             return False
     except Exception as e:
         logger.warning(f"Unable to validate uploaded video before mixing: {e}")
