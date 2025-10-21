@@ -409,6 +409,13 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
                     "type": "response.cancel"
                 })
 
+            elif event_type == "ai_chunk_played":
+                if audio_buffer is not None:
+                    seq = data.get("seq")
+                    ts = data.get("timestamp")
+                    if isinstance(seq, int) and isinstance(ts, (int, float)):
+                        await audio_buffer.update_ai_timestamp(seq, float(ts))
+
             elif event_type == "end":
                 # Client wants to end session
                 logger.info("Client requested session end")
@@ -644,17 +651,20 @@ async def forward_openai_to_client(
             elif event_type == "response.output_audio.delta":
                 # AI audio chunk
                 audio_b64 = event.get("delta", "")
+                chunk_seq: Optional[int] = None
 
                 # Buffer AI audio for server-side mixing
                 if audio_b64:
-                    await audio_buffer.add_ai_chunk(audio_b64, ai_seq)
+                    chunk_seq = ai_seq
+                    await audio_buffer.add_ai_chunk(audio_b64, chunk_seq)
                     ai_seq += 1
 
                 # Still send to client for playback (lip sync)
                 if not await safe_send({
                     "event": "tts_chunk",
                     "audio_b64": audio_b64,
-                    "is_final": False
+                    "is_final": False,
+                    "seq": chunk_seq
                 }):
                     return
 

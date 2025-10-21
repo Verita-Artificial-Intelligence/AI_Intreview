@@ -10,6 +10,7 @@ export class AudioPlayer {
   private audioQueue: AudioBuffer[] = [];
   private currentPlaybackTime = 0;
   private startTimestamp = 0;
+  private contextCreatedAt = 0;
 
   private onPlaybackStartCallback: (() => void) | null = null;
   private onPlaybackEndCallback: (() => void) | null = null;
@@ -19,6 +20,7 @@ export class AudioPlayer {
    */
   async initialize(): Promise<void> {
     this.audioContext = new AudioContext();
+    this.contextCreatedAt = performance.now() / 1000;
 
     // Resume context if suspended (browser autoplay policy)
     if (this.audioContext.state === 'suspended') {
@@ -34,7 +36,13 @@ export class AudioPlayer {
   /**
    * Queue and play audio chunk.
    */
-  async playChunk(audioB64: string): Promise<void> {
+  async playChunk(
+    audioB64: string,
+    options?: {
+      seq?: number;
+      onScheduled?: (info: { seq?: number; startTime: number; duration: number }) => void;
+    }
+  ): Promise<void> {
     if (!this.audioContext) {
       throw new Error('Audio player not initialized');
     }
@@ -81,6 +89,8 @@ export class AudioPlayer {
       const source = this.audioContext.createBufferSource();
       source.buffer = audioBuffer;
 
+      const scheduledStart = this.nextStartTime;
+
       // Check AudioContext state
       if (this.audioContext.state === 'suspended') {
         console.warn('AudioContext suspended, resuming...');
@@ -97,7 +107,15 @@ export class AudioPlayer {
       source.connect(this.audioContext.destination);
 
       // Schedule playback
-      source.start(this.nextStartTime);
+      source.start(scheduledStart);
+
+      if (options?.onScheduled) {
+        options.onScheduled({
+          seq: options.seq,
+          startTime: scheduledStart,
+          duration: audioBuffer.duration,
+        });
+      }
 
       // Update next start time
       this.nextStartTime += audioBuffer.duration;
@@ -238,6 +256,13 @@ export class AudioPlayer {
    */
   getAudioContextTime(): number {
     return this.audioContext?.currentTime || 0;
+  }
+
+  /**
+   * Convert AudioContext time to wall clock seconds.
+   */
+  getWallTimeForContextTime(contextTime: number): number {
+    return this.contextCreatedAt + contextTime;
   }
 
 }
