@@ -25,6 +25,42 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+def _merge_transcript_chunk(
+    transcript: list[dict],
+    speaker: str,
+    text: str,
+    *,
+    final: bool = False,
+    replace_on_final: bool = False,
+) -> bool:
+    """
+    Append or update a transcript entry in-place.
+
+    Args:
+        transcript: Mutable transcript list.
+        speaker: Either 'user' or 'assistant'.
+        text: The text chunk to merge.
+        final: True when this chunk represents the final transcript for the turn.
+        replace_on_final: When True, final chunks overwrite the existing text for the
+            speaker's current turn instead of appending a new entry.
+
+    Returns:
+        bool: True when transcript was updated; False when input text was empty.
+    """
+    if not text:
+        return False
+
+    if transcript and transcript[-1].get("speaker") == speaker:
+        if final and replace_on_final:
+            transcript[-1]["text"] = text
+        else:
+            transcript[-1]["text"] += text
+    else:
+        transcript.append({"speaker": speaker, "text": text})
+
+    return True
+
+
 @router.websocket("/session")
 async def websocket_endpoint(websocket: WebSocket):
     """
@@ -502,8 +538,13 @@ async def forward_openai_to_client(
                     # User transcript
                     text = item.get("transcript", "")
                     logger.info(f"  input_audio_transcription text: '{text[:100] if text else 'EMPTY'}'")
-                    if text:
-                        transcript.append({"speaker": "user", "text": text})
+                    if _merge_transcript_chunk(
+                        transcript,
+                        "user",
+                        text,
+                        final=True,
+                        replace_on_final=True,
+                    ):
                         logger.info(f"USER transcript added: '{text[:50]}...' (total entries: {len(transcript)})")
                         if not await safe_send({
                             "event": "transcript",
@@ -527,8 +568,13 @@ async def forward_openai_to_client(
                         elif ctype == "input_text" and not extracted_text:
                             extracted_text = c.get("text")
                             logger.info(f"      text: '{extracted_text[:100] if extracted_text else 'EMPTY'}'")
-                    if extracted_text:
-                        transcript.append({"speaker": "user", "text": extracted_text})
+                    if _merge_transcript_chunk(
+                        transcript,
+                        "user",
+                        extracted_text,
+                        final=True,
+                        replace_on_final=True,
+                    ):
                         logger.info(f"USER transcript added: '{extracted_text[:50]}...' (total entries: {len(transcript)})")
                         if not await safe_send({
                             "event": "transcript",
@@ -548,8 +594,13 @@ async def forward_openai_to_client(
                 transcript_text = event.get("transcript", "")
                 logger.info(f"conversation.item.input_audio_transcription.completed - item_id: {item_id}, transcript: '{transcript_text[:100] if transcript_text else 'EMPTY'}'")
 
-                if transcript_text:
-                    transcript.append({"speaker": "user", "text": transcript_text})
+                if _merge_transcript_chunk(
+                    transcript,
+                    "user",
+                    transcript_text,
+                    final=True,
+                    replace_on_final=True,
+                ):
                     logger.info(f"USER transcript added (from .completed event): '{transcript_text[:50]}...' (total entries: {len(transcript)})")
 
                     if not await safe_send({
@@ -567,18 +618,53 @@ async def forward_openai_to_client(
                 delta = event.get("delta", "")
                 logger.info(f"conversation.item.input_audio_transcription.delta - item_id: {item_id}, delta: '{delta[:100] if delta else 'EMPTY'}'")
 
-                if delta:
-                    # Append to last user message if exists, otherwise create new
-                    if transcript and transcript[-1]["speaker"] == "user":
-                        transcript[-1]["text"] += delta
-                    else:
-                        transcript.append({"speaker": "user", "text": delta})
+                if _merge_transcript_chunk(transcript, "user", delta):
 
                     if not await safe_send({
                         "event": "transcript",
                         "speaker": "user",
                         "text": delta,
                         "final": False
+                    }):
+                        return
+
+            elif event_type == "response.input_audio_transcription.delta":
+                # GA streaming transcription for user speech
+                delta = event.get("delta", "")
+                logger.info(f"response.input_audio_transcription.delta - delta: '{delta[:100] if delta else 'EMPTY'}'")
+
+                if _merge_transcript_chunk(transcript, "user", delta):
+                    logger.info(f"USER transcript delta merged (response.* event). Current length: {len(transcript)}")
+
+                    if not await safe_send({
+                        "event": "transcript",
+                        "speaker": "user",
+                        "text": delta,
+                        "final": False
+                    }):
+                        return
+
+            elif event_type == "response.input_audio_transcription.done":
+                # GA final transcription for user speech
+                transcript_text = event.get("transcript") or event.get("text") or ""
+                logger.info(
+                    f"response.input_audio_transcription.done - transcript: '{transcript_text[:100] if transcript_text else 'EMPTY'}'"
+                )
+
+                if _merge_transcript_chunk(
+                    transcript,
+                    "user",
+                    transcript_text,
+                    final=True,
+                    replace_on_final=True,
+                ):
+                    logger.info(f"USER transcript finalized (response.* event). Current length: {len(transcript)}")
+
+                    if not await safe_send({
+                        "event": "transcript",
+                        "speaker": "user",
+                        "text": transcript_text,
+                        "final": True
                     }):
                         return
 
