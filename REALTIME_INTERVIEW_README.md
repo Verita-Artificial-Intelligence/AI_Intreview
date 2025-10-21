@@ -111,6 +111,23 @@ Key properties:
 
 ---
 
+## Admin Data Explorer
+
+The admin dashboard now includes a **Data Explorer** page (`/admin/data-explorer`) that aggregates annotation tasks, project metadata, and dataset details. It surfaces the same information exposed by the new backend endpoints:
+
+- `GET /api/admin/data` – filterable, paginated table response with task, project, annotator, and dataset fields.
+- `GET /api/admin/data/export?format=csv|json` – streaming export that reuses the active filters and sort order.
+
+### Available filters & interactions
+
+- **Projects, annotators, tags** – populated automatically from the aggregated results; tag filtering uses AND semantics by default.
+- **Search** – case-insensitive matching across project title, dataset title, annotator name, and task name.
+- **Status toggles & rating range** – quick filtering for lifecycle stage and quality thresholds.
+- **Created date range** – uses the dual-month calendar picker to scope work by submission window.
+- **Sorting** – every sortable column sends `sort_by`/`sort_dir` to the backend so pagination stays consistent with the chosen order.
+
+Exports stream the full filtered dataset without buffering in memory, so large result sets download reliably. The backend creates supporting MongoDB indexes at startup (`job_id`, `annotator_id`, `status`, `quality_rating`, timestamps, and dataset tags) to keep the explorer responsive.
+
 ## Troubleshooting Guide
 
 1. **AI voice plays before candidate speaks in MP4**
@@ -149,4 +166,3 @@ Keep this document updated whenever the realtime protocol, telemetry fields, or 
 - [ ] Do client messages or payloads change? Update the “Detailed Flow” section.
 - [ ] Are new dependencies (e.g., different codecs) introduced? Update prerequisites here and in `SETUP.md`.
 - [ ] Did log formats or troubleshooting steps evolve? Adjust the Operational Checklist.
-

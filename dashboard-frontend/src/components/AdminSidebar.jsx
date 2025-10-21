@@ -1,5 +1,5 @@
 import { useLocation } from 'react-router-dom'
-import { Users, Briefcase, BarChart, CheckSquare, FileText, Table, ChevronRight } from 'lucide-react'
+import { Users, Briefcase, BarChart, FileText, Table, ChevronRight } from 'lucide-react'
 
 export default function AdminSidebar() {
   const location = useLocation()

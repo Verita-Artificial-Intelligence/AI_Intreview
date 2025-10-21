@@ -7,6 +7,7 @@ import {
   ArrowUp,
   ArrowUpDown,
   CalendarDays,
+  Check,
   Download,
   Filter,
   Loader2,
@@ -277,6 +278,7 @@ const AdminDataExplorer = () => {
         : [...prev.tags, tagValue]
       return { ...prev, tags: nextTags }
     })
+    setPage(1)
   }
 
   const handleRatingCommit = (value) => {
@@ -709,13 +711,17 @@ const AdminDataExplorer = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {record.quality_rating ? (
-                            <Badge variant="outline" className="border-green-200 text-green-700">
-                              {record.quality_rating.toFixed(1)}
-                            </Badge>
-                          ) : (
-                            '—'
-                          )}
+                          {(() => {
+                            const numericRating = Number(record.quality_rating)
+                            if (Number.isNaN(numericRating)) {
+                              return '—'
+                            }
+                            return (
+                              <Badge variant="outline" className="border-green-200 text-green-700">
+                                {numericRating.toFixed(1)}
+                              </Badge>
+                            )
+                          })()}
                         </TableCell>
                         <TableCell>
                           <Badge
@@ -796,6 +802,6 @@ const AdminDataExplorer = () => {
   )
 }
 
-const Checkmark = () => <span className="text-brand-500">●</span>
+const Checkmark = () => <Check className="w-3 h-3 text-brand-500" />
 
 export default AdminDataExplorer
