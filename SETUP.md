@@ -2,10 +2,11 @@
 
 ## Prerequisites
 
-- Python 3.9+
-- Node.js 16+
-- **MongoDB (local or cloud instance)** - REQUIRED: The application requires a running MongoDB instance. There is no fallback mechanism.
-- OpenAI API Key
+- Python 3.10+
+- Node.js 18+
+- **MongoDB (local or cloud instance)** — required; the application will not run without it
+- OpenAI API key with access to the Realtime API
+- FFmpeg installed locally and available on `PATH` (needed for media muxing)
 
 ## Backend Setup
 
@@ -107,64 +108,32 @@ cp .env.example .env  # if .env.example exists
 REACT_APP_BACKEND_URL=http://localhost:8000
 ```
 
-5. Start the development server (typically on a different port):
+5. Start the development server:
 ```bash
-yarn start --port 3001
+yarn start
 # or
-npm start -- --port 3001
+npm start
 ```
 
-The interview frontend will be available at `http://localhost:3001`
+By default the interview client runs on `http://localhost:3001`. If another process already uses that port, set `PORT=3001` (or another free port) before starting.
 
-**Note**: Both frontends can run simultaneously on different ports during development.
+**Tip:** Run the dashboard on port 3000 and the interview client on port 3001 for a seamless multi-app workflow.
 
-## Key Changes Made
+## Media & Realtime Overview
 
-### Fixed AI Voice Breakdown Issues
-
-1. **TTS Audio Generation Fix**: 
-   - Fixed the `iter_bytes()` issue in the `/audio/tts` endpoint
-   - Changed from `async for chunk in response.iter_bytes()` to `response.read()`
-   - The OpenAI AsyncOpenAI client returns a response object that needs `.read()` to get the audio bytes
-
-2. **Removed emergentintegrations Dependency**:
-   - Replaced `emergentintegrations.llm.chat.LlmChat` with direct OpenAI API calls
-   - Updated all chat endpoints (`/chat`, `/interviews/{id}/analyze`, `/interviews/{id}/complete`) to use OpenAI's chat completions API
-   - This makes the application more maintainable and removes dependency on a proprietary package
-
-3. **Environment Variable Updates**:
-   - Changed from `EMERGENT_LLM_KEY` to `OPENAI_API_KEY` (with backward compatibility)
-   - Added `.env.example` files for both backend and frontend
+- **FFmpeg requirement** – the backend invokes `ffmpeg` to mux microphone/AI audio with the recorded WebM. If FFmpeg is missing the server falls back to delivering the raw recording.
+- **Audio capture** – the browser downsamples microphone audio to 24 kHz PCM16 and includes capture timestamps with every chunk. Avoid muting/pausing the tab mid-session to keep timing accurate.
+- **AI playback telemetry** – when the AI interviewer speaks, the client sends an `ai_chunk_played` message with the scheduled playback time. The backend rewrites AI chunk timestamps using that signal before mixing.
+- **Storage** – per-interview audio is stored under `backend/uploads/audio`, and the final MP4 export is written to `backend/uploads/videos`. These directories are created automatically.
 
 ## Testing the Voice Interview Feature
 
-1. Create a candidate from the dashboard
-2. Start an audio interview
-3. Click the microphone button to record your response
-4. The system will:
-   - Transcribe your audio using OpenAI Whisper (STT)
-   - Generate an AI response using GPT-4o-mini
-   - Convert the response to speech using OpenAI TTS (nova voice)
-   - Play the audio automatically
+1. Create or select a candidate in the dashboard and launch a realtime interview.
+2. Grant microphone and camera access in the interview client.
+3. Converse with the AI interviewer; watch backend logs for `tts_chunk` and `ai_chunk_played` lines to confirm streaming.
+4. When the session ends, open the admin “View Results” page and play the MP4. Audio should be in sync with the video; if not, review the troubleshooting section below.
 
-## API Endpoints
-
-### Audio Endpoints
-- `POST /api/audio/tts` - Text-to-speech conversion
-- `POST /api/audio/stt` - Speech-to-text transcription
-- `GET /api/audio/voices` - Get available TTS voices
-- `GET /api/audio/persona` - Get AI interviewer persona
-
-### Interview Endpoints
-- `POST /api/interviews` - Create a new interview
-- `GET /api/interviews` - Get all interviews
-- `GET /api/interviews/{id}` - Get specific interview
-- `POST /api/interviews/{id}/complete` - Complete an interview
-- `POST /api/interviews/{id}/analyze` - Analyze interview performance
-
-### Chat Endpoints
-- `POST /api/chat` - Send a message in an interview
-- `GET /api/interviews/{id}/messages` - Get all messages for an interview
+For a deeper technical walkthrough see [REALTIME_INTERVIEW_README.md](./REALTIME_INTERVIEW_README.md).
 
 ## Troubleshooting
 
@@ -177,16 +146,22 @@ The interview frontend will be available at `http://localhost:3001`
   - **Important**: The application has no fallback mechanism and requires MongoDB to be running
 
 ### Audio Not Playing
-- Check that your browser has audio permissions enabled
-- Verify the OpenAI API key is correct in the backend `.env` file
-- Check browser console for any errors
+- Confirm the browser tab has audio permissions.
+- Verify the OpenAI API key is configured correctly in the backend `.env`.
+- Inspect browser devtools for `tts_chunk` payloads; if they are missing, ensure the realtime WebSocket is connected and the OpenAI Realtime model name matches `settings`.
 
 ### Microphone Not Working
-- Ensure your browser has microphone permissions
-- Check that you have a working microphone connected
-- Try refreshing the page and allowing permissions again
+- Ensure your browser has microphone permissions and is using the expected input device.
+- Refresh the page after granting permissions; some browsers require a second attempt.
+- Confirm `MediaRecorder` is supported (Safari requires HTTPS). When in doubt, test in the latest Chrome.
 
 ### Backend Connection Issues
-- Verify the backend is running on port 8000
-- Check that `REACT_APP_BACKEND_URL` in frontend `.env` points to the correct backend URL
-- Ensure CORS is configured correctly in the backend
+- Verify the backend is running on port 8000 (or adjust the frontend `.env` values).
+- Ensure `REACT_APP_BACKEND_URL` in both frontends points to the correct origin.
+- If CORS errors appear, add your frontend origins to the `CORS_ORIGINS` list in the backend configuration.
+
+### Audio & Video Out of Sync
+- Make sure both frontends are using the latest code that emits `ai_chunk_played` telemetry.
+- Check backend logs for lines like `Updated AI chunk timestamp`; absence indicates timestamps are not being received.
+- Confirm FFmpeg is installed and executable (`ffmpeg -version`).
+- Encourage candidates to wear headphones when possible to avoid microphone bleed-through of the AI voice, which can still create faint echoes in the mix.
