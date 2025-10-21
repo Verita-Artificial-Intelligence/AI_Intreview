@@ -21,6 +21,12 @@ export interface MicChunkMessage {
   timestamp?: number;
 }
 
+export interface AIChunkPlayedMessage {
+  event: 'ai_chunk_played';
+  seq: number;
+  timestamp: number;
+}
+
 export interface UserTurnEndMessage {
   event: 'user_turn_end';
   timestamp?: number;
@@ -39,6 +45,7 @@ export interface EndSessionMessage {
 export type ClientMessage =
   | StartSessionMessage
   | MicChunkMessage
+  | AIChunkPlayedMessage
   | UserTurnEndMessage
   | BargeInMessage
   | EndSessionMessage;
@@ -60,7 +67,7 @@ export interface TranscriptMessage {
 
 export interface TTSChunkMessage {
   event: 'tts_chunk';
-  seq: number;
+  seq?: number;
   audio_b64: string;
   is_final: boolean;
 }

@@ -1,5 +1,5 @@
 import { useLocation } from 'react-router-dom'
-import { Users, Briefcase, BarChart, CheckSquare, FileText, ChevronRight } from 'lucide-react'
+import { Users, Briefcase, BarChart, FileText, Table, ChevronRight } from 'lucide-react'
 
 export default function AdminSidebar() {
   const location = useLocation()
@@ -19,6 +19,7 @@ export default function AdminSidebar() {
   ]
 
   const annotationItems = [
+    { path: '/admin/data-explorer', icon: Table, label: 'Data Explorer' },
     { path: '/annotation-data', icon: FileText, label: 'Annotation Data' },
     { path: '/annotators', icon: Users, label: 'Annotators' },
   ]

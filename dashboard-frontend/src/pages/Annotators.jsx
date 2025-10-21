@@ -207,15 +207,6 @@ export default function Annotators() {
                 <p className="text-sm text-neutral-500 mb-4">
                   {searchTerm ? 'Try a different search term' : 'Annotators will appear once annotation tasks are assigned'}
                 </p>
-                {!searchTerm && (
-                  <Button
-                    onClick={() => navigate('/annotation-tasks')}
-                    className="bg-brand-500 hover:bg-brand-600 text-white rounded-lg"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Annotation Tasks
-                  </Button>
-                )}
               </div>
             ) : (
               filteredAnnotators.map((annotator) => (
