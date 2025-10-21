@@ -206,11 +206,21 @@ class AdminDataExplorerService:
                         },
                         None,
                         {
-                            "$dateFromString": {
-                                "dateString": "$$value",
-                                "onError": None,
-                                "onNull": None,
-                            }
+                            "$cond": [
+                                {"$eq": [{"$type": "$$value"}, "date"]},
+                                "$$value",
+                                {
+                                    "$cond": [
+                                        {"$eq": [{"$type": "$$value"}, "string"]},
+                                        {
+                                            "$dateFromString": {
+                                                "dateString": "$$value",
+                                            }
+                                        },
+                                        None,
+                                    ]
+                                },
+                            ]
                         },
                     ]
                 },
@@ -332,11 +342,27 @@ class AdminDataExplorerService:
                 }
             },
             {
-                "$addFields": {
-                    "dataset_doc": {"$arrayElemAt": ["$dataset_doc", 0]},
-                    "job_doc": {"$arrayElemAt": ["$job_doc", 0]},
-                    "candidate_doc": {"$arrayElemAt": ["$candidate_doc", 0]},
-                    "interview_doc": {"$arrayElemAt": ["$interview_doc", 0]},
+                "$unwind": {
+                    "path": "$dataset_doc",
+                    "preserveNullAndEmptyArrays": True,
+                }
+            },
+            {
+                "$unwind": {
+                    "path": "$job_doc",
+                    "preserveNullAndEmptyArrays": True,
+                }
+            },
+            {
+                "$unwind": {
+                    "path": "$candidate_doc",
+                    "preserveNullAndEmptyArrays": True,
+                }
+            },
+            {
+                "$unwind": {
+                    "path": "$interview_doc",
+                    "preserveNullAndEmptyArrays": True,
                 }
             },
             {
