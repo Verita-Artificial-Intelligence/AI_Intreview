@@ -133,6 +133,27 @@ class AudioBuffer:
 
             logger.debug(f"Buffered AI chunk: seq={seq}, size={len(audio_data)} bytes, ts={timestamp:.3f}s")
 
+    async def update_ai_timestamp(self, seq: int, client_timestamp: float) -> None:
+        """
+        Update the timestamp of an AI chunk using client playback timing.
+
+        Args:
+            seq: Sequence number of the AI chunk
+            client_timestamp: Playback start time reported by client (seconds since session start)
+        """
+        async with self.lock:
+            for chunk in self.ai_chunks:
+                if chunk.seq == seq:
+                    new_ts = max(0.0, client_timestamp)
+                    old_ts = chunk.timestamp
+                    chunk.timestamp = new_ts
+                    logger.debug(
+                        f"Updated AI chunk timestamp: seq={seq}, old={old_ts:.3f}s -> new={new_ts:.3f}s"
+                    )
+                    return
+
+            logger.debug(f"Received AI timestamp update for unknown seq={seq}")
+
     async def get_stats(self) -> dict:
         """
         Get buffer statistics.

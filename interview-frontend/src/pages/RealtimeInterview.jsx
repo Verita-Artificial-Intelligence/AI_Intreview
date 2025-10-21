@@ -43,6 +43,7 @@ export default function RealtimeInterview() {
   const audioCaptureRef = useRef(null);
   const audioPlayerRef = useRef(null);
   const videoRecorderRef = useRef(null);
+  const sessionStartRef = useRef(null);
 
   // State
   const [isInitialized, setIsInitialized] = useState(false);
@@ -216,9 +217,34 @@ export default function RealtimeInterview() {
     wsClient.on('tts_chunk', async (message) => {
       if (!audioPlayerRef.current) return;
 
-      // Play audio chunk
       if (message.audio_b64) {
-        await audioPlayerRef.current.playChunk(message.audio_b64);
+        await audioPlayerRef.current.playChunk(message.audio_b64, {
+          seq: message.seq,
+          onScheduled: ({ seq, startTime }) => {
+            if (!audioPlayerRef.current) {
+              return;
+            }
+
+            if (sessionStartRef.current === null) {
+              sessionStartRef.current = performance.now() / 1000;
+            }
+
+            const wallStart = audioPlayerRef.current.getWallTimeForContextTime(startTime);
+            const timestamp = Math.max(0, wallStart - sessionStartRef.current);
+
+            if (
+              typeof seq === 'number' &&
+              wsClientRef.current &&
+              wsClientRef.current.isConnected()
+            ) {
+              wsClientRef.current.send({
+                event: 'ai_chunk_played',
+                seq,
+                timestamp,
+              });
+            }
+          },
+        });
       }
     });
 
@@ -274,7 +300,9 @@ export default function RealtimeInterview() {
     setMicActive(!mutedRef.current);
     setStatus('listening');
 
-    audioCaptureRef.current.start((seq, audioB64) => {
+    sessionStartRef.current = performance.now() / 1000;
+
+    audioCaptureRef.current.start((seq, audioB64, timestamp) => {
       // Only send audio when not muted; OpenAI handles VAD
       if (
         !mutedRef.current &&
@@ -285,6 +313,7 @@ export default function RealtimeInterview() {
           event: 'mic_chunk',
           seq,
           audio_b64: audioB64,
+          timestamp,
         });
       }
     });
@@ -302,6 +331,8 @@ export default function RealtimeInterview() {
     setMicActive(false);
 
     console.log('Microphone stopped');
+
+    sessionStartRef.current = null;
   };
 
   /**
