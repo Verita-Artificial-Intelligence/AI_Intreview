@@ -375,9 +375,15 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
             if event_type == "mic_chunk":
                 audio_b64 = data.get("audio_b64")
                 seq = data.get("seq", 0)
+                timestamp_raw = data.get("timestamp")
+                timestamp: Optional[float]
+                if isinstance(timestamp_raw, (int, float)):
+                    timestamp = float(timestamp_raw)
+                else:
+                    timestamp = None
 
                 # Buffer microphone audio for server-side mixing
-                await audio_buffer.add_mic_chunk(audio_b64, seq)
+                await audio_buffer.add_mic_chunk(audio_b64, seq, timestamp)
 
                 # Still send to OpenAI for VAD and transcription
                 await realtime.send_event({
