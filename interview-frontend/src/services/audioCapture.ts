@@ -15,7 +15,8 @@ export class AudioCapture {
   private readonly CHUNK_DURATION_MS = 100; // 100ms chunks
   private readonly BUFFER_SIZE = 4096; // ScriptProcessorNode buffer size
 
-  private onChunkCallback: ((seq: number, audioB64: string) => void) | null = null;
+  private onChunkCallback: ((seq: number, audioB64: string, timestampSeconds: number) => void) | null = null;
+  private sentSamples = 0;
 
   /**
    * Request microphone permission and initialize audio context.
@@ -40,7 +41,7 @@ export class AudioCapture {
   /**
    * Start capturing audio and emitting chunks.
    */
-  start(onChunk: (seq: number, audioB64: string) => void): void {
+  start(onChunk: (seq: number, audioB64: string, timestampSeconds: number) => void): void {
     if (!this.audioContext || !this.mediaStream) {
       throw new Error('Audio capture not initialized');
     }
@@ -53,6 +54,7 @@ export class AudioCapture {
     this.onChunkCallback = onChunk;
     this.isCapturing = true;
     this.seq = 0;
+    this.sentSamples = 0;
 
     // Create source from microphone
     this.sourceNode = this.audioContext.createMediaStreamSource(this.mediaStream);
@@ -102,8 +104,12 @@ export class AudioCapture {
 
         // Emit chunk
         if (this.onChunkCallback) {
-          this.onChunkCallback(this.seq++, base64);
+          const timestampSeconds = this.sentSamples / this.TARGET_SAMPLE_RATE;
+          this.onChunkCallback(this.seq++, base64, timestampSeconds);
         }
+
+        // Track total samples that have been emitted so future timestamps stay aligned
+        this.sentSamples += chunk.length;
       }
     };
 

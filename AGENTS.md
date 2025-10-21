@@ -28,4 +28,5 @@
 
 ## Security & Configuration Tips
 - The platform needs MongoDB and an OpenAI key; ensure `.env` files declare `MONGO_URL`, `DB_NAME`, `OPENAI_API_KEY`, and frontend `REACT_APP_BACKEND_URL`.
+- FFmpeg must be installed and available on `PATH` for the backend to mux mixed audio into MP4 exports (`uploads/videos`). Without it, only raw WebM files will appear.
 - Exclude generated media, logs, and secrets via `.gitignore`. Run `pip-audit` and `yarn audit` when introducing new dependencies.

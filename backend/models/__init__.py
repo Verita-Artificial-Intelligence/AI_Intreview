@@ -7,6 +7,7 @@ from .job import Job, JobCreate, JobStatusUpdate, InterviewType, SkillDefinition
 from .annotation import AnnotationTask, AnnotationTaskCreate, AnnotationTaskUpdate, AnnotationTaskAssign, AnnotationTaskStatus, AnnotatorStats
 from .annotation_data import AnnotationData, AnnotationDataCreate, DataType
 from .earnings import Earning, EarningsSummary, EarningStatus
+from .admin_data import AdminDataRecord, AdminDataPage
 from .websocket import (
     StartSessionMessage,
     MicChunkMessage,
@@ -51,6 +52,8 @@ __all__ = [
     "AnnotationData",
     "AnnotationDataCreate",
     "DataType",
+    "AdminDataRecord",
+    "AdminDataPage",
     "Earning",
     "EarningsSummary",
     "EarningStatus",

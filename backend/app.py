@@ -19,6 +19,7 @@ from routers import (
     earnings,
     admin,
 )
+from services.admin_data_service import AdminDataExplorerService
 
 # Main application setup
 app = FastAPI(
@@ -37,6 +38,11 @@ app.add_middleware(
 )
 
 # Event handlers for database connection
+@app.on_event("startup")
+async def startup():
+    await AdminDataExplorerService.ensure_indexes()
+
+
 @app.on_event("shutdown")
 async def shutdown_db():
     await shutdown_db_client()
