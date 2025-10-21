@@ -47,6 +47,10 @@ uvicorn server:app --reload --host 0.0.0.0 --port 8000
 
 The backend will be available at `http://localhost:8000`
 
+### Admin Data Explorer APIs
+
+The `/api/admin/data` endpoints power the dashboard Data Explorer. When the backend boots it automatically creates the necessary MongoDB indexes (`job_id`, `annotator_id`, `status`, `quality_rating`, timestamp fields, and `data_to_annotate.annotation_data_id`) so pagination and filtering stay responsive. No manual migration is required, but ensure the service starts with a user that can create indexes the first time the feature is used.
+
 ## Frontend Setup
 
 This project includes two separate frontend applications:

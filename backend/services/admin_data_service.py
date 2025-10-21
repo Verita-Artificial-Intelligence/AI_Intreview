@@ -333,10 +333,10 @@ class AdminDataExplorerService:
             },
             {
                 "$addFields": {
-                    "dataset_doc": {"$first": "$dataset_doc"},
-                    "job_doc": {"$first": "$job_doc"},
-                    "candidate_doc": {"$first": "$candidate_doc"},
-                    "interview_doc": {"$first": "$interview_doc"},
+                    "dataset_doc": {"$arrayElemAt": ["$dataset_doc", 0]},
+                    "job_doc": {"$arrayElemAt": ["$job_doc", 0]},
+                    "candidate_doc": {"$arrayElemAt": ["$candidate_doc", 0]},
+                    "interview_doc": {"$arrayElemAt": ["$interview_doc", 0]},
                 }
             },
             {
