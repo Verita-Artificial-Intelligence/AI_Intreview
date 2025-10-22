@@ -11,7 +11,7 @@ const API = `${BACKEND_URL}/api`
 
 const NewInterviewPrep = () => {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, token } = useAuth()
   const [searchParams] = useSearchParams()
   const jobId = searchParams.get('jobId')
   const videoRef = useRef(null)
@@ -80,10 +80,33 @@ const NewInterviewPrep = () => {
     }
   }
 
-  const handleStartInterview = () => {
+  const handleStartInterview = async () => {
+    if (jobId && user?.id) {
+      try {
+        const response = await axios.get(`${API}/interviews`, {
+          params: { job_id: jobId, candidate_id: user.id },
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        })
+
+        const hasActiveOrCompletedInterview = response.data.some((interview) =>
+          ['in_progress', 'completed', 'under_review', 'approved'].includes(interview.status)
+        )
+
+        if (hasActiveOrCompletedInterview) {
+          setError('You have already completed this interview. Visit your status page for updates instead of reapplying.')
+          return
+        }
+      } catch (checkError) {
+        console.error('Error checking existing interview:', checkError)
+        setError('Unable to verify your application status right now. Please refresh and try again.')
+        return
+      }
+    }
+
     if (stream) {
       stream.getTracks().forEach((track) => track.stop())
     }
+    setError('')
     // Always generate a NEW interview ID for each job application
     // This ensures each job has its own separate interview record
     const interviewId = uuidv4()
