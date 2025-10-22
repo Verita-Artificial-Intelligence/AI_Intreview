@@ -5,6 +5,7 @@
 # python envs
 venv/*
 venv/
+*.csv
 # Dependencies
 node_modules/
 /node_modules
