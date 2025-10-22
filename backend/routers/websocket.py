@@ -480,6 +480,102 @@ async def forward_openai_to_client(
     """Forward events from OpenAI to client and buffer AI audio."""
     ai_seq = 0
     client_closed = False
+    audio_delta_types = {"response.output_audio.delta", "response.audio.delta"}
+    audio_done_types = {"response.output_audio.done", "response.audio.done"}
+    assistant_delta_types = {
+        "response.output_text.delta",
+        "response.output_audio_transcript.delta",
+        "response.audio_transcript.delta",
+        "response.content_part.delta",
+    }
+    assistant_done_types = {
+        "response.output_text.done",
+        "response.output_audio_transcript.done",
+        "response.audio_transcript.done",
+        "response.content_part.done",
+    }
+
+    def extract_audio_b64(event: dict) -> str:
+        delta = event.get("delta")
+        if isinstance(delta, str):
+            return delta
+        if isinstance(delta, dict):
+            for key in ("audio", "audio_b64", "data", "chunk", "value"):
+                val = delta.get(key)
+                if isinstance(val, str):
+                    return val
+        for key in ("audio", "audio_b64", "data", "chunk"):
+            val = event.get(key)
+            if isinstance(val, str):
+                return val
+            if isinstance(val, dict):
+                for inner_key in ("data", "chunk", "b64", "base64", "value"):
+                    inner_val = val.get(inner_key)
+                    if isinstance(inner_val, str):
+                        return inner_val
+        return ""
+
+    def extract_text(event: dict) -> str:
+        for key in ("transcript", "text"):
+            val = event.get(key)
+            if isinstance(val, str):
+                return val
+        delta = event.get("delta")
+        if isinstance(delta, str):
+            return delta
+        if isinstance(delta, dict):
+            for key in ("text", "transcript", "value"):
+                val = delta.get(key)
+                if isinstance(val, str):
+                    return val
+            content = delta.get("content")
+            if isinstance(content, dict):
+                for key in ("text", "transcript", "value"):
+                    val = content.get(key)
+                    if isinstance(val, str):
+                        return val
+        content = event.get("content")
+        if isinstance(content, dict):
+            for key in ("text", "transcript", "value"):
+                val = content.get(key)
+                if isinstance(val, str):
+                    return val
+        item = event.get("item")
+        if isinstance(item, dict):
+            contents = item.get("content") or []
+            if isinstance(contents, list):
+                for entry in contents:
+                    if isinstance(entry, dict):
+                        for key in ("transcript", "text", "value"):
+                            val = entry.get(key)
+                            if isinstance(val, str) and val:
+                                return val
+        return ""
+
+    async def emit_assistant_text(text: str, *, final: bool) -> bool:
+        if not text:
+            return True
+        if final and transcript and transcript[-1]["speaker"] == "assistant" and transcript[-1]["text"] == text:
+            logger.debug("Skipping duplicate final assistant transcript event")
+            return True
+        if not _merge_transcript_chunk(
+            transcript,
+            "assistant",
+            text,
+            final=final,
+            replace_on_final=True,
+        ):
+            return True
+        snippet = text[:50] + ("..." if len(text) > 50 else "")
+        logger.info(
+            f"ASSISTANT transcript {'final' if final else 'delta'}: '{snippet}' (entries: {len(transcript)})"
+        )
+        return await safe_send({
+            "event": "transcript",
+            "speaker": "assistant",
+            "text": text,
+            "final": final
+        })
 
     async def safe_send(payload: dict) -> bool:
         nonlocal client_closed
@@ -518,10 +614,13 @@ async def forward_openai_to_client(
 
             # Log full event for transcription/audio/item related events
             if "transcription" in event_type or "transcript" in event_type or "audio" in event_type or "item" in event_type:
-                if event_type == "response.output_audio.delta":
+                if event_type in audio_delta_types:
                     # Avoid logging large base64 audio chunks
                     log_event = event.copy()
-                    log_event["delta"] = f"<audio chunk len={len(event.get('delta', ''))}>"
+                    audio_preview = extract_audio_b64(event)
+                    log_event["delta"] = f"<audio chunk len={len(audio_preview) if isinstance(audio_preview, str) else 0}>"
+                    if "audio" in log_event:
+                        log_event["audio"] = "<omitted audio>"
                     logger.info(f"   Full event data: {log_event}")
                 else:
                     logger.info(f"   Full event data: {event}")
@@ -674,69 +773,26 @@ async def forward_openai_to_client(
                 error = event.get("error", {})
                 logger.error(f"conversation.item.input_audio_transcription.failed - item_id: {item_id}, error: {error}")
 
-            elif event_type == "response.output_audio_transcript.delta":
-                # Streaming assistant audio transcription (GA)
-                text = event.get("delta", "")
+            elif event_type in assistant_delta_types:
+                text = extract_text(event)
                 if text:
-                    # Append to last assistant message if exists, otherwise create new
-                    if transcript and transcript[-1]["speaker"] == "assistant":
-                        transcript[-1]["text"] += text
-                    else:
-                        transcript.append({"speaker": "assistant", "text": text})
+                    if not await emit_assistant_text(text, final=False):
+                        return
 
+            elif event_type in assistant_done_types:
+                text = extract_text(event)
+                if text:
+                    if not await emit_assistant_text(text, final=True):
+                        return
+                if event_type == "response.output_text.done":
                     if not await safe_send({
-                        "event": "transcript",
-                        "speaker": "assistant",
-                        "text": text,
-                        "final": False
+                        "event": "answer_end"
                     }):
                         return
 
-            elif event_type == "response.output_audio_transcript.done":
-                # Finalized assistant audio transcription (GA)
-                # NOTE: Each .done event is a NEW conversation turn, not an update!
-                text = event.get("transcript", "")
-                if text:
-                    # Always append new assistant messages (each is a separate turn)
-                    transcript.append({"speaker": "assistant", "text": text})
-                    logger.info(f"ASSISTANT transcript added: '{text[:50]}...' (total entries: {len(transcript)})")
-
-                    if not await safe_send({
-                        "event": "transcript",
-                        "speaker": "assistant",
-                        "text": text,
-                        "final": True
-                    }):
-                        return
-
-            elif event_type == "response.output_text.delta":
-                # AI transcript
-                text = event.get("delta", "")
-                if text:
-                    # This is a bit tricky as we get deltas. We'll add to the last message if it's from the assistant.
-                    if transcript and transcript[-1]["speaker"] == "assistant":
-                        transcript[-1]["text"] += text
-                    else:
-                        transcript.append({"speaker": "assistant", "text": text})
-
-                    if not await safe_send({
-                        "event": "transcript",
-                        "speaker": "assistant",
-                        "text": text,
-                        "final": False
-                    }):
-                        return
-
-            elif event_type == "response.output_text.done":
-                # Assistant finished text output segment
-                if not await safe_send({
-                    "event": "answer_end"
-                }):
-                    return
-
-            elif event_type == "response.output_audio.delta":
+            elif event_type in audio_delta_types:
                 # AI audio chunk
-                audio_b64 = event.get("delta", "")
+                audio_b64 = extract_audio_b64(event)
                 chunk_seq: Optional[int] = None
 
                 # Buffer AI audio for server-side mixing
@@ -754,7 +810,7 @@ async def forward_openai_to_client(
                 }):
                     return
 
-            elif event_type == "response.output_audio.done":
+            elif event_type in audio_done_types:
                 # AI finished speaking
                 if not await safe_send({
                     "event": "tts_chunk",
@@ -767,7 +823,7 @@ async def forward_openai_to_client(
                 }):
                     return
 
-            elif event_type == "response.completed":
+            elif event_type in {"response.completed", "response.done"}:
                 # Model signaled response is fully completed (catch-all)
                 if not await safe_send({
                     "event": "answer_end"
