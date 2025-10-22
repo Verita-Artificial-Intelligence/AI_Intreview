@@ -28,6 +28,19 @@ class InterviewService:
         if not candidate:
             raise HTTPException(status_code=404, detail="Candidate not found")
 
+        # Prevent duplicate interviews for the same job once a candidate has progressed
+        if interview_data.job_id:
+            existing_interview = await db.interviews.find_one({
+                "candidate_id": interview_data.candidate_id,
+                "job_id": interview_data.job_id,
+                "status": {"$in": ["in_progress", "completed", "under_review", "approved"]},
+            })
+            if existing_interview:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Candidate already has an active or completed interview for this job.",
+                )
+
         # Get job details and interview configuration if job_id is provided
         job_title = None
         interview_type = interview_data.interview_type
