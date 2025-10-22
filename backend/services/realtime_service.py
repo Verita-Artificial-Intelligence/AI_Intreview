@@ -92,7 +92,7 @@ class RealtimeService:
                     "input": {
                         "turn_detection": {
                             "type": "server_vad",
-                            "silence_duration_ms": 600
+                            "silence_duration_ms": 1200
                         }
                     }
                 },
