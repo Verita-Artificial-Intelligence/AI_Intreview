@@ -46,13 +46,17 @@ class RealtimeService:
         """Establish WebSocket connection to OpenAI Realtime API."""
         try:
             url = f"wss://api.openai.com/v1/realtime?model={self.model}"
-            headers = {"Authorization": f"Bearer {self.api_key}"}
+            headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "OpenAI-Beta": "realtime=v1",
+            }
 
             logger.info(f"Connecting to OpenAI Realtime API: {self.model}")
 
             self.ws = await websockets.connect(
                 url,
                 additional_headers=headers,
+                subprotocols=["realtime"],
                 ping_interval=10,
                 ping_timeout=30,
                 close_timeout=5,
