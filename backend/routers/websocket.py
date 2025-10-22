@@ -125,6 +125,21 @@ async def websocket_endpoint(websocket: WebSocket):
                 interview_doc = await interviews_collection.find_one({"id": interview_id})
 
                 if not interview_doc:
+                    if candidate_id and job_id:
+                        existing_for_job = await interviews_collection.find_one({
+                            "candidate_id": candidate_id,
+                            "job_id": job_id,
+                            "status": {"$in": ["in_progress", "completed", "under_review", "approved"]},
+                        })
+
+                        if existing_for_job:
+                            await websocket.send_json({
+                                "event": "error",
+                                "message": "You have already completed this interview. Please review your application status instead of starting a new one.",
+                            })
+                            await websocket.close(code=1008, reason="duplicate-completed-interview")
+                            return
+
                     # Create new interview document
                     from datetime import datetime, timezone
                     interview_doc = {
