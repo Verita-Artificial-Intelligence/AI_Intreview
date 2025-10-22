@@ -5,6 +5,8 @@ Each interview type has its own system instructions and greeting templates.
 
 from typing import Dict, List, Optional
 
+from prompts.chat import get_interviewer_system_prompt
+
 
 def get_interview_type_config(
     interview_type: str,
@@ -64,34 +66,57 @@ def _format_skills_section(skills: Optional[List[Dict[str, str]]]) -> str:
     return skills_text
 
 
+def _build_base_prompt(
+    candidate_name: str,
+    position: str,
+    skills: Optional[List[Dict[str, str]]] = None,
+) -> str:
+    """Compose the shared interviewer instructions with candidate context."""
+    skill_names: List[str] = []
+    for skill in skills or []:
+        name = skill.get("name")
+        if name:
+            skill_names.append(name)
+
+    return get_interviewer_system_prompt(
+        position=position or "Creative Professional",
+        candidate_name=candidate_name or "the candidate",
+        candidate_skills=skill_names,
+    )
+
+
 def _get_standard_config(candidate_name: str, position: str, skills: Optional[List[Dict[str, str]]] = None, **kwargs) -> Dict[str, str]:
     """Standard conversational interview configuration."""
 
     skills_section = _format_skills_section(skills)
+    base_prompt = _build_base_prompt(candidate_name, position, skills)
 
-    system_instructions = f"""You are an AI interviewer conducting a standard conversational interview for a {position} position.
+    type_guidance = (
+        f"Standard interview focus for the {position} role:\n"
+        "- Conduct a professional, engaging conversation that explores the candidate's creative thinking and fit.\n"
+        "- Ask open-ended questions about their portfolio, past projects, and creative decision-making.\n"
+        "- Adapt your questions based on their responses and use layered follow-ups when answers are brief.\n\n"
+        "Interview structure to cover:\n"
+        "1. Background, experience, and portfolio highlights\n"
+        "2. Creative approach and process on past projects\n"
+        f"3. Collaboration with other creatives and stakeholders{' with emphasis on the skills detailed below' if skills_section else ''}\n"
+        "4. Case studies that probe their decision-making and impact\n"
+        "5. Creative philosophy, inspiration, and growth mindset\n"
+        "6. Opportunity for their questions before closing"
+    )
 
-CANDIDATE: {candidate_name}
-POSITION: {position}{skills_section}
+    if skills_section:
+        type_guidance += f"{skills_section}"
 
-YOUR ROLE:
-- Conduct a professional, engaging, and creative conversation
-- Ask open-ended questions to assess creative thinking and fit for the role
-- Explore the candidate's portfolio, past projects, creative process, and vision
-- Adapt your questions based on their responses
-- Be conversational but maintain professionalism
+    type_guidance += "\n\nKeep the conversation natural and flowing. Ask follow-up questions to understand their creative thinking in depth."
 
-INTERVIEW STRUCTURE:
-1. Brief greeting and introduction
-2. Background, experience, and portfolio questions
-3. Creative approach and process questions{' focusing on the skills listed above' if skills else ''}
-4. Specific project case studies and creative decisions
-5. Creative philosophy and growth mindset questions
-6. Closing with opportunity for candidate questions
+    system_instructions = f"{base_prompt}\n\n{type_guidance}"
 
-Keep the conversation natural and flowing. Ask follow-up questions to understand their creative thinking."""
-
-    initial_greeting = f"Hello {candidate_name}, thank you for joining me today. I'm Alex, and I'll be interviewing you for the {position} position. To start, could you walk me through your creative background and what draws you to this role?"
+    initial_greeting = (
+        f"Hello {candidate_name}, thank you for joining me today. I'm Alex, and I'll be interviewing you for the {position} position. "
+        "Before we wrap later, I'll outline the next steps so we can close the call together. "
+        "To start, could you walk me through your creative background and what draws you to this role?"
+    )
 
     return {
         "system_instructions": system_instructions,
@@ -103,36 +128,35 @@ def _get_human_data_config(candidate_name: str, position: str, skills: Optional[
     """Design critique and feedback exercise configuration."""
 
     skills_section = _format_skills_section(skills)
+    base_prompt = _build_base_prompt(candidate_name, position, skills)
 
-    system_instructions = f"""You are an AI interviewer conducting a design critique and feedback exercise interview for a {position} position.
+    type_guidance = (
+        f"Design critique interview focus for the {position} role:\n"
+        "- Assess the candidate's experience with critique, feedback, and creative direction.\n"
+        "- Evaluate their taste, judgment, and understanding of design principles.\n"
+        "- Present design scenarios and prompt them for clear, actionable feedback.\n"
+        "- Explore how they give and receive critique in collaborative settings.\n\n"
+        "Conversation outline:\n"
+        "1. Background in providing and receiving design feedback\n"
+        "2. Principles and aesthetics they prioritize when evaluating work\n"
+        "3. Practical critique exercise where you describe a scenario and ask for their recommendations\n"
+        "4. Discussion of their reasoning, communication style, and decision-making\n"
+        "5. Reflection on subjective choices, collaboration, and iteration"
+    )
 
-CANDIDATE: {candidate_name}
-POSITION: {position}{skills_section}
+    if skills_section:
+        type_guidance += f"{skills_section}"
 
-YOUR ROLE:
-- Assess experience with design critique, feedback, and creative direction
-- Evaluate taste, aesthetic judgment, and design principles understanding
-- Present design scenarios and ask for critical feedback
-- Assess understanding of design fundamentals and their application
-- Understand how they approach giving and receiving creative feedback
+    type_guidance += "\n\nDuring the critique exercise, present at least one concrete scenario (e.g., UI flow, visual composition, or brand identity) and ask for detailed feedback. Probe for their rationale and follow up on trade-offs they mention."
 
-INTERVIEW STRUCTURE:
-1. Background in design critique and feedback roles
-2. Understanding of design principles and aesthetics
-3. Practical design critique exercise (you will present design scenarios)
-4. Discussion of their design feedback and recommendations
-5. Assessment of their approach to subjective creative decisions
+    system_instructions = f"{base_prompt}\n\n{type_guidance}"
 
-DESIGN CRITIQUE EXERCISE:
-Present the candidate with design scenarios such as:
-- Visual design composition analysis
-- UI/UX flow and usability critique
-- Brand identity and aesthetic direction evaluation
-- Creative direction feedback opportunities
-
-Evaluate their reasoning, design thinking, and communication of feedback."""
-
-    initial_greeting = f"Hello {candidate_name}, thank you for joining me today. I'm Alex, and I'll be assessing your design critique skills and creative feedback abilities for the {position} role. We'll discuss your experience with design direction and then work through some practical design critique exercises together. Could you start by telling me about your experience with design critique and creative feedback?"
+    initial_greeting = (
+        f"Hello {candidate_name}, thank you for joining me today. I'm Alex, and I'll be assessing your design critique skills and creative feedback abilities for the {position} role. "
+        "We'll talk through your experience and work through a practical critique exercise. "
+        "Before we wrap later, I'll explain what happens next so we can close the call cleanly together. "
+        "Could you start by telling me about your experience with design critique and creative feedback?"
+    )
 
     return {
         "system_instructions": system_instructions,
@@ -145,30 +169,30 @@ def _get_custom_questions_config(candidate_name: str, position: str, custom_ques
 
     skills_section = _format_skills_section(skills)
     questions_list = "\n".join([f"{i+1}. {q}" for i, q in enumerate(custom_questions)]) if custom_questions else "Questions will be provided during the interview."
+    base_prompt = _build_base_prompt(candidate_name, position, skills)
 
-    system_instructions = f"""You are an AI interviewer conducting a structured interview with custom questions for a {position} position.
+    type_guidance = (
+        f"Structured custom-question interview for the {position} role:\n"
+        "- Ask the predefined custom questions in order, ensuring each one is acknowledged.\n"
+        "- Listen closely and use follow-up questions to clarify or deepen each answer.\n"
+        "- Keep the conversation focused on the prepared topics while maintaining a natural tone.\n"
+        "- Capture enough detail from the candidate to support evaluation of their fit.\n\n"
+        "Custom questions to cover:\n"
+        f"{questions_list}"
+    )
 
-CANDIDATE: {candidate_name}
-POSITION: {position}{skills_section}
+    if skills_section:
+        type_guidance += f"{skills_section}"
 
-YOUR ROLE:
-- Ask the predefined custom questions in order
-- Listen carefully to responses
-- Ask brief follow-up questions for clarity if needed
-- Keep the interview focused on the custom questions
-- Take notes on their answers for evaluation
+    type_guidance += "\n\nIf the candidate finishes answering quickly, ask a targeted follow-up to explore their reasoning, impact, or lessons learned before moving to the next prepared question."
 
-CUSTOM QUESTIONS TO ASK:
-{questions_list}
+    system_instructions = f"{base_prompt}\n\n{type_guidance}"
 
-APPROACH:
-- Ask each question clearly
-- Give the candidate time to think and respond
-- Ask one follow-up question per main question if clarification is needed
-- Be professional and encouraging
-- Cover all questions within the interview time"""
-
-    initial_greeting = f"Hello {candidate_name}, thank you for joining me today. I'm Alex, and I'll be conducting your interview for the {position} position. I have a set of specific questions prepared for you today. Let's begin - {custom_questions[0] if custom_questions else 'are you ready to start?'}"
+    initial_greeting = (
+        f"Hello {candidate_name}, thank you for joining me today. I'm Alex, and I'll be conducting your interview for the {position} position. "
+        "I have a set of specific questions prepared, and after we work through them I'll explain what happens next so we can wrap together. "
+        f"Let's begin — {custom_questions[0] if custom_questions else 'are you ready to start?'}"
+    )
 
     return {
         "system_instructions": system_instructions,
@@ -181,31 +205,32 @@ def _get_custom_exercise_config(candidate_name: str, position: str, custom_exerc
 
     skills_section = _format_skills_section(skills)
     exercise_description = custom_exercise_prompt or "A custom creative brief or portfolio evaluation will be provided during the interview."
+    base_prompt = _build_base_prompt(candidate_name, position, skills)
 
-    system_instructions = f"""You are an AI interviewer conducting a custom portfolio/asset evaluation interview for a {position} position.
+    type_guidance = (
+        f"Custom creative exercise for the {position} role:\n"
+        f"- Present the brief clearly: {exercise_description}\n"
+        "- Invite clarifying questions so the candidate understands the expectations.\n"
+        "- Observe their creative approach, problem-solving, and communication as they respond.\n"
+        "- Probe on decisions, trade-offs, and the rationale behind their ideas.\n"
+        "- Offer light feedback and ask them to iterate or expand when appropriate.\n\n"
+        "Evaluation priorities:\n"
+        "- Understanding of the brief and constraints\n"
+        "- Originality and quality of their proposed solution\n"
+        "- Clarity in articulating their creative vision and process\n"
+        "- Collaboration mindset and openness to feedback"
+    )
 
-CANDIDATE: {candidate_name}
-POSITION: {position}{skills_section}
+    if skills_section:
+        type_guidance += f"{skills_section}"
 
-CUSTOM EVALUATION BRIEF:
-{exercise_description}
+    system_instructions = f"{base_prompt}\n\n{type_guidance}"
 
-YOUR ROLE:
-- Present the custom brief or evaluation criteria clearly
-- Answer clarifying questions about the creative task
-- Observe their creative approach and thought process
-- Evaluate their response based on creative excellence criteria
-- Provide feedback and explore their creative reasoning
-
-EVALUATION:
-- Understanding of the creative brief
-- Quality and originality of the creative response
-- Creative thinking and problem-solving
-- Communication of their creative vision and approach
-- Completeness, polish, and attention to detail
-- Creative confidence and articulation"""
-
-    initial_greeting = f"Hello {candidate_name}, thank you for joining me today. I'm Alex, and I'll be conducting a custom creative evaluation for the {position} position. I'll present you with a specific brief or portfolio evaluation. Let me explain the creative challenge: {custom_exercise_prompt if custom_exercise_prompt else 'I have a special creative brief prepared for you.'}"
+    initial_greeting = (
+        f"Hello {candidate_name}, thank you for joining me today. I'm Alex, and I'll be conducting a custom creative evaluation for the {position} position. "
+        f"I'll present you with a specific brief or portfolio evaluation. Let me explain the creative challenge: {custom_exercise_prompt if custom_exercise_prompt else 'I have a special creative brief prepared for you.'} "
+        "Once we've wrapped up the exercise, I'll outline the next steps so we can close the session together."
+    )
 
     return {
         "system_instructions": system_instructions,
