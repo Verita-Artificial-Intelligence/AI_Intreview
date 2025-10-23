@@ -23,6 +23,9 @@ class RealtimeService:
         model: str = "gpt-realtime",
         voice: str = "verse",
         instructions: str = "",
+        silence_duration_ms: int = 1200,
+        max_silence_duration_ms: Optional[int] = None,
+        silence_duration_step_ms: int = 200,
     ):
         """
         Initialize Realtime API proxy.
@@ -32,6 +35,9 @@ class RealtimeService:
             model: Model name
             voice: Voice for TTS
             instructions: System instructions
+            silence_duration_ms: Initial server VAD silence window
+            max_silence_duration_ms: Upper bound for adaptive silence window
+            silence_duration_step_ms: Increment to use when adapting the window
         """
         self.api_key = api_key
         self.model = model
@@ -41,6 +47,13 @@ class RealtimeService:
         self.connected = False
         self._receive_task: Optional[asyncio.Task] = None
         self._event_queue: asyncio.Queue = asyncio.Queue()
+        self._initial_silence_duration_ms = max(200, silence_duration_ms)
+        self._max_silence_duration_ms = max(
+            self._initial_silence_duration_ms,
+            (max_silence_duration_ms or self._initial_silence_duration_ms),
+        )
+        self._silence_duration_step_ms = max(50, silence_duration_step_ms)
+        self._current_silence_duration_ms = self._initial_silence_duration_ms
 
     async def connect(self) -> None:
         """Establish WebSocket connection to OpenAI Realtime API."""
@@ -92,7 +105,7 @@ class RealtimeService:
                     "input": {
                         "turn_detection": {
                             "type": "server_vad",
-                            "silence_duration_ms": 1200
+                            "silence_duration_ms": self._current_silence_duration_ms
                         }
                     }
                 },
@@ -114,6 +127,59 @@ class RealtimeService:
         }
         await self.send_event(config)
         logger.info("Session configured with input_audio_transcription")
+
+    async def update_turn_detection(self, silence_duration_ms: int) -> None:
+        """
+        Update the server VAD silence window for the active session.
+
+        Args:
+            silence_duration_ms: New silence duration in milliseconds.
+        """
+        target = max(200, min(silence_duration_ms, self._max_silence_duration_ms))
+        if target == self._current_silence_duration_ms:
+            return
+
+        event = {
+            "type": "session.update",
+            "session": {
+                "audio": {
+                    "input": {
+                        "turn_detection": {
+                            "type": "server_vad",
+                            "silence_duration_ms": target,
+                        }
+                    }
+                }
+            },
+        }
+        await self.send_event(event)
+        logger.info(
+            "Updated server VAD silence window: %sms -> %sms",
+            self._current_silence_duration_ms,
+            target,
+        )
+        self._current_silence_duration_ms = target
+
+    async def extend_silence_window(self) -> Optional[int]:
+        """
+        Increase the silence window in controlled increments.
+
+        Returns:
+            Optional[int]: The applied silence duration, or None if no change was made.
+        """
+        target = min(
+            self._current_silence_duration_ms + self._silence_duration_step_ms,
+            self._max_silence_duration_ms,
+        )
+        if target == self._current_silence_duration_ms:
+            logger.debug(
+                "Silence window already at max: %sms",
+                self._current_silence_duration_ms,
+            )
+            return None
+
+        await self.update_turn_detection(target)
+        return self._current_silence_duration_ms
 
     async def _receive_loop(self) -> None:
         """Receive and queue messages from OpenAI."""
@@ -172,5 +238,5 @@ class RealtimeService:
                 pass
 
         if self.ws:
-            await self.ws.close()
-            logger.info("Connection closed")
+                    await self.ws.close()
+                    logger.info("Connection closed")

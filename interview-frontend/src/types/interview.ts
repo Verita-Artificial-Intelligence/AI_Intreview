@@ -119,6 +119,7 @@ export type InterviewStatus =
   | 'listening'
   | 'processing'
   | 'speaking'
+  | 'ended'
   | 'completed'
   | 'error';
 

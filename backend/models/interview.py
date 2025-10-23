@@ -32,6 +32,13 @@ AcceptanceStatus = Literal[
     "rejected",  # Candidate rejected
 ]
 
+VideoProcessingStatus = Literal[
+    "pending",  # Upload finished but merge pending
+    "processing",  # FFmpeg merge running
+    "completed",  # Merge done
+    "failed",  # Merge failed, fallback video retained
+]
+
 
 class Interview(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -49,6 +56,8 @@ class Interview(BaseModel):
     analysis_status: Optional[AnalysisStatus] = None
     analysis_result: Optional[Dict[str, Any]] = None
     video_url: Optional[str] = None
+    video_processing_status: Optional[VideoProcessingStatus] = None
+    video_filesize: Optional[int] = None
     audio_path: Optional[str] = None  # Legacy support for single audio file
     audio_paths: Optional[Dict[str, str]] = None  # For separate mic, AI, and mixed audio
     interview_type: InterviewType = "standard"
