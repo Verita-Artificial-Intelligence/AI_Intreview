@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
 import { User, FileText, Brain, Code, MessageSquare, Terminal, Wand2, CheckCircle, X, Plus, Trash2, Upload, AlertCircle, Briefcase } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { cardStyles } from '@/lib/design-system'
@@ -59,6 +60,13 @@ const OTHER_INTERVIEW_TYPES = [
   },
 ]
 
+const createEmptySkills = () => [
+  { name: '', description: '' },
+  { name: '', description: '' },
+  { name: '', description: '' },
+  { name: '', description: '' },
+]
+
 const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
   const [step, setStep] = useState(1) // 1: Job selection, 2: Type selection, 3: Skills definition
   const [jobs, setJobs] = useState([])
@@ -66,12 +74,7 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
   const [loadingJobs, setLoadingJobs] = useState(true)
   const [selectedType, setSelectedType] = useState('standard')
   const [showOtherTypes, setShowOtherTypes] = useState(false)
-  const [skills, setSkills] = useState([
-    { name: '', description: '' },
-    { name: '', description: '' },
-    { name: '', description: '' },
-    { name: '', description: '' },
-  ])
+  const [skills, setSkills] = useState(createEmptySkills)
   const [customQuestions, setCustomQuestions] = useState([''])
   const [customExercisePrompt, setCustomExercisePrompt] = useState('')
   const [resumeText, setResumeText] = useState('')
@@ -83,14 +86,55 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
   useEffect(() => {
     if (open) {
       fetchJobs()
+    } else {
+      setStep(1)
+      setSelectedJob(null)
+      setResumeText('')
+      setResumeFile(null)
+      setResumeError('')
     }
   }, [open])
+
+  useEffect(() => {
+    if (!selectedJob) {
+      setSelectedType('standard')
+      setShowOtherTypes(false)
+      setSkills(createEmptySkills())
+      setCustomQuestions([''])
+      setCustomExercisePrompt('')
+      return
+    }
+
+    const jobType = selectedJob.interview_type || 'standard'
+    setSelectedType(jobType)
+    setShowOtherTypes(false)
+
+    if (Array.isArray(selectedJob.skills) && selectedJob.skills.length > 0) {
+      const mappedSkills = selectedJob.skills.map((skill) => ({
+        name: skill?.name || '',
+        description: skill?.description || '',
+      }))
+      setSkills(mappedSkills)
+    } else {
+      setSkills(createEmptySkills())
+    }
+
+    const jobQuestions = Array.isArray(selectedJob.custom_questions)
+      ? selectedJob.custom_questions.filter((q) => typeof q === 'string' && q.trim() !== '')
+      : []
+    setCustomQuestions(jobQuestions.length ? jobQuestions : [''])
+
+    setCustomExercisePrompt(selectedJob.custom_exercise_prompt || '')
+  }, [selectedJob])
 
   const fetchJobs = async () => {
     try {
       setLoadingJobs(true)
       const response = await axios.get(`${API}/jobs`)
-      setJobs(response.data.filter(job => job.status === 'open'))
+      const availableJobs = response.data.filter((job) =>
+        ['pending', 'in_progress'].includes(job.status)
+      )
+      setJobs(availableJobs)
     } catch (error) {
       console.error('Error fetching jobs:', error)
     } finally {
@@ -104,6 +148,7 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
 
   const handleNext = () => {
     if (step === 1) {
+      if (!selectedJob) return
       setStep(2)
     } else if (step === 2) {
       setStep(3)
@@ -187,6 +232,12 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
     setCreating(true)
 
     try {
+      if (!selectedJob) {
+        alert('Please select a job before creating an interview.')
+        setCreating(false)
+        return
+      }
+
       // Filter out empty skills
       const filteredSkills = skills
         .filter((skill) => skill.name.trim() !== '')
@@ -200,6 +251,7 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
 
       const interviewData = {
         candidate_id: candidate.id,
+        job_id: selectedJob.id,
         interview_type: selectedType,
         skills: filteredSkills.length > 0 ? filteredSkills : null,
         custom_questions:
@@ -217,6 +269,15 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
 
       if (response.data) {
         onSuccess(response.data)
+        setSelectedJob(null)
+        setSelectedType('standard')
+        setSkills(createEmptySkills())
+        setCustomQuestions([''])
+        setCustomExercisePrompt('')
+        setResumeText('')
+        setResumeFile(null)
+        setResumeError('')
+        setStep(1)
         onClose()
       }
     } catch (error) {
@@ -227,8 +288,98 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
     }
   }
 
+  const renderJobSelection = () => (
+    <div className="space-y-4">
+      <h3 className="text-base font-semibold text-neutral-900">Select a job</h3>
+      <p className="text-xs text-neutral-600">
+        Interviews inherit their configuration and title from jobs. Choose an active job so the AI introduces the correct role to the candidate.
+      </p>
+
+      {loadingJobs ? (
+        <div className="p-6 text-center border border-dashed border-neutral-200 rounded-lg text-sm text-neutral-600">
+          Loading jobs...
+        </div>
+      ) : jobs.length === 0 ? (
+        <Card className={`p-6 text-center ${cardStyles.default}`}>
+          <p className="text-sm text-neutral-600">
+            No active jobs available. Create a job first, then return to schedule the interview.
+          </p>
+        </Card>
+      ) : (
+        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+          {jobs.map((job) => {
+            const isSelected = selectedJob?.id === job.id
+
+            return (
+              <Card
+                key={job.id}
+                onClick={() => setSelectedJob(job)}
+                className={`p-4 cursor-pointer transition-all ${cardStyles.default} ${
+                  isSelected ? 'border-2 border-brand-500 bg-brand-50' : 'hover:border-brand-300'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-lg ${isSelected ? 'bg-brand-100 text-brand-600' : 'bg-neutral-100 text-neutral-600'}`}>
+                    <Briefcase className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h4 className="font-semibold text-sm text-neutral-900">{job.title}</h4>
+                        <p className="text-xs text-neutral-600 mt-1 line-clamp-2">{job.description}</p>
+                      </div>
+                      <Badge variant="outline" className="text-xs capitalize">
+                        {job.status.replace('_', ' ')}
+                      </Badge>
+                    </div>
+                    {job.position_type && (
+                      <p className="text-xs text-neutral-500 mt-2">{job.position_type}</p>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            )
+          })}
+        </div>
+      )}
+
+      <div className="flex justify-between gap-2 pt-4">
+        <Button onClick={onClose} variant="outline" className="rounded-lg">
+          Cancel
+        </Button>
+        <Button
+          onClick={handleNext}
+          disabled={!selectedJob}
+          className="rounded-lg bg-brand-500 hover:bg-brand-600 text-white"
+        >
+          Next: Interview Type
+        </Button>
+      </div>
+    </div>
+  )
+
+  const renderJobSummary = () => (
+    selectedJob && (
+      <div className="p-4 rounded-lg border border-brand-200 bg-brand-50">
+        <div className="flex items-start gap-3">
+          <div className="p-2 rounded-lg bg-brand-100 text-brand-600">
+            <Briefcase className="w-5 h-5" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-neutral-900">{selectedJob.title}</p>
+            {selectedJob.position_type && (
+              <p className="text-xs text-neutral-600">{selectedJob.position_type}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  )
+
   const renderTypeSelection = () => (
     <div className="space-y-4">
+      {renderJobSummary()}
+
       <h3 className="text-base font-semibold text-neutral-900">Select the interview type</h3>
 
       <div className="space-y-3">
@@ -301,19 +452,29 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
         </div>
       )}
 
-      <div className="flex justify-end gap-2 pt-4">
-        <Button onClick={onClose} variant="outline" className="rounded-lg">
-          Cancel
+      <div className="flex justify-between gap-2 pt-4">
+        <Button onClick={handleBack} variant="outline" className="rounded-lg">
+          Back
         </Button>
-        <Button onClick={handleNext} className="rounded-lg bg-brand-500 hover:bg-brand-600 text-white">
-          Next
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={onClose} variant="outline" className="rounded-lg">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleNext}
+            className="rounded-lg bg-brand-500 hover:bg-brand-600 text-white"
+          >
+            Next: Configure interview
+          </Button>
+        </div>
       </div>
     </div>
   )
 
   const renderSkillDefinition = () => (
     <div className="space-y-4">
+      {renderJobSummary()}
+
       <div>
         <h3 className="text-base font-semibold text-neutral-900 mb-1">Defined skills</h3>
         <p className="text-xs text-neutral-600">
@@ -518,7 +679,11 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
           </DialogTitle>
         </DialogHeader>
 
-        {step === 1 ? renderTypeSelection() : renderSkillDefinition()}
+        {step === 1
+          ? renderJobSelection()
+          : step === 2
+          ? renderTypeSelection()
+          : renderSkillDefinition()}
       </DialogContent>
     </Dialog>
   )

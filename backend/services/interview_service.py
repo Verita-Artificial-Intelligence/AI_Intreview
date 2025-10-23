@@ -60,6 +60,22 @@ class InterviewService:
                 skills = job.get("skills")
                 custom_questions = job.get("custom_questions")
                 custom_exercise_prompt = job.get("custom_exercise_prompt")
+            else:
+                logger.warning(
+                    "Job %s not found when creating interview for candidate %s",
+                    interview_data.job_id,
+                    interview_data.candidate_id,
+                )
+
+        if not job_title:
+            # Fall back to the candidate's stated position so prompts stay contextual
+            job_title = candidate.get("position")
+            if not interview_data.job_id:
+                logger.info(
+                    "Creating interview without job_id for candidate %s; using candidate position '%s'",
+                    interview_data.candidate_id,
+                    job_title or "unknown",
+                )
 
         # Create interview with inherited or provided configuration
         interview = Interview(
