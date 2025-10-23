@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import APIRouter, File, UploadFile, Form, Query, Body, HTTPException
 from typing import List, Optional
 from models import Interview, InterviewCreate
@@ -20,6 +21,11 @@ logger = logging.getLogger(__name__)
 # Create uploads directory if it doesn't exist
 UPLOAD_DIR = Path("uploads/videos")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+FFMPEG_VIDEO_PRESET = os.getenv("FFMPEG_VIDEO_PRESET", "veryfast")
+FFMPEG_CRF = os.getenv("FFMPEG_CRF", "23")
+FFMPEG_AUDIO_BITRATE = os.getenv("FFMPEG_AUDIO_BITRATE", "96k")
+FFMPEG_THREAD_OVERRIDE = os.getenv("FFMPEG_THREADS")
 
 
 @router.post("", response_model=Interview)
@@ -265,10 +271,9 @@ async def upload_interview_video(
 
         # Wait for mixed audio to be ready (with timeout)
         audio_path = None
+        interviews_collection = None
         if interview_id:
-            import asyncio
             interviews_collection = get_interviews_collection()
-
             # Poll for audio path for up to 10 seconds
             max_attempts = 20
             attempt = 0
@@ -294,19 +299,21 @@ async def upload_interview_video(
             final_filename = f"{interview_id}_{session_id}.mp4"
 
         final_video_path = UPLOAD_DIR / final_filename
-
         combine_succeeded = False
+
         if audio_path and Path(audio_path).exists():
             logger.info(f"Combining video with mixed audio: {audio_path}")
-            success = await combine_video_and_audio(temp_video_path, Path(audio_path), final_video_path)
+            success = await combine_video_and_audio(
+                temp_video_path,
+                Path(audio_path),
+                final_video_path,
+            )
 
             if success:
-                # Remove temporary video-only file
                 temp_video_path.unlink(missing_ok=True)
                 logger.info(f"Final video with audio created: {final_filename}")
                 combine_succeeded = True
             else:
-                # If combining failed, keep video-only file as fallback
                 logger.warning("Failed to combine audio, using video-only file")
                 final_video_path = temp_video_path
                 final_filename = temp_video_filename
@@ -340,7 +347,7 @@ async def upload_interview_video(
 
             await interviews_collection.update_one(
                 {"id": interview_id},
-                {"$set": {"video_url": video_url}}
+                {"$set": {"video_url": video_url, "video_processing_status": "completed"}}
             )
             logger.info(f"Updated interview {interview_id} with video_url: {video_url}")
 
@@ -393,13 +400,18 @@ async def combine_video_and_audio(video_path: Path, audio_path: Path, output_pat
             "-map", "0:v:0",  # use video from original recording
             "-map", "1:a:0",  # replace audio with mixed track
             "-c:v", "libx264",
-            "-preset", "medium",
-            "-crf", "20",
+            "-preset", FFMPEG_VIDEO_PRESET,
+            "-crf", FFMPEG_CRF,
             "-c:a", "aac",
-            "-b:a", "128k",
+            "-b:a", FFMPEG_AUDIO_BITRATE,
             "-movflags", "+faststart",
-            str(output_path),
+            "-pix_fmt", "yuv420p",
         ]
+
+        if FFMPEG_THREAD_OVERRIDE:
+            ffmpeg_cmd.extend(["-threads", FFMPEG_THREAD_OVERRIDE])
+
+        ffmpeg_cmd.append(str(output_path))
 
         def _run_ffmpeg():
             result = subprocess.run(

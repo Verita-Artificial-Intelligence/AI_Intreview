@@ -5,6 +5,7 @@ Client ↔ Backend ↔ OpenAI
 """
 
 import asyncio
+import base64
 import json
 import logging
 from typing import Optional
@@ -15,6 +16,7 @@ from config import settings
 from services.realtime_service import RealtimeService
 from services.audio_buffer import AudioBuffer
 from services.audio_mixer import AudioMixer
+from services.speech_activity import SpeechActivityMonitor
 from database import get_interviews_collection
 from prompts.chat import get_interviewer_system_prompt
 from pathlib import Path
@@ -191,6 +193,9 @@ async def websocket_endpoint(websocket: WebSocket):
             model=settings.OPENAI_REALTIME_MODEL,
             voice=settings.OPENAI_REALTIME_VOICE,
             instructions=instructions,
+            silence_duration_ms=settings.OPENAI_REALTIME_SILENCE_DURATION_MS,
+            max_silence_duration_ms=settings.OPENAI_REALTIME_SILENCE_DURATION_MAX_MS,
+            silence_duration_step_ms=settings.OPENAI_REALTIME_SILENCE_DURATION_STEP_MS,
         )
 
         await realtime.connect()
@@ -414,7 +419,16 @@ async def get_interview_instructions(interview_id: Optional[str]) -> str:
 
 
 async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeService, audio_buffer: AudioBuffer):
-    """Forward messages from client to OpenAI and buffer audio."""
+    """Forward messages from client to OpenAI and buffer audio with noise gating."""
+    speech_monitor = SpeechActivityMonitor(
+        chunk_ms=settings.AUDIO_CHUNK_MS,
+        speech_threshold=settings.AUDIO_SPEECH_RMS_THRESHOLD,
+        min_speech_ms=settings.AUDIO_MIN_SPEECH_MS,
+        min_silence_ms=settings.AUDIO_MIN_SILENCE_MS,
+        release_guard_ms=settings.AUDIO_CHUNK_MS * 2,
+    )
+    zero_chunk_cache: dict[int, str] = {}
+
     try:
         while True:
             message = await websocket.receive_text()
@@ -425,6 +439,10 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
             # Map client events to OpenAI events
             if event_type == "mic_chunk":
                 audio_b64 = data.get("audio_b64")
+                if not isinstance(audio_b64, str):
+                    logger.debug("Ignoring mic_chunk without audio payload")
+                    continue
+
                 seq = data.get("seq", 0)
                 timestamp_raw = data.get("timestamp")
                 timestamp: Optional[float]
@@ -433,23 +451,88 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
                 else:
                     timestamp = None
 
-                # Buffer microphone audio for server-side mixing
-                await audio_buffer.add_mic_chunk(audio_b64, seq, timestamp)
+                try:
+                    audio_bytes = base64.b64decode(audio_b64)
+                except Exception as exc:
+                    logger.warning(f"Failed to decode mic chunk seq={seq}: {exc}")
+                    continue
 
-                # Still send to OpenAI for VAD and transcription
+                rms, is_speech = speech_monitor.register_chunk(audio_bytes)
+
+                # Buffer microphone audio for server-side mixing (keep original bytes)
+                await audio_buffer.add_mic_chunk(
+                    audio_b64,
+                    seq,
+                    timestamp,
+                    audio_bytes=audio_bytes,
+                    rms=rms,
+                    is_speech=is_speech,
+                )
+
+                if is_speech or len(audio_bytes) == 0:
+                    forward_audio_b64 = audio_b64
+                else:
+                    zero_len = len(audio_bytes)
+                    forward_audio_b64 = zero_chunk_cache.get(zero_len)
+                    if forward_audio_b64 is None:
+                        forward_audio_b64 = base64.b64encode(b"\x00" * zero_len).decode("ascii")
+                        zero_chunk_cache[zero_len] = forward_audio_b64
+
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(
+                        "Mic chunk processed: seq=%s rms=%.4f speech=%s",
+                        seq,
+                        rms,
+                        is_speech,
+                    )
+
+                # Send sanitized chunk to OpenAI for VAD and transcription
                 await realtime.send_event({
                     "type": "input_audio_buffer.append",
-                    "audio": audio_b64
+                    "audio": forward_audio_b64
                 })
 
             elif event_type == "user_turn_end":
-                # Explicit end of user's turn -> commit audio buffer
-                await realtime.send_event({
-                    "type": "input_audio_buffer.commit"
-                })
+                if speech_monitor.can_commit():
+                    # Explicit end of user's turn -> commit audio buffer
+                    speech_duration = speech_monitor.speech_ms
+                    silence_ms = speech_monitor.current_silence_ms()
+                    await realtime.send_event({
+                        "type": "input_audio_buffer.commit"
+                    })
+                    speech_monitor.mark_commit_success()
+                    logger.debug(
+                        "Committed audio buffer after %.0fms of detected speech",
+                        speech_duration,
+                    )
+                    logger.debug(
+                        "Silence prior to commit: %.0fms",
+                        silence_ms,
+                    )
+                else:
+                    false_turns = speech_monitor.register_false_turn()
+                    logger.info(
+                        "Skipped user_turn_end commit - insufficient speech (speech_ms=%s, silence_ms=%s, false_turns=%s)",
+                        speech_monitor.speech_ms,
+                        speech_monitor.current_silence_ms(),
+                        false_turns,
+                    )
+                    if false_turns >= 2:
+                        try:
+                            extended = await realtime.extend_silence_window()
+                            if extended is not None:
+                                logger.info(
+                                    "Extended server VAD silence window to %sms after %s false turn(s)",
+                                    extended,
+                                    false_turns,
+                                )
+                                speech_monitor.reset_false_turns()
+                        except Exception as exc:
+                            logger.debug(f"Failed to extend silence window: {exc}")
 
             elif event_type == "clear_buffer":
                 # Clear any partial audio buffered on the server
+                speech_monitor.reset_turn()
                 await realtime.send_event({
                     "type": "input_audio_buffer.clear"
                 })

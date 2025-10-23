@@ -50,6 +50,8 @@ export default function RealtimeInterview() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [mediaStream, setMediaStream] = useState(null);
   const [isMuted, setIsMuted] = useState(false);
+  const [showWrapUp, setShowWrapUp] = useState(false);
+  const [wrapUpMessage, setWrapUpMessage] = useState('');
   const mutedRef = useRef(false);
 
   // Initialize services on mount
@@ -209,6 +211,14 @@ export default function RealtimeInterview() {
         text: message.text,
         timestamp: Date.now(),
       });
+
+      if (
+        (message.speaker === 'ai' || message.speaker === 'assistant') &&
+        message.final &&
+        message.text
+      ) {
+        setWrapUpMessage(message.text.trim());
+      }
 
       if (message.speaker === 'user' && message.final) {
         setStatus('processing');
@@ -429,13 +439,18 @@ export default function RealtimeInterview() {
         }
       }
 
-      navigate('/status');
+      setShowWrapUp(true);
     } catch (error) {
       console.error('Failed to finalize interview:', error);
       hasFinalizedRef.current = false;
       cleanup();
       setError('Unable to end the interview. Please try again.');
     }
+  };
+
+  const handleContinueToStatus = () => {
+    setShowWrapUp(false);
+    navigate('/status');
   };
 
   /**
@@ -520,6 +535,40 @@ export default function RealtimeInterview() {
         onToggleMic={handleToggleMic}
         onEndTurn={handleUserTurnEnd}
       />
+
+      {showWrapUp && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-neutral-900/60 backdrop-blur-sm px-6">
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="max-w-xl w-full rounded-3xl bg-white shadow-2xl p-8 space-y-6"
+          >
+            <div className="space-y-2 text-center">
+              <h2 className="text-2xl font-semibold text-neutral-900">Thanks for interviewing!</h2>
+              <p className="text-sm text-neutral-600">
+                We're reviewing your conversation and will email you as soon as the hiring team has next steps.
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-neutral-100 border border-neutral-200 p-4 text-left space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">AI interviewer</p>
+              <p className="text-sm text-neutral-700 leading-relaxed whitespace-pre-line">
+                {wrapUpMessage
+                  ? `"${wrapUpMessage}"`
+                  : '"Thanks again for your time today. Feel free to head to your status page whenever you are ready, and we will follow up soon."'}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleContinueToStatus}
+              className="w-full rounded-full bg-gradient-to-r from-brand-500 to-brand-600 text-white py-3 text-sm font-semibold shadow-lg transition-shadow duration-200 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2 focus:ring-offset-white"
+            >
+              Continue to status
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
