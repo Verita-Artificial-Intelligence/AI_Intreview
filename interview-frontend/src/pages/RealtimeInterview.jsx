@@ -44,6 +44,7 @@ export default function RealtimeInterview() {
   const audioPlayerRef = useRef(null);
   const videoRecorderRef = useRef(null);
   const sessionStartRef = useRef(null);
+  const hasFinalizedRef = useRef(false);
 
   // State
   const [isInitialized, setIsInitialized] = useState(false);
@@ -258,12 +259,9 @@ export default function RealtimeInterview() {
 
     wsClient.on('conversation_ended', () => {
       console.log('Conversation ended by AI');
-      // Stop mic & audio, set ended state
-      stopMicrophone();
-      if (audioPlayerRef.current) {
-        audioPlayerRef.current.stop();
-      }
-      setStatus('ended');
+      handleEndInterview('ai').catch((error) => {
+        console.error('Failed to finalize interview after AI end:', error);
+      });
     });
 
     wsClient.on('notice', (message) => {
@@ -381,46 +379,63 @@ export default function RealtimeInterview() {
   /**
    * End interview session.
    */
-  const handleEndInterview = async () => {
-    console.log('Ending interview...');
-
-    // First, set status to ended to trigger recording stop
-    setStatus('ended');
-
-    // Send end message to server
-    if (wsClientRef.current && wsClientRef.current.isConnected()) {
-      wsClientRef.current.send({
-        event: 'end',
-        reason: 'user_ended',
-      });
+  const handleEndInterview = async (trigger = 'user') => {
+    if (hasFinalizedRef.current) {
+      console.log('End interview already in progress; skipping duplicate trigger.');
+      return;
     }
 
-    // Wait for recording to stop and upload
-    if (videoRecorderRef.current) {
-      console.log('Waiting for video recording to finish uploading...');
-      await videoRecorderRef.current.waitForUpload();
-      console.log('Video upload complete');
-    }
+    hasFinalizedRef.current = true;
+    console.log(`Ending interview (trigger: ${trigger})...`);
 
-    cleanup();
+    try {
+      // Ensure UI reflects end state immediately
+      setStatus('ended');
+      stopMicrophone();
 
-    // Mark interview as completed via API
-    if (interviewId && token) {
-      try {
-        await axios.post(
-          `${BACKEND_URL}/api/interviews/${interviewId}/complete`,
-          {},
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        console.log('Interview marked as completed');
-      } catch (error) {
-        console.error('Failed to mark interview as completed:', error);
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.stop();
       }
-    }
 
-    navigate('/status');
+      // Notify backend only when the user explicitly ends the call
+      if (trigger === 'user' && wsClientRef.current && wsClientRef.current.isConnected()) {
+        wsClientRef.current.send({
+          event: 'end',
+          reason: 'user_ended',
+        });
+      }
+
+      if (videoRecorderRef.current) {
+        console.log('Waiting for video recording to finish uploading...');
+        await videoRecorderRef.current.waitForUpload();
+        console.log('Video upload complete');
+      }
+
+      cleanup();
+
+      // Mark interview as completed via API for both user and AI endings
+      if (interviewId && token) {
+        try {
+          await axios.post(
+            `${BACKEND_URL}/api/interviews/${interviewId}/complete`,
+            {},
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          console.log('Interview marked as completed');
+        } catch (error) {
+          console.error('Failed to mark interview as completed:', error);
+        }
+      }
+
+      navigate('/status');
+    } catch (error) {
+      console.error('Failed to finalize interview:', error);
+      hasFinalizedRef.current = false;
+      cleanup();
+      setError('Unable to end the interview. Please try again.');
+    }
   };
 
   /**
@@ -500,7 +515,7 @@ export default function RealtimeInterview() {
 
       {/* Bottom Controls Bar - refined styling */}
       <InterviewControls
-        onEndInterview={handleEndInterview}
+        onEndInterview={() => handleEndInterview('user')}
         onInterrupt={handleInterrupt}
         onToggleMic={handleToggleMic}
         onEndTurn={handleUserTurnEnd}
