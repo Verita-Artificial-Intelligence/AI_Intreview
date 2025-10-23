@@ -44,11 +44,14 @@ export default function RealtimeInterview() {
   const audioPlayerRef = useRef(null);
   const videoRecorderRef = useRef(null);
   const sessionStartRef = useRef(null);
+  const hasFinalizedRef = useRef(false);
 
   // State
   const [isInitialized, setIsInitialized] = useState(false);
   const [mediaStream, setMediaStream] = useState(null);
   const [isMuted, setIsMuted] = useState(false);
+  const [showWrapUp, setShowWrapUp] = useState(false);
+  const [wrapUpMessage, setWrapUpMessage] = useState('');
   const mutedRef = useRef(false);
 
   // Initialize services on mount
@@ -209,6 +212,14 @@ export default function RealtimeInterview() {
         timestamp: Date.now(),
       });
 
+      if (
+        (message.speaker === 'ai' || message.speaker === 'assistant') &&
+        message.final &&
+        message.text
+      ) {
+        setWrapUpMessage(message.text.trim());
+      }
+
       if (message.speaker === 'user' && message.final) {
         setStatus('processing');
       }
@@ -258,12 +269,9 @@ export default function RealtimeInterview() {
 
     wsClient.on('conversation_ended', () => {
       console.log('Conversation ended by AI');
-      // Stop mic & audio, set ended state
-      stopMicrophone();
-      if (audioPlayerRef.current) {
-        audioPlayerRef.current.stop();
-      }
-      setStatus('ended');
+      handleEndInterview('ai').catch((error) => {
+        console.error('Failed to finalize interview after AI end:', error);
+      });
     });
 
     wsClient.on('notice', (message) => {
@@ -381,45 +389,67 @@ export default function RealtimeInterview() {
   /**
    * End interview session.
    */
-  const handleEndInterview = async () => {
-    console.log('Ending interview...');
-
-    // First, set status to ended to trigger recording stop
-    setStatus('ended');
-
-    // Send end message to server
-    if (wsClientRef.current && wsClientRef.current.isConnected()) {
-      wsClientRef.current.send({
-        event: 'end',
-        reason: 'user_ended',
-      });
+  const handleEndInterview = async (trigger = 'user') => {
+    if (hasFinalizedRef.current) {
+      console.log('End interview already in progress; skipping duplicate trigger.');
+      return;
     }
 
-    // Wait for recording to stop and upload
-    if (videoRecorderRef.current) {
-      console.log('Waiting for video recording to finish uploading...');
-      await videoRecorderRef.current.waitForUpload();
-      console.log('Video upload complete');
-    }
+    hasFinalizedRef.current = true;
+    console.log(`Ending interview (trigger: ${trigger})...`);
 
-    cleanup();
+    try {
+      // Ensure UI reflects end state immediately
+      setStatus('ended');
+      stopMicrophone();
 
-    // Mark interview as completed via API
-    if (interviewId && token) {
-      try {
-        await axios.post(
-          `${BACKEND_URL}/api/interviews/${interviewId}/complete`,
-          {},
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        console.log('Interview marked as completed');
-      } catch (error) {
-        console.error('Failed to mark interview as completed:', error);
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.stop();
       }
-    }
 
+      // Notify backend only when the user explicitly ends the call
+      if (trigger === 'user' && wsClientRef.current && wsClientRef.current.isConnected()) {
+        wsClientRef.current.send({
+          event: 'end',
+          reason: 'user_ended',
+        });
+      }
+
+      if (videoRecorderRef.current) {
+        console.log('Waiting for video recording to finish uploading...');
+        await videoRecorderRef.current.waitForUpload();
+        console.log('Video upload complete');
+      }
+
+      cleanup();
+
+      // Mark interview as completed via API for both user and AI endings
+      if (interviewId && token) {
+        try {
+          await axios.post(
+            `${BACKEND_URL}/api/interviews/${interviewId}/complete`,
+            {},
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          console.log('Interview marked as completed');
+        } catch (error) {
+          console.error('Failed to mark interview as completed:', error);
+        }
+      }
+
+      setShowWrapUp(true);
+    } catch (error) {
+      console.error('Failed to finalize interview:', error);
+      hasFinalizedRef.current = false;
+      cleanup();
+      setError('Unable to end the interview. Please try again.');
+    }
+  };
+
+  const handleContinueToStatus = () => {
+    setShowWrapUp(false);
     navigate('/status');
   };
 
@@ -500,11 +530,45 @@ export default function RealtimeInterview() {
 
       {/* Bottom Controls Bar - refined styling */}
       <InterviewControls
-        onEndInterview={handleEndInterview}
+        onEndInterview={() => handleEndInterview('user')}
         onInterrupt={handleInterrupt}
         onToggleMic={handleToggleMic}
         onEndTurn={handleUserTurnEnd}
       />
+
+      {showWrapUp && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-neutral-900/60 backdrop-blur-sm px-6">
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="max-w-xl w-full rounded-3xl bg-white shadow-2xl p-8 space-y-6"
+          >
+            <div className="space-y-2 text-center">
+              <h2 className="text-2xl font-semibold text-neutral-900">Thanks for interviewing!</h2>
+              <p className="text-sm text-neutral-600">
+                We're reviewing your conversation and will email you as soon as the hiring team has next steps.
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-neutral-100 border border-neutral-200 p-4 text-left space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">AI interviewer</p>
+              <p className="text-sm text-neutral-700 leading-relaxed whitespace-pre-line">
+                {wrapUpMessage
+                  ? `"${wrapUpMessage}"`
+                  : '"Thanks again for your time today. Feel free to head to your status page whenever you are ready, and we will follow up soon."'}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleContinueToStatus}
+              className="w-full rounded-full bg-gradient-to-r from-brand-500 to-brand-600 text-white py-3 text-sm font-semibold shadow-lg transition-shadow duration-200 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2 focus:ring-offset-white"
+            >
+              Continue to status
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

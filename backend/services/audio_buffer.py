@@ -22,6 +22,8 @@ class AudioChunk:
     timestamp: float  # Relative timestamp in seconds since session start
     source: str  # "mic" or "ai"
     seq: int  # Sequence number
+    rms: Optional[float] = None  # Normalized RMS level (0.0-1.0)
+    is_speech: Optional[bool] = None  # True when chunk likely contains speech
 
 
 class AudioBuffer:
@@ -52,7 +54,16 @@ class AudioBuffer:
 
         logger.info(f"AudioBuffer initialized: {sample_rate}Hz, {channels} channel(s)")
 
-    async def add_mic_chunk(self, audio_b64: str, seq: int, client_timestamp: Optional[float] = None) -> None:
+    async def add_mic_chunk(
+        self,
+        audio_b64: str,
+        seq: int,
+        client_timestamp: Optional[float] = None,
+        *,
+        audio_bytes: Optional[bytes] = None,
+        rms: Optional[float] = None,
+        is_speech: Optional[bool] = None,
+    ) -> None:
         """
         Add microphone audio chunk to buffer.
 
@@ -72,8 +83,8 @@ class AudioBuffer:
             if client_timestamp is not None and self.client_reference is None:
                 self.client_reference = client_timestamp
 
-            # Decode audio data
-            audio_data = base64.b64decode(audio_b64)
+            # Decode audio data (use provided bytes when available to avoid duplicate work)
+            audio_data = audio_bytes if audio_bytes is not None else base64.b64decode(audio_b64)
 
             # Calculate timestamp relative to session start
             if client_timestamp is not None and self.client_reference is not None:
@@ -85,12 +96,22 @@ class AudioBuffer:
                 data=audio_data,
                 timestamp=timestamp,
                 source="mic",
-                seq=seq
+                seq=seq,
+                rms=rms,
+                is_speech=is_speech,
             )
 
             self.mic_chunks.append(chunk)
 
-            logger.debug(f"Buffered mic chunk: seq={seq}, size={len(audio_data)} bytes, ts={timestamp:.3f}s")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    "Buffered mic chunk: seq=%s, size=%s bytes, ts=%.3fs, rms=%s, speech=%s",
+                    seq,
+                    len(audio_data),
+                    timestamp,
+                    f"{rms:.4f}" if rms is not None else "n/a",
+                    is_speech,
+                )
 
     async def add_ai_chunk(self, audio_b64: str, seq: int) -> None:
         """
@@ -126,7 +147,7 @@ class AudioBuffer:
                 data=audio_data,
                 timestamp=timestamp,
                 source="ai",
-                seq=seq
+                seq=seq,
             )
 
             self.ai_chunks.append(chunk)

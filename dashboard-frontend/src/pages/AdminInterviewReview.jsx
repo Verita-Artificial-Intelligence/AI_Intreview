@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { Button } from '@/components/ui/button'
@@ -42,11 +42,7 @@ const AdminInterviewReview = () => {
   const [videoSources, setVideoSources] = useState([])
   const [transcriptUnavailable, setTranscriptUnavailable] = useState(false)
 
-  useEffect(() => {
-    fetchInterviewData()
-  }, [interviewId])
-
-  const fetchInterviewData = async () => {
+  const fetchInterviewData = useCallback(async () => {
     try {
       setTranscriptUnavailable(false)
 
@@ -140,6 +136,9 @@ const AdminInterviewReview = () => {
         })
 
         setVideoSources(uniqueRecordings)
+        if (uniqueRecordings.length > 0) {
+          setVideoPollingAttempts(0)
+        }
       } else {
         setVideoSources([])
       }
@@ -166,7 +165,27 @@ const AdminInterviewReview = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [interviewId])
+
+  useEffect(() => {
+    fetchInterviewData()
+  }, [fetchInterviewData])
+
+  const [videoPollingAttempts, setVideoPollingAttempts] = useState(0)
+
+  useEffect(() => {
+    if (!interview) return
+    if (interview.status !== 'completed') return
+    if (videoSources.length > 0) return
+    if (videoPollingAttempts >= 5) return
+
+    const timeoutId = setTimeout(() => {
+      setVideoPollingAttempts((attempts) => attempts + 1)
+      fetchInterviewData()
+    }, 5000)
+
+    return () => clearTimeout(timeoutId)
+  }, [interview, videoSources.length, videoPollingAttempts, fetchInterviewData])
 
   const generateAnalysis = async (msgs, cand) => {
     setAnalyzing(true)
@@ -478,6 +497,16 @@ const AdminInterviewReview = () => {
                 </div>
               </div>
             </Card>
+
+            {interview?.status === 'completed' && videoSources.length === 0 && (
+              <Card className={`p-4 ${cardStyles.default} bg-neutral-50 border-dashed`}>
+                <h3 className="font-bold text-sm mb-2 text-neutral-900">Recording Processing</h3>
+                <p className="text-xs text-neutral-600">
+                  We&apos;re finalizing the interview recording. This usually takes just a moment&mdash;refreshing happens
+                  automatically, so hang tight or check back shortly if the video doesn&apos;t appear right away.
+                </p>
+              </Card>
+            )}
 
             {videoSources.length > 0 && (
               <Card className={`p-4 ${cardStyles.default}`}>
