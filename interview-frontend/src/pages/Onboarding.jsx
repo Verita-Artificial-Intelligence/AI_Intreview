@@ -246,6 +246,10 @@ export default function Onboarding() {
   const [scrapingLinkedIn, setScrapingLinkedIn] = useState(false)
   const [linkedInScraped, setLinkedInScraped] = useState(false)
   const [error, setError] = useState('')
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [verificationProgress, setVerificationProgress] = useState(0)
+  const [verificationStep, setVerificationStep] = useState('')
+  const [isVerified, setIsVerified] = useState(false)
 
   const [formData, setFormData] = useState({
     // Step 1: Resume
@@ -539,7 +543,13 @@ export default function Onboarding() {
     }
 
     if (currentStep === 2) {
-      if (!formData.firstName || !formData.lastName || !formData.email) {
+      if (
+        !formData.firstName ||
+        !formData.lastName ||
+        !formData.email ||
+        !formData.city ||
+        !formData.country
+      ) {
         setError('Please fill in all required fields')
         return
       }
@@ -589,6 +599,8 @@ export default function Onboarding() {
   const handleSubmit = async () => {
     try {
       setLoading(true)
+      setIsVerifying(true)
+      setVerificationProgress(0)
 
       // Helper function to check if an entry has meaningful data
       const hasData = (obj) => {
@@ -604,9 +616,37 @@ export default function Onboarding() {
         })
       }
 
+      const fullName = `${formData.firstName} ${formData.lastName}`
+
+      // Verification Step 1: Validate identity
+      setVerificationStep(
+        `Verifying identity for ${fullName} in ${formData.city}, ${formData.country}...`
+      )
+      setVerificationProgress(20)
+      // TODO: Call api.intrace.ai for identity verification
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+
+      // Verification Step 2: Checking credentials
+      setVerificationStep(`Checking credentials and background information...`)
+      setVerificationProgress(40)
+      // TODO: Call api.intrace.ai for credential verification
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+
+      // Verification Step 3: Validating work authorization
+      setVerificationStep(
+        `Validating work authorization in ${formData.country}...`
+      )
+      setVerificationProgress(60)
+      // TODO: Call api.intrace.ai for work authorization check
+      await new Promise((resolve) => setTimeout(resolve, 1500))
+
+      // Verification Step 4: Creating profile
+      setVerificationStep(`Creating your profile...`)
+      setVerificationProgress(80)
+
       // Prepare profile data - only include optional fields if they have content
       const profileData = {
-        name: `${formData.firstName} ${formData.lastName}`,
+        name: fullName,
         bio: formData.bio,
         expertise: formData.expertise,
       }
@@ -663,6 +703,18 @@ export default function Onboarding() {
       // Call completeProfile
       await completeProfile(profileData)
 
+      // Verification Step 5: Finalizing
+      setVerificationStep(`Finalizing setup for ${fullName}...`)
+      setVerificationProgress(95)
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      // Complete
+      setVerificationProgress(100)
+      setVerificationStep(`Verified! Welcome to Verita AI.`)
+      setIsVerified(true)
+
+      // Wait a moment before navigating
+      await new Promise((resolve) => setTimeout(resolve, 1500))
       navigate('/')
     } catch (err) {
       console.error('Error completing onboarding:', err)
@@ -693,12 +745,77 @@ export default function Onboarding() {
       }
 
       setError(errorMessage)
+      setIsVerifying(false)
+      setVerificationProgress(0)
     } finally {
       setLoading(false)
     }
   }
 
   const progressPercent = (currentStep / STEPS.length) * 100
+
+  // Show verification screen when verifying
+  if (isVerifying) {
+    return (
+      <div className="flex min-h-screen bg-neutral-50 items-center justify-center">
+        <Card className="w-full max-w-2xl mx-4 p-12 border border-neutral-200">
+          <div className="text-center">
+            {/* Logo */}
+            <div className="flex justify-center mb-6">
+              <img
+                src="/images/verita_ai_logo.jpeg"
+                alt="Verita AI"
+                className="w-16 h-16 rounded-lg object-cover"
+              />
+            </div>
+
+            {/* Title */}
+            <h2 className="text-3xl font-bold text-neutral-900 mb-2">
+              {isVerified ? 'Verification Complete!' : 'Verifying Your Profile'}
+            </h2>
+
+            {/* Verification Status Text */}
+            <p className="text-base text-neutral-600 mb-8 min-h-[24px]">
+              {verificationStep}
+            </p>
+
+            {/* Progress Bar */}
+            <div className="mb-8">
+              <div className="h-3 bg-neutral-200 rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all duration-500 ease-out ${
+                    isVerified
+                      ? 'bg-green-500'
+                      : 'bg-gradient-to-r from-blue-500 to-blue-600'
+                  }`}
+                  style={{ width: `${verificationProgress}%` }}
+                ></div>
+              </div>
+              <p className="text-sm text-neutral-600 mt-3 font-medium">
+                {verificationProgress}% Complete
+              </p>
+            </div>
+
+            {/* Success Icon */}
+            {isVerified && (
+              <div className="flex justify-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center animate-bounce">
+                  <CheckCircle2 className="w-10 h-10 text-green-600" />
+                </div>
+              </div>
+            )}
+
+            {/* Loading Spinner */}
+            {!isVerified && (
+              <div className="flex justify-center">
+                <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
+              </div>
+            )}
+          </div>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-screen bg-neutral-50">
@@ -936,6 +1053,16 @@ function StepPersonalInfo({
   scrapingLinkedIn,
   linkedInScraped,
 }) {
+  const [countrySearch, setCountrySearch] = useState('')
+
+  const handleCountryChange = (value) => {
+    handleInputChange({ target: { name: 'country', value } })
+  }
+
+  const filteredCountries = COUNTRIES.filter((country) =>
+    country.toLowerCase().includes(countrySearch.toLowerCase())
+  )
+
   return (
     <div>
       <div className="mb-6">
@@ -1008,7 +1135,7 @@ function StepPersonalInfo({
         <div className="grid grid-cols-2 gap-6">
           <div>
             <label className="block text-xs font-semibold text-neutral-600 tracking-wide mb-2">
-              CITY
+              CITY *
             </label>
             <Input
               name="city"
@@ -1020,15 +1147,39 @@ function StepPersonalInfo({
           </div>
           <div>
             <label className="block text-xs font-semibold text-neutral-600 tracking-wide mb-2">
-              COUNTRY
+              COUNTRY *
             </label>
-            <Input
-              name="country"
+            <Select
               value={formData.country}
-              onChange={handleInputChange}
-              className="text-sm border-neutral-300"
-              placeholder="United States"
-            />
+              onValueChange={handleCountryChange}
+            >
+              <SelectTrigger className="text-sm border-neutral-300">
+                <SelectValue placeholder="Select your country" />
+              </SelectTrigger>
+              <SelectContent className="max-h-80">
+                <div className="sticky top-0 z-10 bg-white px-2 pb-2 pt-2">
+                  <Input
+                    placeholder="Search countries..."
+                    value={countrySearch}
+                    onChange={(e) => setCountrySearch(e.target.value)}
+                    className="h-8 text-sm"
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                  />
+                </div>
+                {filteredCountries.length > 0 ? (
+                  filteredCountries.map((country) => (
+                    <SelectItem key={country} value={country}>
+                      {country}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <div className="px-2 py-6 text-center text-sm text-neutral-500">
+                    No countries found
+                  </div>
+                )}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -1584,8 +1735,8 @@ function StepAuthorization({ formData, handleInputChange }) {
           </Select>
         </div>
 
-        <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg">
-          <p className="text-sm text-blue-600">
+        <div className="p-4  border-2 border-blue-100 rounded-lg">
+          <p className="text-sm text-blue-400">
             Your work authorization status helps us match you with opportunities
             you're eligible for.
           </p>
