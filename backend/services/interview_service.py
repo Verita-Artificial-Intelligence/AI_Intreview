@@ -19,6 +19,48 @@ logger = logging.getLogger(__name__)
 
 class InterviewService:
     @staticmethod
+    async def summarize_job_description(job_description: str) -> str:
+        """
+        Generate a concise summary of a job description for use in interview prompts.
+
+        Args:
+            job_description: Full job description text
+
+        Returns:
+            2-3 sentence summary of key requirements and responsibilities
+        """
+        if not job_description or len(job_description.strip()) < 50:
+            return ""
+
+        try:
+            completion = await openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a helpful assistant that summarizes job descriptions concisely."
+                    },
+                    {
+                        "role": "user",
+                        "content": f"""Summarize this job description in 2-3 sentences, focusing on the key requirements, responsibilities, and qualifications needed for the role. Be specific and concise.
+
+Job Description:
+{job_description}
+
+Summary:"""
+                    }
+                ]
+            )
+
+            summary = completion.choices[0].message.content.strip()
+            return summary
+
+        except Exception as e:
+            logger.error(f"Failed to summarize job description: {e}")
+            # Return truncated description as fallback
+            return job_description[:500] + ("..." if len(job_description) > 500 else "")
+
+    @staticmethod
     async def create_interview(interview_data: InterviewCreate) -> Interview:
         """Create a new interview - inherits configuration from job if job_id is provided"""
         # Get candidate
@@ -43,6 +85,8 @@ class InterviewService:
 
         # Get job details and interview configuration if job_id is provided
         job_title = None
+        job_description = None
+        job_description_summary = None
         interview_type = interview_data.interview_type
         skills = interview_data.skills
         custom_questions = interview_data.custom_questions
@@ -55,11 +99,16 @@ class InterviewService:
             )
             if job:
                 job_title = job.get("title")
+                job_description = job.get("description")
                 # Inherit interview configuration from job
                 interview_type = job.get("interview_type", "standard")
                 skills = job.get("skills")
                 custom_questions = job.get("custom_questions")
                 custom_exercise_prompt = job.get("custom_exercise_prompt")
+
+                # Generate summary of job description for efficient prompt usage
+                if job_description:
+                    job_description_summary = await InterviewService.summarize_job_description(job_description)
             else:
                 logger.warning(
                     "Job %s not found when creating interview for candidate %s",
@@ -84,6 +133,7 @@ class InterviewService:
             position=candidate["position"],
             job_id=interview_data.job_id,
             job_title=job_title,
+            job_description_summary=job_description_summary,
             status=interview_data.status if interview_data.status else "in_progress",
             interview_type=interview_type,
             skills=skills,
@@ -108,7 +158,8 @@ class InterviewService:
             skills=skills_dict,
             resume_text=interview_data.resume_text,
             custom_questions=custom_questions,
-            custom_exercise_prompt=custom_exercise_prompt
+            custom_exercise_prompt=custom_exercise_prompt,
+            role_description=job_description_summary or job_description
         )
 
         system_msg = ChatMessage(
@@ -122,8 +173,31 @@ class InterviewService:
         return interview
 
     @staticmethod
-    def get_interview_instructions(interview: Interview) -> str:
+    async def get_interview_instructions(interview: Interview) -> str:
         """Get the system instructions for an interview based on its type and configuration"""
+        # Backward compatibility: Generate summary for old interviews
+        job_description_summary = interview.job_description_summary
+
+        if not job_description_summary and interview.job_id:
+            logger.info(f"Auto-generating job description summary for interview {interview.id}")
+            try:
+                jobs_collection = get_jobs_collection()
+                job = await jobs_collection.find_one(
+                    {"id": interview.job_id}, {"_id": 0}
+                )
+                if job and job.get("description"):
+                    job_description_summary = await InterviewService.summarize_job_description(
+                        job.get("description")
+                    )
+                    # Save the summary back to the interview record
+                    await db.interviews.update_one(
+                        {"id": interview.id},
+                        {"$set": {"job_description_summary": job_description_summary}}
+                    )
+                    logger.info(f"Successfully saved job description summary for interview {interview.id}")
+            except Exception as e:
+                logger.error(f"Failed to auto-generate job description summary: {e}")
+
         skills_dict = [skill.dict() if isinstance(skill, SkillDefinition) else skill
                       for skill in (interview.skills or [])]
 
@@ -134,7 +208,8 @@ class InterviewService:
             skills=skills_dict,
             resume_text=interview.resume_text,
             custom_questions=interview.custom_questions,
-            custom_exercise_prompt=interview.custom_exercise_prompt
+            custom_exercise_prompt=interview.custom_exercise_prompt,
+            role_description=job_description_summary
         )
 
         return config["system_instructions"]

@@ -49,6 +49,7 @@ class Interview(BaseModel):
     position: Optional[str] = None
     job_id: Optional[str] = None
     job_title: Optional[str] = None
+    job_description_summary: Optional[str] = None
     status: InterviewStatus = "not_started"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     completed_at: Optional[datetime] = None
