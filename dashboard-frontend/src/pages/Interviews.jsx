@@ -28,6 +28,15 @@ const Interviews = () => {
   const candidateFilter = searchParams.get('candidate')
   const jobFilter = searchParams.get('job')
 
+  const getInitials = (name) => {
+    if (!name) return 'U'
+    const parts = name.trim().split(' ')
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase()
+    return (
+      parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
+    ).toUpperCase()
+  }
+
   useEffect(() => {
     fetchData()
   }, [candidateFilter, jobFilter])
@@ -217,8 +226,8 @@ const Interviews = () => {
                   </button>
 
                   <div className="flex items-start gap-3 mb-4 flex-1">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white bg-gradient-to-br from-brand-400 to-brand-600 flex-shrink-0">
-                      {interview.candidate_name?.charAt(0).toUpperCase() || 'U'}
+                    <div className="w-10 h-10 rounded-md flex items-center justify-center text-sm font-bold text-neutral-900 bg-brand-200 flex-shrink-0">
+                      {getInitials(interview.candidate_name)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
@@ -246,7 +255,7 @@ const Interviews = () => {
                         <span
                           className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
                             interview.acceptance_status === 'accepted'
-                              ? 'bg-green-100 text-green-700'
+                              ? 'bg-green-50 text-green-700'
                               : interview.acceptance_status === 'rejected'
                                 ? 'bg-red-100 text-red-700'
                                 : 'bg-gray-100 text-gray-700'
@@ -277,9 +286,10 @@ const Interviews = () => {
                         onClick={() =>
                           navigate(`/admin/review/${interview.id}`)
                         }
+                        variant="outline"
                         data-testid={`view-results-${interview.id}`}
                         size="sm"
-                        className="w-full rounded-lg bg-brand-500 hover:bg-brand-600 text-white"
+                        className="w-full rounded-lg "
                       >
                         View Results
                       </Button>

@@ -64,6 +64,15 @@ const Dashboard = () => {
   const [performanceFilter, setPerformanceFilter] = useState('all')
   const [annotatorLoading, setAnnotatorLoading] = useState(false)
 
+  const getInitials = (name) => {
+    if (!name) return 'U'
+    const parts = name.trim().split(' ')
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase()
+    return (
+      parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
+    ).toUpperCase()
+  }
+
   useEffect(() => {
     fetchData()
     fetchAnnotatorStats()
@@ -309,10 +318,8 @@ const Dashboard = () => {
                         >
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white bg-gradient-to-br from-blue-400 to-blue-600 flex-shrink-0">
-                                {interview.candidate_name
-                                  ?.charAt(0)
-                                  .toUpperCase() || 'U'}
+                              <div className="w-8 h-8 rounded-md flex items-center justify-center text-xs font-semibold text-neutral-900 bg-brand-200 flex-shrink-0">
+                                {getInitials(interview.candidate_name)}
                               </div>
                               <span className="font-medium text-sm text-gray-900">
                                 {interview.candidate_name || 'Unknown'}
@@ -345,7 +352,7 @@ const Dashboard = () => {
                                   }
                                   variant="ghost"
                                   size="sm"
-                                  className="h-9 px-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md text-sm"
+                                  className="h-9 px-3 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md text-sm"
                                 >
                                   <Eye className="w-4 h-4 mr-1.5" />
                                   View
@@ -358,7 +365,7 @@ const Dashboard = () => {
                                     interview.candidate_name
                                   )
                                 }
-                                className="p-1.5 text-red-600 hover:text-red-700 rounded hover:bg-red-50 transition-colors"
+                                className="p-1.5 text-gray-600 hover:text-red-600 rounded hover:bg-red-50 transition-colors"
                                 title="Delete interview"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -482,8 +489,8 @@ const Dashboard = () => {
                     className="p-5 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow"
                   >
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold text-white bg-gradient-to-br from-blue-400 to-blue-600 flex-shrink-0">
-                        {annotator.name?.charAt(0).toUpperCase() || 'U'}
+                      <div className="w-10 h-10 rounded-md flex items-center justify-center text-xs font-semibold text-neutral-900 bg-brand-200 flex-shrink-0">
+                        {getInitials(annotator.name)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-sm text-gray-900 truncate">
