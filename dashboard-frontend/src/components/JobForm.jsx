@@ -107,7 +107,6 @@ const JobForm = ({ open, onClose, onSubmit }) => {
 
   const handleTypeSelect = (typeId) => {
     setFormData((prev) => ({ ...prev, interview_type: typeId }))
-    setStep(3)
   }
 
   const addSkill = () => {
@@ -198,7 +197,7 @@ const JobForm = ({ open, onClose, onSubmit }) => {
 
   const renderJobDetails = () => (
     <>
-      <div className="space-y-4 py-4">
+      <div className="space-y-4 pt-2 pb-4">
         <div className="space-y-2">
           <Label htmlFor="title" className="text-sm font-medium">
             Job Title
@@ -218,11 +217,7 @@ const JobForm = ({ open, onClose, onSubmit }) => {
             Position Type
           </Label>
           <Select
-            value={
-              POSITION_TYPES.includes(formData.position_type)
-                ? formData.position_type
-                : 'Other'
-            }
+            value={formData.position_type || undefined}
             onValueChange={handlePositionTypeChange}
           >
             <SelectTrigger className="w-full h-10 rounded-lg text-sm">
@@ -236,9 +231,7 @@ const JobForm = ({ open, onClose, onSubmit }) => {
               ))}
             </SelectContent>
           </Select>
-          {(!POSITION_TYPES.includes(formData.position_type) ||
-            formData.position_type === 'Other' ||
-            customPositionType) && (
+          {formData.position_type === 'Other' && (
             <Input
               id="custom_position_type"
               name="custom_position_type"
@@ -309,9 +302,6 @@ const JobForm = ({ open, onClose, onSubmit }) => {
   const renderTypeSelection = () => (
     <>
       <div className="py-4">
-        <h3 className="text-sm font-medium mb-4">
-          Select the interview type for this job
-        </h3>
         <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
           {INTERVIEW_TYPES.map((type) => {
             const Icon = type.icon
@@ -320,9 +310,9 @@ const JobForm = ({ open, onClose, onSubmit }) => {
               <Card
                 key={type.id}
                 onClick={() => handleTypeSelect(type.id)}
-                className={`p-4 cursor-pointer transition-all hover:shadow-md ${
+                className={`p-4 cursor-pointer transition-all hover:shadow-md hover:border-brand-500 hover:bg-brand-50 ${
                   isSelected
-                    ? 'border-2 border-brand-500 bg-brand-50'
+                    ? 'border border-brand-500 bg-brand-50'
                     : 'border border-neutral-200'
                 }`}
               >
@@ -356,6 +346,14 @@ const JobForm = ({ open, onClose, onSubmit }) => {
         >
           Back
         </Button>
+        <Button
+          type="button"
+          onClick={() => setStep(3)}
+          disabled={!formData.interview_type}
+          className="rounded-lg bg-brand-500 hover:bg-brand-600 text-white"
+        >
+          Next: Configure Interview
+        </Button>
       </DialogFooter>
     </>
   )
@@ -373,7 +371,7 @@ const JobForm = ({ open, onClose, onSubmit }) => {
               {formData.skills.map((skill, index) => (
                 <div
                   key={index}
-                  className="flex items-start gap-2 p-3 bg-neutral-50 rounded-lg"
+                  className="flex items-start gap-2 p-3 bg-neutral-50 rounded-lg border border-neutral-200"
                 >
                   <div className="flex-1">
                     <div className="font-medium text-sm">{skill.name}</div>
