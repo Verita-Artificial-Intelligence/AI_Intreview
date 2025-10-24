@@ -38,11 +38,15 @@ export default function Sidebar() {
     <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-neutral-200 overflow-y-auto flex flex-col">
       <div className="p-6">
         <div className="flex items-center gap-3 mb-1">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0">
-            <span className="text-lg font-bold text-white tracking-wider">V</span>
-          </div>
+          <img
+            src="/images/verita_ai_logo.jpeg"
+            alt="Verita AI"
+            className="w-10 h-10 rounded-md flex-shrink-0 object-cover"
+          />
           <div>
-            <h2 className="text-xl font-display font-bold text-neutral-900">Verita</h2>
+            <h2 className="text-xl font-display font-bold text-neutral-900">
+              Verita AI
+            </h2>
           </div>
         </div>
       </div>
