@@ -5,6 +5,7 @@ Combines microphone and AI audio streams into a single audio file,
 with precise temporal alignment and volume control.
 """
 
+import asyncio
 import logging
 import tempfile
 from pathlib import Path
@@ -59,8 +60,26 @@ class AudioMixer:
             logger.warning("No audio chunks to mix")
             return False
 
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            None,
+            self._mix_streams_sync,
+            mic_chunks,
+            ai_chunks,
+            output_path,
+            mic_volume,
+            ai_volume,
+        )
+
+    def _mix_streams_sync(
+        self,
+        mic_chunks: List[AudioChunk],
+        ai_chunks: List[AudioChunk],
+        output_path: Path,
+        mic_volume: float,
+        ai_volume: float,
+    ) -> bool:
         try:
-            # Convert chunks to numpy arrays and create AudioClips
             clips = []
 
             if mic_chunks:
@@ -73,25 +92,18 @@ class AudioMixer:
                 clips.append(ai_clip)
                 logger.info(f"Created AI audio clip: duration={ai_clip.duration:.2f}s")
 
-            # Composite (mix) all audio clips
-            if len(clips) == 1:
-                final_audio = clips[0]
-            else:
-                final_audio = CompositeAudioClip(clips)
-
+            final_audio = clips[0] if len(clips) == 1 else CompositeAudioClip(clips)
             logger.info(f"Mixing audio streams: final duration={final_audio.duration:.2f}s")
 
-            # Write to output file
             final_audio.write_audiofile(
                 str(output_path),
                 fps=self.sample_rate,
-                nbytes=2,  # 16-bit audio
-                codec='pcm_s16le',  # WAV format
-                ffmpeg_params=["-ac", str(self.channels)],  # Mono/stereo
-                logger=None  # Suppress MoviePy logs
+                nbytes=2,
+                codec='pcm_s16le',
+                ffmpeg_params=["-ac", str(self.channels)],
+                logger=None,
             )
 
-            # Close clips to free resources
             final_audio.close()
             for clip in clips:
                 clip.close()
@@ -99,8 +111,8 @@ class AudioMixer:
             logger.info(f"Audio mixed successfully: {output_path}")
             return True
 
-        except Exception as e:
-            logger.error(f"Error mixing audio: {e}", exc_info=True)
+        except Exception as exc:
+            logger.error(f"Error mixing audio: {exc}", exc_info=True)
             return False
 
     def _chunks_to_audioclip(self, chunks: List[AudioChunk], volume: float) -> AudioClip:

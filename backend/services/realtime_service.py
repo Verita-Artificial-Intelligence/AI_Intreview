@@ -42,35 +42,47 @@ class RealtimeService:
         self._receive_task: Optional[asyncio.Task] = None
         self._event_queue: asyncio.Queue = asyncio.Queue()
 
-    async def connect(self) -> None:
-        """Establish WebSocket connection to OpenAI Realtime API."""
-        try:
-            url = f"wss://api.openai.com/v1/realtime?model={self.model}"
-            headers = {"Authorization": f"Bearer {self.api_key}"}
+    async def connect(self, max_retries: int = 3, base_delay: float = 0.5) -> None:
+        """Establish WebSocket connection to OpenAI Realtime API with retries."""
 
-            logger.info(f"Connecting to OpenAI Realtime API: {self.model}")
+        url = f"wss://api.openai.com/v1/realtime?model={self.model}"
+        headers = {"Authorization": f"Bearer {self.api_key}"}
 
-            self.ws = await websockets.connect(
-                url,
-                additional_headers=headers,
-                ping_interval=10,
-                ping_timeout=30,
-                close_timeout=5,
-            )
+        attempt = 0
+        while True:
+            try:
+                if self.ws is not None:
+                    await self.close()
 
-            self.connected = True
-            logger.info("Connected to OpenAI Realtime API")
+                logger.info(f"Connecting to OpenAI Realtime API: {self.model} (attempt {attempt + 1})")
 
-            # Start receiving messages
-            self._receive_task = asyncio.create_task(self._receive_loop())
+                self.ws = await websockets.connect(
+                    url,
+                    additional_headers=headers,
+                    ping_interval=10,
+                    ping_timeout=30,
+                    close_timeout=5,
+                )
 
-            # Configure session with minimal settings
-            await self._configure_session()
+                self.connected = True
+                logger.info("Connected to OpenAI Realtime API")
 
-        except Exception as e:
-            logger.error(f"Failed to connect to OpenAI: {e}")
-            self.connected = False
-            raise
+                self._event_queue = asyncio.Queue()
+                self._receive_task = asyncio.create_task(self._receive_loop())
+                await self._configure_session()
+                return
+
+            except Exception as exc:
+                self.connected = False
+                attempt += 1
+                logger.error(f"Failed to connect to OpenAI (attempt {attempt}): {exc}")
+
+                if attempt > max_retries:
+                    logger.error("Exceeded maximum retries while connecting to OpenAI")
+                    raise
+
+                delay = base_delay * (2 ** (attempt - 1))
+                await asyncio.sleep(delay)
 
     async def _configure_session(self) -> None:
         """Configure session with instructions and voice for OpenAI Realtime."""
@@ -166,7 +178,10 @@ class RealtimeService:
                 await self._receive_task
             except asyncio.CancelledError:
                 pass
+            finally:
+                self._receive_task = None
 
         if self.ws:
             await self.ws.close()
             logger.info("Connection closed")
+            self.ws = None

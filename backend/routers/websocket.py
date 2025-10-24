@@ -43,6 +43,7 @@ async def websocket_endpoint(websocket: WebSocket):
     session_id: Optional[str] = None
     openai_task: Optional[asyncio.Task] = None
     client_proxy_task: Optional[asyncio.Task] = None
+    idle_commit_task: Optional[asyncio.Task] = None
     transcript: list[dict] = []
     interview_id: Optional[str] = None
     can_persist: bool = True
@@ -152,6 +153,12 @@ async def websocket_endpoint(websocket: WebSocket):
 
         logger.info(f"Session ready: {session_id}")
 
+        # Track microphone activity to guard against stalled sessions
+        audio_timing = {
+            "last_audio_ts": None,
+            "commit_sent": False,
+        }
+
         # Seed initial turn so the model starts proactively
         await realtime.send_event({
             "type": "conversation.item.create",
@@ -171,8 +178,33 @@ async def websocket_endpoint(websocket: WebSocket):
             forward_openai_to_client(realtime, websocket, transcript, audio_buffer)
         )
         client_proxy_task = asyncio.create_task(
-            forward_client_to_openai(websocket, realtime, audio_buffer)
+            forward_client_to_openai(websocket, realtime, audio_buffer, audio_timing)
         )
+
+        # Idle commit watchdog to keep the session moving if the client forgets
+        async def idle_commit_watcher():
+            try:
+                loop = asyncio.get_running_loop()
+                while True:
+                    await asyncio.sleep(0.5)
+                    last_ts = audio_timing["last_audio_ts"]
+                    if last_ts is None:
+                        continue
+
+                    if audio_timing["commit_sent"]:
+                        continue
+
+                    if (loop.time() - last_ts) > 2.0:
+                        try:
+                            await realtime.send_event({"type": "input_audio_buffer.commit"})
+                        except Exception as exc:
+                            logger.debug(f"Idle commit failed: {exc}")
+                        else:
+                            audio_timing["commit_sent"] = True
+            except asyncio.CancelledError:
+                return
+
+        idle_commit_task = asyncio.create_task(idle_commit_watcher())
 
         await asyncio.gather(openai_task, client_proxy_task)
 
@@ -195,8 +227,10 @@ async def websocket_endpoint(websocket: WebSocket):
             openai_task.cancel()
         if client_proxy_task:
             client_proxy_task.cancel()
+        if idle_commit_task:
+            idle_commit_task.cancel()
         # Await task cancellation to avoid hanging during reload
-        tasks = [t for t in (openai_task, client_proxy_task) if t]
+        tasks = [t for t in (openai_task, client_proxy_task, idle_commit_task) if t]
         if tasks:
             try:
                 await asyncio.gather(*tasks, return_exceptions=True)
@@ -253,72 +287,77 @@ async def save_mixed_audio(session_id: str, interview_id: str, audio_buffer: Aud
         stats = await audio_buffer.get_stats()
         logger.info(f"Audio buffer stats for interview {interview_id}: {stats}")
         
-        # Flush audio buffer to get all chunks
+        persisted = False
         mic_chunks, ai_chunks = await audio_buffer.flush()
 
-        if not mic_chunks and not ai_chunks:
-            logger.warning(f"No audio data to save for interview {interview_id}")
-            return
-
-        # Create audio directory
-        audio_dir = Path("uploads/audio")
-        audio_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Initialize mixer and paths dictionary
-        mixer = AudioMixer(sample_rate=24000, channels=1)
-        paths = {}
-
-        # Save microphone audio stream separately
-        if mic_chunks:
-            mic_path = audio_dir / f"interview_{interview_id}_mic.wav"
-            paths["mic"] = str(mic_path)
-            try:
-                mic_clip = mixer._chunks_to_audioclip(mic_chunks, 1.0)
-                mic_clip.write_audiofile(str(mic_path), fps=mixer.sample_rate, nbytes=2, codec='pcm_s16le', logger=None)
-                mic_clip.close()
-                logger.info(f"Microphone audio saved to {mic_path}")
-            except Exception as e:
-                logger.error(f"Failed to save microphone audio for interview {interview_id}: {e}", exc_info=True)
-
-        # Save AI audio stream separately
-        if ai_chunks:
-            ai_path = audio_dir / f"interview_{interview_id}_ai.wav"
-            paths["ai"] = str(ai_path)
-            try:
-                ai_clip = mixer._chunks_to_audioclip(ai_chunks, 1.0)
-                ai_clip.write_audiofile(str(ai_path), fps=mixer.sample_rate, nbytes=2, codec='pcm_s16le', logger=None)
-                ai_clip.close()
-                logger.info(f"AI audio saved to {ai_path}")
-            except Exception as e:
-                logger.error(f"Failed to save AI audio for interview {interview_id}: {e}", exc_info=True)
-
-        # Mix the two streams
-        mixed_path = audio_dir / f"interview_{interview_id}_mixed.wav"
-        paths["mixed"] = str(mixed_path)
         try:
+            if not mic_chunks and not ai_chunks:
+                logger.warning(f"No audio data to save for interview {interview_id}")
+                persisted = True
+                return
+
+            audio_dir = Path("uploads/audio")
+            audio_dir.mkdir(parents=True, exist_ok=True)
+
+            mixer = AudioMixer(sample_rate=24000, channels=1)
+            paths = {}
+
+            if mic_chunks:
+                mic_path = audio_dir / f"interview_{interview_id}_mic.wav"
+                paths["mic"] = str(mic_path)
+                try:
+                    mic_clip = mixer._chunks_to_audioclip(mic_chunks, 1.0)
+                    mic_clip.write_audiofile(str(mic_path), fps=mixer.sample_rate, nbytes=2, codec='pcm_s16le', logger=None)
+                    mic_clip.close()
+                    logger.info(f"Microphone audio saved to {mic_path}")
+                except Exception as e:
+                    logger.error(f"Failed to save microphone audio for interview {interview_id}: {e}", exc_info=True)
+
+            if ai_chunks:
+                ai_path = audio_dir / f"interview_{interview_id}_ai.wav"
+                paths["ai"] = str(ai_path)
+                try:
+                    ai_clip = mixer._chunks_to_audioclip(ai_chunks, 1.0)
+                    ai_clip.write_audiofile(str(ai_path), fps=mixer.sample_rate, nbytes=2, codec='pcm_s16le', logger=None)
+                    ai_clip.close()
+                    logger.info(f"AI audio saved to {ai_path}")
+                except Exception as e:
+                    logger.error(f"Failed to save AI audio for interview {interview_id}: {e}", exc_info=True)
+
+            mixed_path = audio_dir / f"interview_{interview_id}_mixed.wav"
+            paths["mixed"] = str(mixed_path)
             success = await mixer.mix_streams(
                 mic_chunks=mic_chunks,
                 ai_chunks=ai_chunks,
                 output_path=mixed_path,
                 mic_volume=1.0,
-                ai_volume=1.0
+                ai_volume=1.0,
             )
+
             if success:
                 logger.info(f"Mixed audio saved successfully to {mixed_path}")
             else:
                 logger.error(f"Audio mixing failed for interview {interview_id}, but individual streams were saved.")
+                return
+
+            interviews_collection = get_interviews_collection()
+            await interviews_collection.update_one(
+                {"id": interview_id},
+                {"$set": {
+                    "audio_paths": paths,
+                    "audio_path": paths.get("mixed", paths.get("mic"))
+                }}
+            )
+            persisted = True
+
         except Exception as e:
-            logger.error(f"An exception occurred during audio mixing for interview {interview_id}: {e}", exc_info=True)
-        
-        # Update database with all audio paths
-        interviews_collection = get_interviews_collection()
-        await interviews_collection.update_one(
-            {"id": interview_id},
-            {"$set": {
-                "audio_paths": paths,
-                "audio_path": paths.get("mixed", paths.get("mic")) # For legacy support
-            }}
-        )
+            logger.error(f"An exception occurred during audio persistence for interview {interview_id}: {e}", exc_info=True)
+
+        finally:
+            if persisted:
+                await audio_buffer.discard_last_flush_backup()
+            else:
+                await audio_buffer.restore_last_flush()
 
     except Exception as e:
         logger.error(f"Error saving mixed audio for interview {interview_id}: {e}", exc_info=True)
@@ -362,12 +401,37 @@ async def get_interview_instructions(interview_id: Optional[str]) -> str:
         return get_interviewer_system_prompt()
 
 
-async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeService, audio_buffer: AudioBuffer):
+async def forward_client_to_openai(
+    websocket: WebSocket,
+    realtime: RealtimeService,
+    audio_buffer: AudioBuffer,
+    audio_timing: dict,
+):
     """Forward messages from client to OpenAI and buffer audio."""
+
+    async def send_to_openai(event: dict) -> bool:
+        try:
+            await realtime.send_event(event)
+            return True
+        except Exception as exc:
+            logger.error(f"Failed to forward event to OpenAI: {exc}")
+            return False
+
     try:
         while True:
-            message = await websocket.receive_text()
-            data = json.loads(message)
+            try:
+                message = await websocket.receive_text()
+            except WebSocketDisconnect:
+                raise
+            except Exception as exc:
+                logger.error(f"WebSocket receive failed: {exc}")
+                break
+
+            try:
+                data = json.loads(message)
+            except json.JSONDecodeError as exc:
+                logger.warning(f"Received malformed JSON from client: {exc}")
+                continue
 
             event_type = data.get("event")
 
@@ -383,31 +447,35 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
                     timestamp = None
 
                 # Buffer microphone audio for server-side mixing
-                await audio_buffer.add_mic_chunk(audio_b64, seq, timestamp)
+                await audio_buffer.add_mic_chunk(audio_b64 or "", seq, timestamp)
 
                 # Still send to OpenAI for VAD and transcription
-                await realtime.send_event({
+                if not await send_to_openai({
                     "type": "input_audio_buffer.append",
-                    "audio": audio_b64
-                })
+                    "audio": audio_b64,
+                }):
+                    break
+
+                # Update commit watchdog
+                audio_timing["last_audio_ts"] = asyncio.get_running_loop().time()
+                audio_timing["commit_sent"] = False
 
             elif event_type == "user_turn_end":
                 # Explicit end of user's turn -> commit audio buffer
-                await realtime.send_event({
-                    "type": "input_audio_buffer.commit"
-                })
+                if not await send_to_openai({"type": "input_audio_buffer.commit"}):
+                    break
+                audio_timing["commit_sent"] = True
 
             elif event_type == "clear_buffer":
                 # Clear any partial audio buffered on the server
-                await realtime.send_event({
-                    "type": "input_audio_buffer.clear"
-                })
+                if not await send_to_openai({"type": "input_audio_buffer.clear"}):
+                    break
+                audio_timing["commit_sent"] = True
 
             elif event_type == "barge_in":
                 # Interrupt current model response
-                await realtime.send_event({
-                    "type": "response.cancel"
-                })
+                if not await send_to_openai({"type": "response.cancel"}):
+                    break
 
             elif event_type == "ai_chunk_played":
                 if audio_buffer is not None:
