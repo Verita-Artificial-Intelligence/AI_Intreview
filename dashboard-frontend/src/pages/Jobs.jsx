@@ -83,14 +83,12 @@ const Jobs = () => {
     navigate(`/interviews?job=${jobId}`)
   }
 
+  // Centralized interview type labels (matching backend/config/interview_type_definitions.py)
   const getInterviewTypeLabel = (type) => {
     const labels = {
-      standard: 'Standard Interview',
-      resume_based: 'Portfolio/Resume Based',
-      human_data: 'Design Critique',
-      software_engineer: 'Creative Project',
-      custom_questions: 'Custom Questions',
-      coding_exercise: 'Creative Exercise',
+      standard: 'Standard interview',
+      human_data: 'Design critique & feedback exercise',
+      custom_questions: 'Custom questions only',
       custom_exercise: 'Custom Creative Exercise',
     }
     return labels[type] || type
