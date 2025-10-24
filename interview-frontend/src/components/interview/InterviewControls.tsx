@@ -20,35 +20,87 @@ export const InterviewControls: React.FC<InterviewControlsProps> = ({
 }) => {
   const status = useInterviewStore((state) => state.status);
   const isMicActive = useInterviewStore((state) => state.isMicActive);
+  const isAIPlaying = useInterviewStore((state) => state.isAIPlaying);
+  const userAudioLevel = useInterviewStore((state) => state.userAudioLevel);
+
+  // User is speaking when mic is active, audio level exceeds threshold, AND AI is not speaking
+  // AI has precedence - we don't show user activity when AI is speaking (system isn't listening)
+  const isUserSpeaking = isMicActive && userAudioLevel > 0.02 && !isAIPlaying;
 
   return (
-    <div className="flex items-center justify-center gap-8 px-6 py-5 bg-white/80 backdrop-blur-md border-t border-gray-200">
-      {/* Microphone Toggle */}
-      <button
-        onClick={onToggleMic}
-        disabled={status === 'ended'}
-        className={`
-          flex items-center justify-center
-          w-14 h-14 rounded-full
-          transition-all duration-300 ease-out
-          shadow-lg hover:shadow-xl
-          ${
-            status === 'ended'
-              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              : isMicActive
-                ? 'bg-white hover:bg-gray-50 text-gray-700'
-                : 'bg-gradient-to-br from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white'
+    <>
+      <style>{`
+        @keyframes micPulseOuter {
+          0%, 100% {
+            transform: scale(1);
+            opacity: 0.6;
           }
-        `}
-        title={isMicActive ? 'Mute' : 'Unmute'}
-        aria-label={isMicActive ? 'Mute microphone' : 'Unmute microphone'}
-      >
-        {isMicActive && status !== 'ended' ? (
-          <Mic className="w-6 h-6" />
-        ) : (
-          <MicOff className="w-6 h-6" />
-        )}
-      </button>
+          50% {
+            transform: scale(1.4);
+            opacity: 0;
+          }
+        }
+
+        @keyframes micPulseInner {
+          0%, 100% {
+            transform: scale(1);
+            opacity: 0.5;
+          }
+          50% {
+            transform: scale(1.2);
+            opacity: 0.2;
+          }
+        }
+      `}</style>
+
+      <div className="flex items-center justify-center gap-8 px-6 py-5 bg-white/80 backdrop-blur-md border-t border-gray-200">
+        {/* Microphone Toggle with Voice Activity Indicator */}
+        <div className="relative flex items-center justify-center">
+          {/* Voice activity pulse rings - Meet/Skype style */}
+          {isUserSpeaking && (
+            <>
+              <div
+                className="absolute inset-0 w-14 h-14 rounded-full bg-sky-400/40"
+                style={{
+                  animation: 'micPulseOuter 0.8s ease-out infinite'
+                }}
+              />
+              <div
+                className="absolute inset-0 w-14 h-14 rounded-full bg-sky-400/30"
+                style={{
+                  animation: 'micPulseInner 0.8s ease-out infinite 0.1s'
+                }}
+              />
+            </>
+          )}
+
+        <button
+          onClick={onToggleMic}
+          disabled={status === 'ended'}
+          className={`
+            relative z-10
+            flex items-center justify-center
+            w-14 h-14 rounded-full
+            transition-all duration-300 ease-out
+            shadow-lg hover:shadow-xl
+            ${
+              status === 'ended'
+                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                : isMicActive
+                  ? 'bg-white hover:bg-gray-50 text-gray-700'
+                  : 'bg-gradient-to-br from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white'
+            }
+          `}
+          title={isMicActive ? 'Mute' : 'Unmute'}
+          aria-label={isMicActive ? 'Mute microphone' : 'Unmute microphone'}
+        >
+          {isMicActive && status !== 'ended' ? (
+            <Mic className="w-6 h-6" />
+          ) : (
+            <MicOff className="w-6 h-6" />
+          )}
+        </button>
+      </div>
 
       {/* End Call - Destructive action */}
       <button
@@ -79,6 +131,7 @@ export const InterviewControls: React.FC<InterviewControlsProps> = ({
         </div>
       )}
     </div>
+    </>
   );
 };
 

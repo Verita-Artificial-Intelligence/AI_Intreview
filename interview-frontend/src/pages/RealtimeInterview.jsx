@@ -34,6 +34,7 @@ export default function RealtimeInterview() {
     addTranscript,
     setMicActive,
     setAIPlaying,
+    setUserAudioLevel,
     setLatencyMetrics,
     reset,
   } = useInterviewStore();
@@ -317,21 +318,27 @@ export default function RealtimeInterview() {
 
     sessionStartRef.current = performance.now() / 1000;
 
-    audioCaptureRef.current.start((seq, audioB64, timestamp) => {
-      // Only send audio when not muted; OpenAI handles VAD
-      if (
-        !mutedRef.current &&
-        wsClientRef.current &&
-        wsClientRef.current.isConnected()
-      ) {
-        wsClientRef.current.send({
-          event: 'mic_chunk',
-          seq,
-          audio_b64: audioB64,
-          timestamp,
-        });
+    audioCaptureRef.current.start(
+      (seq, audioB64, timestamp) => {
+        // Only send audio when not muted; OpenAI handles VAD
+        if (
+          !mutedRef.current &&
+          wsClientRef.current &&
+          wsClientRef.current.isConnected()
+        ) {
+          wsClientRef.current.send({
+            event: 'mic_chunk',
+            seq,
+            audio_b64: audioB64,
+            timestamp,
+          });
+        }
+      },
+      (level) => {
+        // Update audio level for visualization (only when not muted)
+        setUserAudioLevel(!mutedRef.current ? level : 0);
       }
-    });
+    );
 
     console.log('Microphone started');
   };
@@ -344,6 +351,7 @@ export default function RealtimeInterview() {
 
     audioCaptureRef.current.stop();
     setMicActive(false);
+    setUserAudioLevel(0);
 
     console.log('Microphone stopped');
 
