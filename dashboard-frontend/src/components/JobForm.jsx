@@ -55,9 +55,8 @@ const INTERVIEW_TYPES = [
   },
   {
     id: 'custom_exercise',
-    title: 'Custom portfolio/asset evaluation',
-    description:
-      'Add a prompt and get audio response—AI evaluates creative work based on your custom criteria.',
+    title: 'Custom Creative Exercise',
+    description: 'Add a custom creative brief and get audio responses—AI evaluates creative thinking and problem-solving.',
     icon: Paintbrush,
   },
 ]
