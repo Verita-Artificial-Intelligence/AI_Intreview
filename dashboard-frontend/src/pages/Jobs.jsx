@@ -87,7 +87,7 @@ const Jobs = () => {
       software_engineer: 'Creative Project',
       custom_questions: 'Custom Questions',
       coding_exercise: 'Creative Exercise',
-      custom_exercise: 'Custom Portfolio Evaluation',
+      custom_exercise: 'Custom Creative Exercise',
     }
     return labels[type] || type
   }
