@@ -39,7 +39,7 @@ EVALUATION_FRAMEWORKS = {
 OPENAI_REALTIME_MODEL = os.environ.get(
     "OPENAI_REALTIME_MODEL", "gpt-realtime"
 )
-OPENAI_REALTIME_VOICE = os.environ.get("OPENAI_REALTIME_VOICE", "alloy")
+OPENAI_REALTIME_VOICE = os.environ.get("OPENAI_REALTIME_VOICE", "nova")
 OPENAI_REALTIME_AUTO_GREET = (
     os.environ.get("OPENAI_REALTIME_AUTO_GREET", "true").lower() == "true"
 )
