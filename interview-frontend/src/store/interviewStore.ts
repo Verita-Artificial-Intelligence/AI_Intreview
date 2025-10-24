@@ -20,6 +20,7 @@ interface InterviewStore extends InterviewState {
   setCurrentAIText: (text: string) => void;
   setMicActive: (active: boolean) => void;
   setAIPlaying: (playing: boolean) => void;
+  setUserAudioLevel: (level: number) => void;
   setLatencyMetrics: (metrics: LatencyMetrics) => void;
   clearTranscripts: () => void;
   reset: () => void;
@@ -34,6 +35,7 @@ const initialState: InterviewState = {
   currentAIText: '',
   isMicActive: false,
   isAIPlaying: false,
+  userAudioLevel: 0,
   latencyMetrics: null,
 };
 
@@ -59,6 +61,8 @@ export const useInterviewStore = create<InterviewStore>((set) => ({
 
   setAIPlaying: (playing) => set({ isAIPlaying: playing }),
 
+  setUserAudioLevel: (level) => set({ userAudioLevel: level }),
+
   setLatencyMetrics: (metrics) => set({ latencyMetrics: metrics }),
 
   clearTranscripts: () => set({ transcripts: [] }),
@@ -78,3 +82,6 @@ export const useIsAIPlaying = () =>
 
 export const useIsMicActive = () =>
   useInterviewStore((state) => state.isMicActive);
+
+export const useUserAudioLevel = () =>
+  useInterviewStore((state) => state.userAudioLevel);
