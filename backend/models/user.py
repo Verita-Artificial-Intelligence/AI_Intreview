@@ -29,6 +29,10 @@ class User(BaseModel):
     publications: Optional[List[dict]] = None
     certifications: Optional[List[dict]] = None
     resume_url: Optional[str] = None
+    
+    # Work authorization
+    work_authorization: Optional[str] = None  # citizen, work_visa, need_sponsorship
+    citizenship: Optional[str] = None
 
     # Interview tracking
     interview_id: Optional[str] = None
@@ -70,3 +74,5 @@ class ProfileComplete(BaseModel):
     publications: List[dict] | None = None
     certifications: List[dict] | None = None
     resume_url: str | None = None
+    work_authorization: str | None = None
+    citizenship: str | None = None

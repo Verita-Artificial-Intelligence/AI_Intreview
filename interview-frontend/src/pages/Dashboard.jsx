@@ -81,7 +81,7 @@ const Dashboard = () => {
           </div>
           <div className="flex gap-3">
             <Button
-              onClick={() => navigate('/marketplace')}
+              onClick={() => navigate('/')}
               data-testid="marketplace-nav-button"
               className="rounded-lg font-medium bg-brand-500 hover:bg-brand-600 text-white"
             >
@@ -127,7 +127,7 @@ const Dashboard = () => {
                 No interviews yet. Start by browsing candidates!
               </p>
               <Button
-                onClick={() => navigate('/marketplace')}
+                onClick={() => navigate('/')}
                 data-testid="empty-state-marketplace-button"
                 className="rounded-lg font-medium bg-brand-500 hover:bg-brand-600 text-white"
               >

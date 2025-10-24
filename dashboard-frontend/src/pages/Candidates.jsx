@@ -202,13 +202,13 @@ const Candidates = () => {
                           {candidate.skills.slice(0, 3).map((skill, idx) => (
                             <span
                               key={idx}
-                              className="px-2 py-1 bg-neutral-100 text-neutral-700 text-[10px] font-medium rounded-full"
+                              className="px-2 py-0.5 bg-neutral-100 text-neutral-700 text-[10px] font-medium rounded-full"
                             >
                               {skill}
                             </span>
                           ))}
                           {candidate.skills.length > 3 && (
-                            <span className="px-2 py-1 bg-neutral-100 text-neutral-600 text-[10px] font-medium rounded-full">
+                            <span className="px-2 py-0.5 bg-neutral-100 text-neutral-600 text-[10px] font-medium rounded-full">
                               +{candidate.skills.length - 3}
                             </span>
                           )}
@@ -231,7 +231,8 @@ const Candidates = () => {
                         <Button
                           onClick={() => handleViewInterviews(candidate.id)}
                           variant="outline"
-                          className="w-full h-8 text-xs rounded-lg font-medium border border-brand-500 text-brand-600 hover:bg-brand-50"
+                          size="sm"
+                          className="w-full rounded-lg"
                         >
                           View All
                         </Button>

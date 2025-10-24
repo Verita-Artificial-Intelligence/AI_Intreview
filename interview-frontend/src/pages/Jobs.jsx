@@ -180,14 +180,17 @@ export default function Jobs() {
             onValueChange={setActiveTab}
             className="space-y-4"
           >
-            <TabsList className="grid w-full max-w-md grid-cols-2">
-              <TabsTrigger value="active" className="flex items-center gap-2">
+            <TabsList className="grid w-full max-w-md grid-cols-2 bg-transparent p-0 gap-2">
+              <TabsTrigger
+                value="active"
+                className="flex items-center gap-2 data-[state=active]:bg-white data-[state=inactive]:bg-transparent border border-gray-200 data-[state=active]:shadow-sm"
+              >
                 <Briefcase className="w-4 h-4" />
                 Active Jobs ({activeInterviews.length})
               </TabsTrigger>
               <TabsTrigger
                 value="completed"
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 data-[state=active]:bg-white data-[state=inactive]:bg-transparent border border-gray-200 data-[state=active]:shadow-sm"
               >
                 <CheckCircle className="w-4 h-4" />
                 Completed ({completedInterviews.length})
@@ -209,11 +212,12 @@ export default function Jobs() {
                   </p>
                   <Button
                     onClick={() => navigate('/')}
+                    variant="outline"
                     size="sm"
-                    className="rounded-lg bg-brand-500 hover:bg-brand-600 text-white h-9 px-3 text-sm"
+                    className="rounded-lg h-8 px-3 text-xs"
                   >
                     Browse Opportunities
-                    <ArrowRight className="w-4 h-4 ml-2" />
+                    <ArrowRight className="w-3.5 h-3.5 ml-2" />
                   </Button>
                 </Card>
               ) : (

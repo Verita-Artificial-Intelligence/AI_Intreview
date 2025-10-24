@@ -84,12 +84,13 @@ class InterviewService:
             position=candidate["position"],
             job_id=interview_data.job_id,
             job_title=job_title,
-            status="in_progress",
+            status=interview_data.status if interview_data.status else "in_progress",
             interview_type=interview_type,
             skills=skills,
             custom_questions=custom_questions,
             custom_exercise_prompt=custom_exercise_prompt,
             resume_text=interview_data.resume_text,  # Resume is per-candidate
+            availability_confirmed=interview_data.availability_confirmed,  # Per-job availability
         )
 
         doc = prepare_for_mongo(interview.model_dump())

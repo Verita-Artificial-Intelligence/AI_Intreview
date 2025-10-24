@@ -56,7 +56,8 @@ const INTERVIEW_TYPES = [
   {
     id: 'custom_exercise',
     title: 'Custom Creative Exercise',
-    description: 'Add a custom creative brief and get audio responses—AI evaluates creative thinking and problem-solving.',
+    description:
+      'Add a custom creative brief and get audio responses—AI evaluates creative thinking and problem-solving.',
     icon: Paintbrush,
   },
 ]
