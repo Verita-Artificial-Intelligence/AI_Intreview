@@ -238,7 +238,7 @@ const Interviews = () => {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex gap-2">
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${getStatusClass(interview.status)}`}
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusClass(interview.status)}`}
                       >
                         {getStatusLabel(interview.status)}
                       </span>
@@ -246,10 +246,10 @@ const Interviews = () => {
                         <span
                           className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
                             interview.acceptance_status === 'accepted'
-                              ? 'bg-green-100 text-green-700 border border-green-300'
+                              ? 'bg-green-100 text-green-700'
                               : interview.acceptance_status === 'rejected'
-                                ? 'bg-red-100 text-red-700 border border-red-300'
-                                : 'bg-gray-100 text-gray-700 border border-gray-300'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-gray-100 text-gray-700'
                           }`}
                         >
                           {interview.acceptance_status === 'accepted'
@@ -278,7 +278,8 @@ const Interviews = () => {
                           navigate(`/admin/review/${interview.id}`)
                         }
                         data-testid={`view-results-${interview.id}`}
-                        className="w-full h-7 text-xs rounded-lg font-medium border-2 border-brand-500 text-brand-600 hover:bg-brand-50 bg-white"
+                        size="sm"
+                        className="w-full rounded-lg bg-brand-500 hover:bg-brand-600 text-white"
                       >
                         View Results
                       </Button>

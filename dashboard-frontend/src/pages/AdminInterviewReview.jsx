@@ -52,7 +52,10 @@ const AdminInterviewReview = () => {
         .then((res) => res.data)
         .catch((error) => {
           if (error.response?.status === 404) {
-            console.warn('Transcript not yet available for interview:', interviewId)
+            console.warn(
+              'Transcript not yet available for interview:',
+              interviewId
+            )
             setTranscriptUnavailable(true)
             return null
           }
@@ -84,13 +87,19 @@ const AdminInterviewReview = () => {
           candidateData = candidateRes.data
         } catch (candidateError) {
           // If candidate fetch fails (e.g., profile not completed), use interview data
-          console.warn('Could not fetch full candidate profile, using interview data:', candidateError.message)
+          console.warn(
+            'Could not fetch full candidate profile, using interview data:',
+            candidateError.message
+          )
           candidateData = {
             id: interviewRes.data.candidate_id,
             name: interviewRes.data.candidate_name || 'Unknown',
             email: 'N/A',
-            position: interviewRes.data.position || interviewRes.data.job_title || 'N/A',
-            skills: interviewRes.data.skills?.map(s => s.name) || [],
+            position:
+              interviewRes.data.position ||
+              interviewRes.data.job_title ||
+              'N/A',
+            skills: interviewRes.data.skills?.map((s) => s.name) || [],
             experience_years: 0,
             bio: '',
           }
@@ -102,8 +111,9 @@ const AdminInterviewReview = () => {
           id: null,
           name: interviewRes.data.candidate_name || 'Unknown',
           email: 'N/A',
-          position: interviewRes.data.position || interviewRes.data.job_title || 'N/A',
-          skills: interviewRes.data.skills?.map(s => s.name) || [],
+          position:
+            interviewRes.data.position || interviewRes.data.job_title || 'N/A',
+          skills: interviewRes.data.skills?.map((s) => s.name) || [],
           experience_years: 0,
           bio: '',
         }
@@ -122,7 +132,9 @@ const AdminInterviewReview = () => {
               return value
             }
             if (!BACKEND_URL) return value
-            const base = BACKEND_URL.endsWith('/') ? BACKEND_URL.slice(0, -1) : BACKEND_URL
+            const base = BACKEND_URL.endsWith('/')
+              ? BACKEND_URL.slice(0, -1)
+              : BACKEND_URL
             const path = value.startsWith('/') ? value : `/${value}`
             return `${base}${path}`
           })
@@ -143,11 +155,17 @@ const AdminInterviewReview = () => {
         setVideoSources([])
       }
 
-      const transcriptHasEntries = Array.isArray(interviewRes.data?.transcript) && interviewRes.data.transcript.length > 0
-      const messagesHaveEntries = Array.isArray(messagesData) && messagesData.length > 0
+      const transcriptHasEntries =
+        Array.isArray(interviewRes.data?.transcript) &&
+        interviewRes.data.transcript.length > 0
+      const messagesHaveEntries =
+        Array.isArray(messagesData) && messagesData.length > 0
 
       // Check if analysis already exists
-      if (interviewRes.data.analysis_result && interviewRes.data.analysis_status === 'completed') {
+      if (
+        interviewRes.data.analysis_result &&
+        interviewRes.data.analysis_status === 'completed'
+      ) {
         setAnalysis(interviewRes.data.analysis_result)
       } else if (interviewRes.data.analysis_status === 'processing') {
         setAnalysis({ processing: true })
@@ -198,7 +216,11 @@ const AdminInterviewReview = () => {
       setAnalysisError(null)
     } catch (error) {
       console.error('Error generating analysis:', error)
-      setAnalysisError(error.response?.data?.detail || error.message || 'Failed to generate analysis')
+      setAnalysisError(
+        error.response?.data?.detail ||
+          error.message ||
+          'Failed to generate analysis'
+      )
       setAnalysis(null)
     } finally {
       setAnalyzing(false)
@@ -208,7 +230,9 @@ const AdminInterviewReview = () => {
   const confirmAcceptCandidate = async () => {
     try {
       await axios.patch(`${API}/interviews/${interviewId}/accept`)
-      toast.success('Candidate accepted! You can now create annotation tasks for them.')
+      toast.success(
+        'Candidate accepted! You can now create annotation tasks for them.'
+      )
       setShowAcceptDialog(false)
       fetchInterviewData()
     } catch (error) {
@@ -251,7 +275,7 @@ const AdminInterviewReview = () => {
   // Show analyzing state while generating analysis
   if (analyzing || analysis?.processing) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-white">
         <div className={pageHeader.wrapper}>
           <div className={`${containers.lg} ${pageHeader.container}`}>
             <Button
@@ -268,9 +292,12 @@ const AdminInterviewReview = () => {
         <div className="flex items-center justify-center py-20">
           <div className="text-center max-w-md">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500 mx-auto mb-4"></div>
-            <h2 className="text-xl font-bold mb-2 text-neutral-900">Analyzing Interview</h2>
+            <h2 className="text-xl font-bold mb-2 text-neutral-900">
+              Analyzing Interview
+            </h2>
             <p className="text-neutral-600">
-              Our AI is analyzing the interview responses. This usually takes 10-30 seconds...
+              Our AI is analyzing the interview responses. This usually takes
+              10-30 seconds...
             </p>
           </div>
         </div>
@@ -297,7 +324,9 @@ const AdminInterviewReview = () => {
         </div>
         <div className="flex items-center justify-center py-20">
           <div className="text-center max-w-md">
-            <h2 className="text-xl font-bold mb-2 text-neutral-900">Analysis Failed</h2>
+            <h2 className="text-xl font-bold mb-2 text-neutral-900">
+              Analysis Failed
+            </h2>
             <p className="text-neutral-600 mb-2">
               We encountered an error while analyzing this interview.
             </p>
@@ -306,7 +335,10 @@ const AdminInterviewReview = () => {
                 {analysisError}
               </p>
             )}
-            <Button onClick={() => generateAnalysis(messages, candidate)} variant="outline">
+            <Button
+              onClick={() => generateAnalysis(messages, candidate)}
+              variant="outline"
+            >
               Retry Analysis
             </Button>
           </div>
@@ -334,11 +366,17 @@ const AdminInterviewReview = () => {
         </div>
         <div className="flex items-center justify-center py-20">
           <div className="text-center max-w-md">
-            <h2 className="text-xl font-bold mb-2 text-neutral-900">No Analysis Available</h2>
+            <h2 className="text-xl font-bold mb-2 text-neutral-900">
+              No Analysis Available
+            </h2>
             <p className="text-neutral-600 mb-6">
-              This interview hasn't been analyzed yet. Generate an analysis to view results.
+              This interview hasn't been analyzed yet. Generate an analysis to
+              view results.
             </p>
-            <Button onClick={() => generateAnalysis(messages, candidate)} className="bg-brand-500 hover:bg-brand-600">
+            <Button
+              onClick={() => generateAnalysis(messages, candidate)}
+              className="bg-brand-500 hover:bg-brand-600"
+            >
               Generate Analysis
             </Button>
           </div>
@@ -408,7 +446,9 @@ const AdminInterviewReview = () => {
               </div>
 
               <div className="mt-3 pt-3 border-t border-neutral-200">
-                <p className="text-xs font-medium text-neutral-700 mb-1.5">Skills</p>
+                <p className="text-xs font-medium text-neutral-700 mb-1.5">
+                  Skills
+                </p>
                 <div className="flex flex-wrap gap-1.5">
                   {candidate.skills.map((skill, index) => (
                     <span
@@ -422,54 +462,72 @@ const AdminInterviewReview = () => {
               </div>
 
               <div className="mt-3 pt-3 border-t border-neutral-200">
-                <p className="text-xs font-medium text-neutral-700 mb-1.5">Bio</p>
+                <p className="text-xs font-medium text-neutral-700 mb-1.5">
+                  Bio
+                </p>
                 <p className="text-xs text-neutral-600">{candidate.bio}</p>
               </div>
             </Card>
 
             {/* Accept/Reject Actions */}
-            {interview.status === 'completed' && interview.acceptance_status !== 'accepted' && interview.acceptance_status !== 'rejected' && (
-              <Card className={`p-4 ${cardStyles.default}`}>
-                <h3 className="font-bold text-sm mb-3 text-neutral-900">Candidate Decision</h3>
-                <div className="space-y-2">
-                  <Button
-                    onClick={() => setShowAcceptDialog(true)}
-                    className="w-full bg-brand-500 hover:bg-brand-600 text-white"
-                  >
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Accept Candidate
-                  </Button>
-                  <Button
-                    onClick={() => setShowRejectDialog(true)}
-                    variant="outline"
-                    className="w-full border-neutral-300 text-neutral-700 hover:bg-neutral-50"
-                  >
-                    <XCircle className="w-4 h-4 mr-2" />
-                    Reject Candidate
-                  </Button>
-                </div>
-              </Card>
-            )}
+            {interview.status === 'completed' &&
+              interview.acceptance_status !== 'accepted' &&
+              interview.acceptance_status !== 'rejected' && (
+                <Card className={`p-4 ${cardStyles.default}`}>
+                  <h3 className="font-bold text-sm mb-3 text-neutral-900">
+                    Candidate Decision
+                  </h3>
+                  <div className="space-y-2">
+                    <Button
+                      onClick={() => setShowAcceptDialog(true)}
+                      className="w-full bg-brand-500 hover:bg-brand-600 text-white"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Accept Candidate
+                    </Button>
+                    <Button
+                      onClick={() => setShowRejectDialog(true)}
+                      variant="outline"
+                      className="w-full border-neutral-300 text-neutral-700 hover:bg-neutral-50"
+                    >
+                      <XCircle className="w-4 h-4 mr-2" />
+                      Reject Candidate
+                    </Button>
+                  </div>
+                </Card>
+              )}
 
             {interview.acceptance_status === 'accepted' && (
-              <Card className={`p-4 ${cardStyles.default} bg-green-50 border-green-200`}>
+              <Card
+                className={`p-4 ${cardStyles.default} bg-green-50 border-green-200`}
+              >
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-green-600" />
                   <div>
-                    <p className="font-bold text-sm text-green-900">Candidate Accepted</p>
-                    <p className="text-xs text-green-700">Ready for annotation task assignment</p>
+                    <p className="font-bold text-sm text-green-900">
+                      Candidate Accepted
+                    </p>
+                    <p className="text-xs text-green-700">
+                      Ready for annotation task assignment
+                    </p>
                   </div>
                 </div>
               </Card>
             )}
 
             {interview.acceptance_status === 'rejected' && (
-              <Card className={`p-4 ${cardStyles.default} bg-neutral-50 border-neutral-200`}>
+              <Card
+                className={`p-4 ${cardStyles.default} bg-neutral-50 border-neutral-200`}
+              >
                 <div className="flex items-center gap-2">
                   <XCircle className="w-5 h-5 text-neutral-600" />
                   <div>
-                    <p className="font-bold text-sm text-neutral-900">Candidate Rejected</p>
-                    <p className="text-xs text-neutral-700">This candidate has been declined</p>
+                    <p className="font-bold text-sm text-neutral-900">
+                      Candidate Rejected
+                    </p>
+                    <p className="text-xs text-neutral-700">
+                      This candidate has been declined
+                    </p>
                   </div>
                 </div>
               </Card>
@@ -477,12 +535,15 @@ const AdminInterviewReview = () => {
 
             {/* Interview Metadata */}
             <Card className={`p-4 ${cardStyles.default}`}>
-              <h3 className="font-bold text-sm mb-3 text-neutral-900">Interview Details</h3>
+              <h3 className="font-bold text-sm mb-3 text-neutral-900">
+                Interview Details
+              </h3>
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between">
                   <span className="text-neutral-600">Status</span>
                   <span className="font-medium text-neutral-900">
-                    {interview.status.charAt(0).toUpperCase() + interview.status.slice(1)}
+                    {interview.status.charAt(0).toUpperCase() +
+                      interview.status.slice(1)}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -490,7 +551,9 @@ const AdminInterviewReview = () => {
                   <span className="font-medium text-neutral-900">
                     {interview.completed_at
                       ? Math.round(
-                          (new Date(interview.completed_at) - new Date(interview.created_at)) / 60000
+                          (new Date(interview.completed_at) -
+                            new Date(interview.created_at)) /
+                            60000
                         ) + ' min'
                       : 'In progress'}
                   </span>
@@ -499,18 +562,26 @@ const AdminInterviewReview = () => {
             </Card>
 
             {interview?.status === 'completed' && videoSources.length === 0 && (
-              <Card className={`p-4 ${cardStyles.default} bg-neutral-50 border-dashed`}>
-                <h3 className="font-bold text-sm mb-2 text-neutral-900">Recording Processing</h3>
+              <Card
+                className={`p-4 ${cardStyles.default} bg-neutral-50 border-dashed`}
+              >
+                <h3 className="font-bold text-sm mb-2 text-neutral-900">
+                  Recording Processing
+                </h3>
                 <p className="text-xs text-neutral-600">
-                  We&apos;re finalizing the interview recording. This usually takes just a moment&mdash;refreshing happens
-                  automatically, so hang tight or check back shortly if the video doesn&apos;t appear right away.
+                  We&apos;re finalizing the interview recording. This usually
+                  takes just a moment&mdash;refreshing happens automatically, so
+                  hang tight or check back shortly if the video doesn&apos;t
+                  appear right away.
                 </p>
               </Card>
             )}
 
             {videoSources.length > 0 && (
               <Card className={`p-4 ${cardStyles.default}`}>
-                <h3 className="font-bold text-sm mb-3 text-neutral-900">Interview Recording</h3>
+                <h3 className="font-bold text-sm mb-3 text-neutral-900">
+                  Interview Recording
+                </h3>
                 <div className="space-y-3">
                   {videoSources.map((src, idx) => (
                     <div key={idx}>
@@ -532,7 +603,6 @@ const AdminInterviewReview = () => {
                 </div>
               </Card>
             )}
-
           </div>
 
           {/* Right Column - Analysis & Transcript */}
@@ -542,222 +612,318 @@ const AdminInterviewReview = () => {
               <Card className={`p-4 ${cardStyles.default}`}>
                 <div className="flex flex-col items-center justify-center py-12">
                   <Clock className="w-16 h-16 text-brand-500 mb-4" />
-                  <h3 className="text-xl font-bold mb-2 text-neutral-900">Analysis Pending</h3>
+                  <h3 className="text-xl font-bold mb-2 text-neutral-900">
+                    Analysis Pending
+                  </h3>
                   <p className="text-neutral-600 text-center max-w-md">
-                    The AI analysis for this interview is being prepared. Please check back later.
+                    The AI analysis for this interview is being prepared. Please
+                    check back later.
                   </p>
                 </div>
               </Card>
             ) : (
               <>
-            {/* Overall Score */}
-            <Card className={`p-4 ${cardStyles.default}`}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-bold text-neutral-900">Overall Assessment</h3>
-                  <p className="text-xs text-neutral-600 mt-0.5">
-                    AI-generated evaluation based on interview responses
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-neutral-900">
-                      {analysis?.overall_score || 0}<span className="text-sm text-neutral-500">/10</span>
+                {/* Overall Score */}
+                <Card className={`p-4 ${cardStyles.default}`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-bold text-neutral-900">
+                        Overall Assessment
+                      </h3>
+                      <p className="text-xs text-neutral-600 mt-0.5">
+                        AI-generated evaluation based on interview responses
+                      </p>
                     </div>
-                    <p className="text-xs text-neutral-500">Score</p>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Skills Assessment */}
-            <Card className={`p-4 ${cardStyles.default}`}>
-              <h3 className="text-base font-bold mb-3 text-neutral-900">Skills Assessment</h3>
-              <div className="space-y-3">
-                {analysis?.skills_breakdown?.map((skill, index) => (
-                  <div key={index}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-sm font-medium text-neutral-900">{skill.skill}</span>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs px-2 py-0.5 rounded-full border ${getScoreBadge(skill.score)}`}>
-                          {skill.level}
-                        </span>
-                        <span className="text-sm font-bold text-neutral-900">{skill.score}/10</span>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-neutral-900">
+                          {analysis?.overall_score || 0}
+                          <span className="text-sm text-neutral-500">/10</span>
+                        </div>
+                        <p className="text-xs text-neutral-500">Score</p>
                       </div>
-                    </div>
-                    <div className="w-full bg-neutral-100 rounded-full h-1.5">
-                      <div
-                        className="bg-brand-500 h-1.5 rounded-full transition-all"
-                        style={{ width: `${(skill.score / 10) * 100}%` }}
-                      />
                     </div>
                   </div>
-                ))}
-              </div>
-            </Card>
+                </Card>
 
-            {/* Key Insights */}
-            {analysis?.key_insights && analysis.key_insights.length > 0 && (
-              <Card className={`p-4 ${cardStyles.default}`}>
-                <h3 className="text-base font-bold mb-3 text-neutral-900">Key Insights</h3>
-                <ul className="space-y-2">
-                  {analysis.key_insights.map((insight, index) => (
-                    <li key={index} className="flex gap-2 text-sm text-neutral-700">
-                      <span className="text-neutral-400 flex-shrink-0">•</span>
-                      <span>{insight}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            )}
-
-            {/* Strengths & Growth Areas */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className={`p-4 ${cardStyles.default}`}>
-                <h3 className="text-sm font-bold mb-2 text-neutral-900">Strengths</h3>
-                <ul className="space-y-1.5">
-                  {analysis?.strengths?.map((strength, index) => (
-                    <li key={index} className="flex gap-2 text-xs text-neutral-700">
-                      <span className="text-neutral-400 flex-shrink-0">•</span>
-                      <span>{strength}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-
-              <Card className={`p-4 ${cardStyles.default}`}>
-                <h3 className="text-sm font-bold mb-2 text-neutral-900">Growth Areas</h3>
-                <ul className="space-y-1.5">
-                  {analysis?.areas_for_improvement?.map((area, index) => (
-                    <li key={index} className="flex gap-2 text-xs text-neutral-700">
-                      <span className="text-neutral-400 flex-shrink-0">•</span>
-                      <span>{area}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            </div>
-
-            {/* Communication & Technical */}
-            {(analysis?.communication_assessment || analysis?.technical_depth || analysis?.problem_solving) && (
-              <Card className={`p-4 ${cardStyles.default}`}>
-                <h3 className="text-base font-bold mb-3 text-neutral-900">Detailed Assessment</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {analysis?.communication_assessment && (
-                    <div>
-                      <p className="text-sm font-semibold text-neutral-900 mb-2">Communication</p>
-                      <div className="space-y-1 text-xs">
-                        <div className="flex justify-between">
-                          <span className="text-neutral-600">Clarity</span>
-                          <span className="font-medium text-neutral-900">
-                            {analysis.communication_assessment.clarity_score}/10
+                {/* Skills Assessment */}
+                <Card className={`p-4 ${cardStyles.default}`}>
+                  <h3 className="text-base font-bold mb-3 text-neutral-900">
+                    Skills Assessment
+                  </h3>
+                  <div className="space-y-3">
+                    {analysis?.skills_breakdown?.map((skill, index) => (
+                      <div key={index}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-sm font-medium text-neutral-900">
+                            {skill.skill}
                           </span>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`text-xs px-2 py-0.5 rounded-full border ${getScoreBadge(skill.score)}`}
+                            >
+                              {skill.level}
+                            </span>
+                            <span className="text-sm font-bold text-neutral-900">
+                              {skill.score}/10
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-neutral-600">Articulation</span>
-                          <span className="font-medium text-neutral-900">
-                            {analysis.communication_assessment.articulation_score}/10
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-neutral-600">Confidence</span>
-                          <span className="font-medium text-neutral-900">
-                            {analysis.communication_assessment.confidence_score}/10
-                          </span>
+                        <div className="w-full bg-neutral-100 rounded-full h-1.5">
+                          <div
+                            className="bg-brand-500 h-1.5 rounded-full transition-all"
+                            style={{ width: `${(skill.score / 10) * 100}%` }}
+                          />
                         </div>
                       </div>
-                    </div>
-                  )}
-
-                  {analysis?.technical_depth && (
-                    <div>
-                      <p className="text-sm font-semibold text-neutral-900 mb-2">Technical Depth</p>
-                      <div className="text-xs">
-                        <div className="flex justify-between mb-1">
-                          <span className="text-neutral-600">Score</span>
-                          <span className="font-medium text-neutral-900">{analysis.technical_depth.score}/10</span>
-                        </div>
-                        <p className="text-neutral-600 leading-relaxed">{analysis.technical_depth.notes}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {analysis?.problem_solving && (
-                    <div>
-                      <p className="text-sm font-semibold text-neutral-900 mb-2">Problem Solving</p>
-                      <div className="text-xs">
-                        <div className="flex justify-between mb-1">
-                          <span className="text-neutral-600">Score</span>
-                          <span className="font-medium text-neutral-900">{analysis.problem_solving.score}/10</span>
-                        </div>
-                        <p className="text-neutral-600 leading-relaxed">{analysis.problem_solving.approach}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            )}
-
-            {/* Hiring Recommendation */}
-            <Card className={`p-4 ${cardStyles.default}`}>
-              <h3 className="text-base font-bold mb-3 text-neutral-900">Hiring Recommendation</h3>
-              <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg border border-neutral-200 mb-3">
-                <div>
-                  <p className="text-lg font-bold text-neutral-900">{analysis?.recommendation}</p>
-                  <p className="text-xs text-neutral-600">Confidence: {analysis?.confidence}%</p>
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-neutral-900">{analysis?.confidence}%</div>
-                </div>
-              </div>
-
-              {analysis?.recommendations && analysis.recommendations.length > 0 && (
-                <div className="pt-3 border-t border-neutral-200">
-                  <p className="text-sm font-semibold text-neutral-900 mb-2">Recommendations</p>
-                  <ul className="space-y-1">
-                    {analysis.recommendations.map((rec, index) => (
-                      <li key={index} className="text-xs text-neutral-700 flex gap-2">
-                        <span className="text-neutral-400">•</span>
-                        <span>{rec}</span>
-                      </li>
                     ))}
-                  </ul>
-                </div>
-              )}
-            </Card>
+                  </div>
+                </Card>
 
-            {/* Interview Transcript */}
-            {interview.transcript && interview.transcript.length > 0 ? (
-              <Card className={`p-4 ${cardStyles.default}`}>
-                <h3 className="text-base font-bold mb-3 text-neutral-900">Interview Transcript</h3>
-                <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-                  {interview.transcript.map((entry, index) => (
-                    <div key={index} className="border-l-2 border-neutral-200 pl-3">
-                      <div className="flex items-baseline gap-2 mb-1">
-                        <span className="text-xs font-semibold text-neutral-900">
-                          {entry.speaker === 'assistant' ? 'AI Interviewer' : candidate.name}
-                        </span>
-                        <span className="text-[10px] text-neutral-500">
-                          [{index + 1}]
-                        </span>
-                      </div>
-                      <p className="text-sm text-neutral-700 leading-relaxed">{entry.text}</p>
+                {/* Key Insights */}
+                {analysis?.key_insights && analysis.key_insights.length > 0 && (
+                  <Card className={`p-4 ${cardStyles.default}`}>
+                    <h3 className="text-base font-bold mb-3 text-neutral-900">
+                      Key Insights
+                    </h3>
+                    <ul className="space-y-2">
+                      {analysis.key_insights.map((insight, index) => (
+                        <li
+                          key={index}
+                          className="flex gap-2 text-sm text-neutral-700"
+                        >
+                          <span className="text-neutral-400 flex-shrink-0">
+                            •
+                          </span>
+                          <span>{insight}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Card>
+                )}
+
+                {/* Strengths & Growth Areas */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card className={`p-4 ${cardStyles.default}`}>
+                    <h3 className="text-sm font-bold mb-2 text-neutral-900">
+                      Strengths
+                    </h3>
+                    <ul className="space-y-1.5">
+                      {analysis?.strengths?.map((strength, index) => (
+                        <li
+                          key={index}
+                          className="flex gap-2 text-xs text-neutral-700"
+                        >
+                          <span className="text-neutral-400 flex-shrink-0">
+                            •
+                          </span>
+                          <span>{strength}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Card>
+
+                  <Card className={`p-4 ${cardStyles.default}`}>
+                    <h3 className="text-sm font-bold mb-2 text-neutral-900">
+                      Growth Areas
+                    </h3>
+                    <ul className="space-y-1.5">
+                      {analysis?.areas_for_improvement?.map((area, index) => (
+                        <li
+                          key={index}
+                          className="flex gap-2 text-xs text-neutral-700"
+                        >
+                          <span className="text-neutral-400 flex-shrink-0">
+                            •
+                          </span>
+                          <span>{area}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Card>
+                </div>
+
+                {/* Communication & Technical */}
+                {(analysis?.communication_assessment ||
+                  analysis?.technical_depth ||
+                  analysis?.problem_solving) && (
+                  <Card className={`p-4 ${cardStyles.default}`}>
+                    <h3 className="text-base font-bold mb-3 text-neutral-900">
+                      Detailed Assessment
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {analysis?.communication_assessment && (
+                        <div>
+                          <p className="text-sm font-semibold text-neutral-900 mb-2">
+                            Communication
+                          </p>
+                          <div className="space-y-1 text-xs">
+                            <div className="flex justify-between">
+                              <span className="text-neutral-600">Clarity</span>
+                              <span className="font-medium text-neutral-900">
+                                {
+                                  analysis.communication_assessment
+                                    .clarity_score
+                                }
+                                /10
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-neutral-600">
+                                Articulation
+                              </span>
+                              <span className="font-medium text-neutral-900">
+                                {
+                                  analysis.communication_assessment
+                                    .articulation_score
+                                }
+                                /10
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-neutral-600">
+                                Confidence
+                              </span>
+                              <span className="font-medium text-neutral-900">
+                                {
+                                  analysis.communication_assessment
+                                    .confidence_score
+                                }
+                                /10
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {analysis?.technical_depth && (
+                        <div>
+                          <p className="text-sm font-semibold text-neutral-900 mb-2">
+                            Technical Depth
+                          </p>
+                          <div className="text-xs">
+                            <div className="flex justify-between mb-1">
+                              <span className="text-neutral-600">Score</span>
+                              <span className="font-medium text-neutral-900">
+                                {analysis.technical_depth.score}/10
+                              </span>
+                            </div>
+                            <p className="text-neutral-600 leading-relaxed">
+                              {analysis.technical_depth.notes}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {analysis?.problem_solving && (
+                        <div>
+                          <p className="text-sm font-semibold text-neutral-900 mb-2">
+                            Problem Solving
+                          </p>
+                          <div className="text-xs">
+                            <div className="flex justify-between mb-1">
+                              <span className="text-neutral-600">Score</span>
+                              <span className="font-medium text-neutral-900">
+                                {analysis.problem_solving.score}/10
+                              </span>
+                            </div>
+                            <p className="text-neutral-600 leading-relaxed">
+                              {analysis.problem_solving.approach}
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
-              </Card>
-            ) : transcriptUnavailable ? (
-              <Card className={`p-4 ${cardStyles.default}`}>
-                <div className="flex flex-col items-center text-center py-10">
-                  <Clock className="w-10 h-10 text-brand-500 mb-4" />
-                  <h3 className="text-base font-bold text-neutral-900 mb-1">Transcript Not Ready Yet</h3>
-                  <p className="text-sm text-neutral-600 max-w-sm">
-                    We&apos;re still preparing the interview transcript. Try refreshing this page in a few moments to view the full conversation.
-                  </p>
-                </div>
-              </Card>
-            ) : null}
-            </>
+                  </Card>
+                )}
+
+                {/* Hiring Recommendation */}
+                <Card className={`p-4 ${cardStyles.default}`}>
+                  <h3 className="text-base font-bold mb-3 text-neutral-900">
+                    Hiring Recommendation
+                  </h3>
+                  <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg border border-neutral-200 mb-3">
+                    <div>
+                      <p className="text-lg font-bold text-neutral-900">
+                        {analysis?.recommendation}
+                      </p>
+                      <p className="text-xs text-neutral-600">
+                        Confidence: {analysis?.confidence}%
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-neutral-900">
+                        {analysis?.confidence}%
+                      </div>
+                    </div>
+                  </div>
+
+                  {analysis?.recommendations &&
+                    analysis.recommendations.length > 0 && (
+                      <div className="pt-3 border-t border-neutral-200">
+                        <p className="text-sm font-semibold text-neutral-900 mb-2">
+                          Recommendations
+                        </p>
+                        <ul className="space-y-1">
+                          {analysis.recommendations.map((rec, index) => (
+                            <li
+                              key={index}
+                              className="text-xs text-neutral-700 flex gap-2"
+                            >
+                              <span className="text-neutral-400">•</span>
+                              <span>{rec}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                </Card>
+
+                {/* Interview Transcript */}
+                {interview.transcript && interview.transcript.length > 0 ? (
+                  <Card className={`p-4 ${cardStyles.default}`}>
+                    <h3 className="text-base font-bold mb-3 text-neutral-900">
+                      Interview Transcript
+                    </h3>
+                    <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                      {interview.transcript.map((entry, index) => (
+                        <div
+                          key={index}
+                          className="border-l-2 border-neutral-200 pl-3"
+                        >
+                          <div className="flex items-baseline gap-2 mb-1">
+                            <span className="text-xs font-semibold text-neutral-900">
+                              {entry.speaker === 'assistant'
+                                ? 'AI Interviewer'
+                                : candidate.name}
+                            </span>
+                            <span className="text-[10px] text-neutral-500">
+                              [{index + 1}]
+                            </span>
+                          </div>
+                          <p className="text-sm text-neutral-700 leading-relaxed">
+                            {entry.text}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                ) : transcriptUnavailable ? (
+                  <Card className={`p-4 ${cardStyles.default}`}>
+                    <div className="flex flex-col items-center text-center py-10">
+                      <Clock className="w-10 h-10 text-brand-500 mb-4" />
+                      <h3 className="text-base font-bold text-neutral-900 mb-1">
+                        Transcript Not Ready Yet
+                      </h3>
+                      <p className="text-sm text-neutral-600 max-w-sm">
+                        We&apos;re still preparing the interview transcript. Try
+                        refreshing this page in a few moments to view the full
+                        conversation.
+                      </p>
+                    </div>
+                  </Card>
+                ) : null}
+              </>
             )}
           </div>
         </div>
@@ -769,7 +935,9 @@ const AdminInterviewReview = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Accept Candidate</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to accept this candidate? After accepting, you can create annotation tasks for them through the Annotation Tasks page.
+              Are you sure you want to accept this candidate? After accepting,
+              you can create annotation tasks for them through the Annotation
+              Tasks page.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -790,7 +958,9 @@ const AdminInterviewReview = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Reject Candidate</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to reject this candidate? This action will update their status and they will not be able to proceed with annotation tasks.
+              Are you sure you want to reject this candidate? This action will
+              update their status and they will not be able to proceed with
+              annotation tasks.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

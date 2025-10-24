@@ -1,14 +1,7 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
-import {
-  Briefcase,
-  Plus,
-  Search,
-  Trash2,
-  FileText,
-  MessagesSquare,
-} from 'lucide-react'
+import { Briefcase, Plus, Search, FileText, MessagesSquare } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -35,8 +28,6 @@ const Jobs = () => {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [showJobForm, setShowJobForm] = useState(false)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [jobToDelete, setJobToDelete] = useState(null)
   const [showStatusDialog, setShowStatusDialog] = useState(false)
   const [statusTransition, setStatusTransition] = useState(null)
 
@@ -81,25 +72,6 @@ const Jobs = () => {
     } catch (error) {
       console.error('Error creating job:', error)
       throw error
-    }
-  }
-
-  const handleDeleteJob = (jobId, jobTitle) => {
-    setJobToDelete({ id: jobId, title: jobTitle })
-    setShowDeleteDialog(true)
-  }
-
-  const confirmDeleteJob = async () => {
-    if (!jobToDelete) return
-
-    try {
-      await axios.delete(`${API}/jobs/${jobToDelete.id}`)
-      setShowDeleteDialog(false)
-      setJobToDelete(null)
-      fetchJobs()
-    } catch (error) {
-      console.error('Error deleting job:', error)
-      alert('Failed to delete job. Please try again.')
     }
   }
 
@@ -247,7 +219,8 @@ const Jobs = () => {
               </div>
               <Button
                 onClick={() => setShowJobForm(true)}
-                className="rounded-lg font-medium bg-blue-500 hover:bg-blue-600 text-white h-10 px-5 shadow-sm hover:shadow transition-shadow"
+                type="button"
+                className="rounded-lg bg-brand-500 hover:bg-brand-600 text-white"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Create Job
@@ -311,27 +284,30 @@ const Jobs = () => {
               {filteredJobs.map((job) => (
                 <Card
                   key={job.id}
-                  className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow relative group flex flex-col"
+                  className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow relative flex flex-col"
                 >
-                  {/* Delete Button */}
-                  <button
-                    onClick={() => handleDeleteJob(job.id, job.title)}
-                    className="absolute top-3 right-3 p-2 text-neutral-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg hover:bg-red-50"
-                    title="Delete job"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-
                   {/* Job Details */}
-                  <div className="mb-4 flex-1">
+                  <div className="mb-3 flex-1">
                     <div className="flex items-start gap-3 mb-3">
-                      <div className="p-2 bg-brand-100 rounded-lg">
-                        <Briefcase className="w-5 h-5 text-brand-600" />
+                      <div className="p-2.5 bg-neutral-100 border border-neutral-200 rounded-lg flex-shrink-0">
+                        <Briefcase className="w-5 h-5 text-neutral-600" />
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg text-neutral-900 mb-1">
-                          {job.title}
-                        </h3>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <h3 className="font-semibold text-lg text-neutral-900">
+                            {job.title}
+                          </h3>
+                          {(() => {
+                            const badge = getStatusBadge(job.status)
+                            return (
+                              <span
+                                className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${badge.bg} ${badge.text} flex-shrink-0`}
+                              >
+                                {badge.label}
+                              </span>
+                            )
+                          })()}
+                        </div>
                         <p className="text-sm text-neutral-600">
                           {job.position_type}
                         </p>
@@ -352,7 +328,7 @@ const Jobs = () => {
 
                     {/* Skills */}
                     {job.skills && job.skills.length > 0 && (
-                      <div className="mb-4">
+                      <div>
                         <p className="text-xs font-medium text-neutral-700 mb-2">
                           Skills to assess:
                         </p>
@@ -373,20 +349,6 @@ const Jobs = () => {
                         </div>
                       </div>
                     )}
-
-                    {/* Status Badge */}
-                    <div className="mb-4">
-                      {(() => {
-                        const badge = getStatusBadge(job.status)
-                        return (
-                          <span
-                            className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}
-                          >
-                            {badge.label}
-                          </span>
-                        )
-                      })()}
-                    </div>
                   </div>
 
                   {/* Actions */}
@@ -422,31 +384,6 @@ const Jobs = () => {
         onClose={() => setShowJobForm(false)}
         onSubmit={handleCreateJob}
       />
-
-      {/* Delete Job Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Job</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{jobToDelete?.title}"? This will
-              also delete all associated interviews. This action cannot be
-              undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setJobToDelete(null)}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDeleteJob}
-              className="bg-red-500 hover:bg-red-600"
-            >
-              Delete Job
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Status Transition Dialog */}
       <AlertDialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
