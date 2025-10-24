@@ -16,6 +16,7 @@ export class AudioCapture {
   private readonly BUFFER_SIZE = 4096; // ScriptProcessorNode buffer size
 
   private onChunkCallback: ((seq: number, audioB64: string, timestampSeconds: number) => void) | null = null;
+  private onAudioLevelCallback: ((level: number) => void) | null = null;
   private sentSamples = 0;
 
   /**
@@ -41,7 +42,10 @@ export class AudioCapture {
   /**
    * Start capturing audio and emitting chunks.
    */
-  start(onChunk: (seq: number, audioB64: string, timestampSeconds: number) => void): void {
+  start(
+    onChunk: (seq: number, audioB64: string, timestampSeconds: number) => void,
+    onAudioLevel?: (level: number) => void
+  ): void {
     if (!this.audioContext || !this.mediaStream) {
       throw new Error('Audio capture not initialized');
     }
@@ -52,6 +56,7 @@ export class AudioCapture {
     }
 
     this.onChunkCallback = onChunk;
+    this.onAudioLevelCallback = onAudioLevel || null;
     this.isCapturing = true;
     this.seq = 0;
     this.sentSamples = 0;
@@ -76,6 +81,12 @@ export class AudioCapture {
 
       // Downsample from 48kHz to 24kHz (2:1 ratio)
       const downsampled = this.downsample(inputData, 48000, this.TARGET_SAMPLE_RATE);
+
+      // Calculate audio level for visualization (non-invasive, read-only)
+      if (this.onAudioLevelCallback) {
+        const rms = this.calculateRMS(downsampled);
+        this.onAudioLevelCallback(rms);
+      }
 
       // Add to buffer
       audioBuffer.push(downsampled);
@@ -237,5 +248,17 @@ export class AudioCapture {
    */
   isActive(): boolean {
     return this.isCapturing;
+  }
+
+  /**
+   * Calculate RMS (root mean square) audio level for visualization.
+   * Returns a value between 0 and 1.
+   */
+  private calculateRMS(buffer: Float32Array): number {
+    let sum = 0;
+    for (let i = 0; i < buffer.length; i++) {
+      sum += buffer[i] * buffer[i];
+    }
+    return Math.sqrt(sum / buffer.length);
   }
 }

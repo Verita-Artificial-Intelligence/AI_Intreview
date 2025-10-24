@@ -162,6 +162,7 @@ export interface InterviewState {
   // Audio
   isMicActive: boolean;
   isAIPlaying: boolean;
+  userAudioLevel: number;
 
   // Metrics
   latencyMetrics: LatencyMetrics | null;
