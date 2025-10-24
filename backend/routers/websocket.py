@@ -50,7 +50,12 @@ def _merge_transcript_chunk(
         bool: True when transcript was updated; False when input text was empty.
     """
     if not text:
+        logger.debug(f"🚫 Skipping empty transcript chunk for {speaker}")
         return False
+    
+    logger.debug(f"📝 Merging transcript chunk: speaker={speaker}, final={final}, replace_on_final={replace_on_final}, text='{text[:50]}{'...' if len(text) > 50 else ''}'")
+    
+    before_count = len(transcript)
 
     if transcript and transcript[-1].get("speaker") == speaker:
         current_text = transcript[-1].get("text", "")
@@ -69,7 +74,12 @@ def _merge_transcript_chunk(
             elif len(current_text) > 0 and len(text) > 10:
                 # Different substantial text from same speaker = likely new turn
                 # Create new entry instead of replacing
-                transcript.append({"speaker": speaker, "text": text})
+                import time
+                transcript.append({
+                    "speaker": speaker, 
+                    "text": text,
+                    "timestamp": time.time()
+                })
             else:
                 # Default: replace as originally intended
                 transcript[-1]["text"] = text
@@ -77,8 +87,17 @@ def _merge_transcript_chunk(
             # Non-final or no replace: append
             transcript[-1]["text"] += text
     else:
-        transcript.append({"speaker": speaker, "text": text})
+        # Add timestamp when creating new entry
+        import time
+        transcript.append({
+            "speaker": speaker, 
+            "text": text,
+            "timestamp": time.time()
+        })
 
+    after_count = len(transcript)
+    logger.debug(f"✅ Transcript updated: {before_count} -> {after_count} entries, last entry: {transcript[-1] if transcript else 'none'}")
+    
     return True
 
 
@@ -281,15 +300,57 @@ async def websocket_endpoint(websocket: WebSocket):
         if realtime:
             await realtime.close()
 
+        # Wait a moment for any pending transcription events after session end
+        if transcript and len([e for e in transcript if e.get("speaker") == "user"]) == 0:
+            logger.info("⏳ No user transcripts yet - waiting briefly for pending transcription events...")
+            try:
+                # Wait up to 2 seconds for any pending transcription events
+                wait_start = asyncio.get_event_loop().time()
+                while (asyncio.get_event_loop().time() - wait_start) < 2.0:
+                    try:
+                        event = await asyncio.wait_for(realtime._event_queue.get(), timeout=0.1)
+                        event_type = event.get("type", "")
+                        logger.info(f"📥 Late event: {event_type}")
+                        
+                        # Process any user transcription events that come in
+                        if "input_audio_transcription" in event_type or ("conversation.item.done" in event_type and 
+                            event.get("item", {}).get("type") == "input_audio_transcription"):
+                            transcript_text = event.get("transcript", "") or event.get("item", {}).get("transcript", "")
+                            if transcript_text and _merge_transcript_chunk(transcript, "user", transcript_text, final=True):
+                                logger.info(f"📝 Late user transcript captured: '{transcript_text[:50]}...'")
+                        
+                    except asyncio.TimeoutError:
+                        continue
+                    except Exception as e:
+                        logger.debug(f"Error processing late events: {e}")
+                        break
+            except Exception as e:
+                logger.debug(f"Error waiting for late transcription events: {e}")
+
+        # Fallback: If we still have no user transcripts but we have mic audio, try local transcription
+        user_entries = [entry for entry in transcript if entry.get("speaker") == "user"]
+        if len(user_entries) == 0:
+            logger.warning("⚠️ No user transcripts received from OpenAI - check if audio was properly committed")
+
         # Save mixed audio and transcript
         logger.info(f"Session ending - can_persist={can_persist}, interview_id={interview_id}, transcript_length={len(transcript) if transcript else 0}")
 
         if can_persist and interview_id is not None:
             if transcript:
-                logger.info(f"Saving transcript with {len(transcript)} entries for interview {interview_id}")
+                # Log transcript details for debugging
+                user_entries = [entry for entry in transcript if entry.get("speaker") == "user"]
+                ai_entries = [entry for entry in transcript if entry.get("speaker") == "assistant"]
+                logger.info(f"💾 Saving transcript with {len(transcript)} entries for interview {interview_id}: {len(user_entries)} user, {len(ai_entries)} AI")
+                
+                # Log first few entries for debugging
+                for i, entry in enumerate(transcript[:3]):
+                    speaker = entry.get("speaker", "unknown")
+                    text_preview = entry.get("text", "")[:50] + ("..." if len(entry.get("text", "")) > 50 else "")
+                    logger.info(f"  [{i+1}] {speaker}: '{text_preview}'")
+                
                 await save_transcript(interview_id, transcript)
             else:
-                logger.warning(f"No transcript to save for interview {interview_id}")
+                logger.warning(f"❌ No transcript to save for interview {interview_id}")
 
             if audio_buffer:
                 await save_mixed_audio(session_id, interview_id, audio_buffer)
@@ -305,16 +366,27 @@ async def save_transcript(interview_id: str, transcript: list[dict]):
     """
     try:
         from datetime import datetime, timezone
+        
+        # Add timestamps to entries that don't have them and sort by timestamp
+        current_time = datetime.now(timezone.utc)
+        for i, entry in enumerate(transcript):
+            if "timestamp" not in entry or not entry["timestamp"]:
+                # Add incremental timestamps (1 second apart)
+                entry["timestamp"] = (current_time.timestamp() + i)
+        
+        # Sort transcript by timestamp to ensure proper ordering
+        sorted_transcript = sorted(transcript, key=lambda x: x.get("timestamp", 0))
+        
         interviews_collection = get_interviews_collection()
         await interviews_collection.update_one(
             {"id": interview_id},
             {"$set": {
-                "transcript": transcript,
+                "transcript": sorted_transcript,
                 "status": "completed",
-                "completed_at": datetime.now(timezone.utc)
+                "completed_at": current_time
             }}
         )
-        logger.info(f"Transcript saved for interview {interview_id}")
+        logger.info(f"Transcript saved for interview {interview_id} with {len(sorted_transcript)} entries in chronological order")
     except Exception as e:
         logger.error(f"Error saving transcript for interview {interview_id}: {e}")
 
@@ -553,6 +625,8 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
                         "type": "input_audio_buffer.append",
                         "audio": forward_audio_b64
                     })
+                    if logger.isEnabledFor(logging.DEBUG) and is_speech:
+                        logger.debug(f"🎤 Sent speech audio to OpenAI: seq={seq}, rms={rms:.4f}")
                 except RuntimeError as e:
                     logger.warning(f"Failed to send audio chunk: {e}")
                     break  # WebSocket closed, stop processing
@@ -597,21 +671,24 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
                     is_likely_mid_speech = recent_speech_density > 0.3
                 
                 if (speech_monitor.can_commit() and has_meaningful_speech and has_sufficient_silence and not is_likely_mid_speech):
-                    # Explicit end of user's turn -> commit audio buffer
+                    # Explicit end of user's turn -> commit audio buffer to trigger OpenAI transcription
                     try:
+                        logger.info(
+                            "🎤 User turn ended: speech=%.0fms, silence=%.0fms/%.0fms - committing to OpenAI",
+                            speech_duration,
+                            silence_ms,
+                            required_silence,
+                        )
+                        
+                        # Commit to OpenAI - this will trigger automatic transcription via input_audio_transcription
                         await realtime.send_event({
                             "type": "input_audio_buffer.commit"
                         })
                         speech_monitor.mark_commit_success()
                         # Reset recent speech tracking after successful commit
                         recent_speech_chunks.clear()
-                        logger.info(
-                            "✅ Committed audio buffer: speech=%.0fms, silence=%.0fms/%.0fms, recent_density=%.1%%",
-                            speech_duration,
-                            silence_ms,
-                            required_silence,
-                            recent_speech_density * 100,
-                        )
+                        logger.info("✅ Audio committed to OpenAI - waiting for transcription event")
+                        
                     except RuntimeError as e:
                         logger.warning(f"Failed to commit audio buffer: {e}")
                         break
@@ -682,11 +759,23 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
             elif event_type == "end":
                 # Client wants to end session
                 logger.info("Client requested session end")
-                # Ensure any buffered audio is finalized without depending on local heuristics
-                try:
-                    await realtime.send_event({"type": "input_audio_buffer.commit"})
-                except Exception as exc:
-                    logger.debug(f"Failed to commit audio buffer on end: {exc}")
+                
+                # Check if there's any user speech that hasn't been committed yet
+                if speech_monitor.has_speech():
+                    logger.info(f"🎤 User has spoken ({speech_monitor.speech_ms}ms) but not committed - forcing commit before session end")
+                    try:
+                        await realtime.send_event({"type": "input_audio_buffer.commit"})
+                        # Give OpenAI a moment to process the transcription
+                        await asyncio.sleep(0.5)
+                        logger.info("✅ Forced commit completed - waiting for transcription events")
+                    except Exception as exc:
+                        logger.warning(f"Failed to commit audio buffer on end: {exc}")
+                else:
+                    # Ensure any buffered audio is finalized without depending on local heuristics
+                    try:
+                        await realtime.send_event({"type": "input_audio_buffer.commit"})
+                    except Exception as exc:
+                        logger.debug(f"Failed to commit audio buffer on end: {exc}")
                 break
 
             # Ignore other client events - OpenAI handles turn detection
@@ -840,7 +929,7 @@ async def forward_openai_to_client(
             logger.info(f"🔍 OpenAI Event Type: {event_type}")
 
             # Log full event for transcription/audio/item related events
-            if "transcription" in event_type or "transcript" in event_type or "audio" in event_type or "item" in event_type:
+            if "transcription" in event_type or "transcript" in event_type or "audio" in event_type or "item" in event_type or "conversation" in event_type:
                 if event_type in audio_delta_types:
                     # Avoid logging large base64 audio chunks
                     log_event = event.copy()
@@ -851,6 +940,23 @@ async def forward_openai_to_client(
                     logger.info(f"   Full event data: {log_event}")
                 else:
                     logger.info(f"   Full event data: {event}")
+            
+            # Special logging for any event that might contain user transcription
+            if "input" in event_type or "user" in event_type.lower():
+                logger.info(f"🎤 POTENTIAL USER EVENT: {event_type} - {event}")
+            
+            # Log session configuration events
+            if event_type in ("session.created", "session.updated"):
+                session = event.get("session", {})
+                transcription_config = session.get("input_audio_transcription")
+                logger.info(f"📋 SESSION EVENT: {event_type}")
+                logger.info(f"   Transcription config: {transcription_config}")
+                logger.info(f"   Full session: {session}")
+            
+            # Log buffer commit events
+            if event_type == "input_audio_buffer.committed":
+                logger.info(f"✅ AUDIO BUFFER COMMITTED - transcription should follow!")
+                logger.info(f"   Event data: {event}")
 
             # Map OpenAI events to client events
             if event_type == "conversation.item.done":
@@ -859,59 +965,9 @@ async def forward_openai_to_client(
                 item_role = item.get("role")
                 logger.info(f"conversation.item.done - type: {item_type}, role: {item_role}")
 
-                # Case 1: legacy-style transcription item
-                if item_type == "input_audio_transcription":
-                    # User transcript
-                    text = item.get("transcript", "")
-                    logger.info(f"  input_audio_transcription text: '{text[:100] if text else 'EMPTY'}'")
-                    if _merge_transcript_chunk(
-                        transcript,
-                        "user",
-                        text,
-                        final=True,
-                        replace_on_final=True,
-                    ):
-                        logger.info(f"USER transcript added: '{text[:50]}...' (total entries: {len(transcript)})")
-                        if not await safe_send({
-                            "event": "transcript",
-                            "speaker": "user",
-                            "text": text,
-                            "final": True
-                        }):
-                            return
-                        # Server VAD will automatically trigger response, no manual response.create needed
-                # Case 2: GA message item containing user content entries
-                elif item_type == "message" and item_role == "user":
-                    content = item.get("content", []) or []
-                    logger.info(f"  user message with {len(content)} content entries")
-                    extracted_text = None
-                    for c in content:
-                        ctype = c.get("type")
-                        logger.info(f"    content type: {ctype}")
-                        if ctype == "input_audio_transcription":
-                            extracted_text = c.get("transcript") or c.get("text")
-                            logger.info(f"      transcript: '{extracted_text[:100] if extracted_text else 'EMPTY'}'")
-                        elif ctype in ("input_text", "text") and not extracted_text:
-                            extracted_text = c.get("text")
-                            logger.info(f"      text: '{extracted_text[:100] if extracted_text else 'EMPTY'}'")
-                    if _merge_transcript_chunk(
-                        transcript,
-                        "user",
-                        extracted_text,
-                        final=True,
-                        replace_on_final=False,
-                    ):
-                        logger.info(f"USER transcript added: '{extracted_text[:50]}...' (total entries: {len(transcript)})")
-                        if not await safe_send({
-                            "event": "transcript",
-                            "speaker": "user",
-                            "text": extracted_text,
-                            "final": True
-                        }):
-                            return
-                        # Server VAD will automatically trigger response, no manual response.create needed
-                    else:
-                        logger.warning(f"  user message had NO extractable text! content: {content}")
+                # Log user messages but don't process them here - handled by dedicated transcription events
+                if item_type == "message" and item_role == "user":
+                    logger.debug(f"Skipping conversation.item.done for user message - transcription handled by dedicated events")
 
             elif event_type == "conversation.item.input_audio_transcription.completed":
                 # User audio transcription completed event
@@ -928,63 +984,6 @@ async def forward_openai_to_client(
                     replace_on_final=False,
                 ):
                     logger.info(f"USER transcript added (from .completed event): '{transcript_text[:50]}...' (total entries: {len(transcript)})")
-
-                    if not await safe_send({
-                        "event": "transcript",
-                        "speaker": "user",
-                        "text": transcript_text,
-                        "final": True
-                    }):
-                        return
-
-            elif event_type == "conversation.item.input_audio_transcription.delta":
-                # User audio transcription streaming delta
-                item_id = event.get("item_id")
-                content_index = event.get("content_index", 0)
-                delta = event.get("delta", "")
-                logger.info(f"conversation.item.input_audio_transcription.delta - item_id: {item_id}, delta: '{delta[:100] if delta else 'EMPTY'}'")
-
-                if _merge_transcript_chunk(transcript, "user", delta):
-
-                    if not await safe_send({
-                        "event": "transcript",
-                        "speaker": "user",
-                        "text": delta,
-                        "final": False
-                    }):
-                        return
-
-            elif event_type == "response.input_audio_transcription.delta":
-                # GA streaming transcription for user speech
-                delta = event.get("delta", "")
-                logger.info(f"response.input_audio_transcription.delta - delta: '{delta[:100] if delta else 'EMPTY'}'")
-
-                if _merge_transcript_chunk(transcript, "user", delta):
-                    logger.info(f"USER transcript delta merged (response.* event). Current length: {len(transcript)}")
-
-                    if not await safe_send({
-                        "event": "transcript",
-                        "speaker": "user",
-                        "text": delta,
-                        "final": False
-                    }):
-                        return
-
-            elif event_type == "response.input_audio_transcription.done":
-                # GA final transcription for user speech
-                transcript_text = event.get("transcript") or event.get("text") or ""
-                logger.info(
-                    f"response.input_audio_transcription.done - transcript: '{transcript_text[:100] if transcript_text else 'EMPTY'}'"
-                )
-
-                if _merge_transcript_chunk(
-                    transcript,
-                    "user",
-                    transcript_text,
-                    final=True,
-                    replace_on_final=False,
-                ):
-                    logger.info(f"USER transcript finalized (response.* event). Current length: {len(transcript)}")
 
                     if not await safe_send({
                         "event": "transcript",

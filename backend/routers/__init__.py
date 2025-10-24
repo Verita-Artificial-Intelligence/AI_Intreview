@@ -2,6 +2,7 @@ from . import (
     audio,
     auth,
     candidates,
+    chat,
     interviews,
     jobs,
     annotations,
