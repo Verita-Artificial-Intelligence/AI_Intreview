@@ -447,6 +447,10 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
         release_guard_ms=settings.AUDIO_CHUNK_MS * 2,
     )
     zero_chunk_cache: dict[int, str] = {}
+    
+    # Track recent speech activity to prevent mid-speech interruptions
+    recent_speech_chunks = []  # Track last 20 chunks (2 seconds at 100ms chunks)
+    max_recent_chunks = 20
 
     try:
         while True:
@@ -477,6 +481,44 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
                     continue
 
                 rms, is_speech = speech_monitor.register_chunk(audio_bytes)
+
+                # Track recent speech activity for intelligent VAD adjustment
+                recent_speech_chunks.append(is_speech)
+                if len(recent_speech_chunks) > max_recent_chunks:
+                    recent_speech_chunks.pop(0)
+                
+                # Calculate speech density in recent chunks
+                recent_speech_count = sum(recent_speech_chunks)
+                speech_density = recent_speech_count / len(recent_speech_chunks) if recent_speech_chunks else 0
+                
+                # Dynamically adjust silence window based on speech activity
+                if speech_density > 0.7:  # Very high speech activity (70%+ of recent chunks)
+                    # User is actively speaking - extend silence window to prevent interruption
+                    target_silence = min(3500, settings.OPENAI_REALTIME_SILENCE_DURATION_MAX_MS)
+                    try:
+                        await realtime.update_turn_detection(target_silence)
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.debug(f"🗣️  Very high speech activity ({speech_density:.1%}) - extended silence window to {target_silence}ms")
+                    except Exception as e:
+                        logger.debug(f"Failed to extend silence window during active speech: {e}")
+                elif speech_density > 0.4:  # Moderate speech activity
+                    # Some speech but not continuous - use default window
+                    target_silence = settings.OPENAI_REALTIME_SILENCE_DURATION_MS
+                    try:
+                        await realtime.update_turn_detection(target_silence)
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.debug(f"🎯 Moderate speech activity ({speech_density:.1%}) - using default silence window {target_silence}ms")
+                    except Exception as e:
+                        logger.debug(f"Failed to set default silence window: {e}")
+                elif speech_density < 0.15:  # Very low speech activity
+                    # Mostly silence - use shorter window for responsiveness
+                    target_silence = max(2200, settings.OPENAI_REALTIME_SILENCE_DURATION_MS - 800)
+                    try:
+                        await realtime.update_turn_detection(target_silence)
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.debug(f"🤫 Low speech activity ({speech_density:.1%}) - reduced silence window to {target_silence}ms")
+                    except Exception as e:
+                        logger.debug(f"Failed to reduce silence window during low activity: {e}")
 
                 # Buffer microphone audio for server-side mixing (keep original bytes)
                 await audio_buffer.add_mic_chunk(
@@ -516,40 +558,92 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
                     break  # WebSocket closed, stop processing
 
             elif event_type == "user_turn_end":
-                if speech_monitor.can_commit():
+                # More conservative approach: require meaningful speech AND sufficient silence
+                speech_duration = speech_monitor.speech_ms
+                silence_ms = speech_monitor.current_silence_ms()
+                has_meaningful_speech = speech_duration >= settings.AUDIO_MIN_SPEECH_MS
+                
+                # Check recent speech activity to prevent mid-speech interruptions
+                recent_speech_count = sum(recent_speech_chunks[-10:]) if len(recent_speech_chunks) >= 10 else sum(recent_speech_chunks)
+                recent_chunks_count = min(len(recent_speech_chunks), 10)
+                recent_speech_density = recent_speech_count / recent_chunks_count if recent_chunks_count > 0 else 0
+                
+                # Dynamic silence requirement based on speech pattern
+                base_silence_requirement = settings.AUDIO_MIN_SILENCE_MS
+                if recent_speech_density > 0.6:
+                    # High activity - require more silence to be sure they're done
+                    required_silence = base_silence_requirement * 1.2
+                elif recent_speech_density < 0.2:
+                    # Low activity - can be more responsive
+                    required_silence = base_silence_requirement * 0.7
+                else:
+                    required_silence = base_silence_requirement
+                
+                has_sufficient_silence = silence_ms >= required_silence
+                
+                # Look at speech pattern to detect natural end vs mid-speech pause
+                if len(recent_speech_chunks) >= 15:
+                    # Compare recent activity (last 1 sec) vs slightly older activity (1-2 sec ago)
+                    very_recent = sum(recent_speech_chunks[-10:]) / 10  # Last 1 second
+                    slightly_older = sum(recent_speech_chunks[-20:-10]) / 10 if len(recent_speech_chunks) >= 20 else very_recent
+                    
+                    # If speech activity is declining, user is likely finishing
+                    speech_declining = very_recent < slightly_older * 0.6
+                    
+                    # If user was recently speaking actively but activity is declining, allow commit
+                    is_likely_mid_speech = recent_speech_density > 0.5 and not speech_declining
+                else:
+                    # Not enough history, use simple threshold
+                    is_likely_mid_speech = recent_speech_density > 0.3
+                
+                if (speech_monitor.can_commit() and has_meaningful_speech and has_sufficient_silence and not is_likely_mid_speech):
                     # Explicit end of user's turn -> commit audio buffer
-                    speech_duration = speech_monitor.speech_ms
-                    silence_ms = speech_monitor.current_silence_ms()
                     try:
                         await realtime.send_event({
                             "type": "input_audio_buffer.commit"
                         })
                         speech_monitor.mark_commit_success()
-                        logger.debug(
-                            "Committed audio buffer after %.0fms of detected speech",
+                        # Reset recent speech tracking after successful commit
+                        recent_speech_chunks.clear()
+                        logger.info(
+                            "✅ Committed audio buffer: speech=%.0fms, silence=%.0fms/%.0fms, recent_density=%.1%%",
                             speech_duration,
-                        )
-                        logger.debug(
-                            "Silence prior to commit: %.0fms",
                             silence_ms,
+                            required_silence,
+                            recent_speech_density * 100,
                         )
                     except RuntimeError as e:
                         logger.warning(f"Failed to commit audio buffer: {e}")
                         break
                 else:
                     false_turns = speech_monitor.register_false_turn()
+                    rejection_reason = []
+                    if not speech_monitor.can_commit():
+                        rejection_reason.append("cannot_commit")
+                    if not has_meaningful_speech:
+                        rejection_reason.append("insufficient_speech")
+                    if not has_sufficient_silence:
+                        rejection_reason.append("insufficient_silence")
+                    if is_likely_mid_speech:
+                        rejection_reason.append("likely_mid_speech")
+                    
                     logger.info(
-                        "Skipped user_turn_end commit - insufficient speech (speech_ms=%s, silence_ms=%s, false_turns=%s)",
-                        speech_monitor.speech_ms,
-                        speech_monitor.current_silence_ms(),
+                        "⏸️  Skipped user_turn_end commit - %s (speech_ms=%s/%s, silence_ms=%s/%.0f, recent_density=%.1%%, false_turns=%s)",
+                        "+".join(rejection_reason),
+                        speech_duration,
+                        settings.AUDIO_MIN_SPEECH_MS,
+                        silence_ms,
+                        required_silence,
+                        recent_speech_density * 100,
                         false_turns,
                     )
-                    if false_turns >= 2:
+                    # Be more aggressive about extending silence window for false turns
+                    if false_turns >= 1:  # Changed from 2 to 1 for faster adaptation
                         try:
                             extended = await realtime.extend_silence_window()
                             if extended is not None:
                                 logger.info(
-                                    "Extended server VAD silence window to %sms after %s false turn(s)",
+                                    "🔧 Extended server VAD silence window to %sms after %s false turn(s)",
                                     extended,
                                     false_turns,
                                 )
