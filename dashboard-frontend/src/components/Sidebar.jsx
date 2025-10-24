@@ -8,6 +8,8 @@ import {
   LogOut,
   ChevronRight,
   Table,
+  MessagesSquare,
+  Layers,
 } from 'lucide-react'
 
 export default function Sidebar() {
@@ -22,15 +24,15 @@ export default function Sidebar() {
   }
 
   const navItems = [
-    { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/', icon: Layers, label: 'Dashboard' },
     { path: '/candidates', icon: Users, label: 'Candidates' },
-    { path: '/interviews', icon: Briefcase, label: 'Interviews' },
+    { path: '/interviews', icon: MessagesSquare, label: 'Interviews' },
     { path: '/jobs', icon: Briefcase, label: 'Jobs' },
   ]
 
   const annotationItems = [
-    { path: '/admin/data-explorer', icon: Table, label: 'Data Explorer' },
-    { path: '/annotation-data', icon: FileText, label: 'Annotation Data' },
+    // { path: '/admin/data-explorer', icon: Table, label: 'Data Explorer' },
+    // { path: '/annotation-data', icon: FileText, label: 'Annotation Data' },
     { path: '/annotators', icon: Users, label: 'Annotators' },
   ]
 
