@@ -55,8 +55,12 @@ const Jobs = () => {
     try {
       setLoading(true)
       const response = await axios.get(`${API}/jobs`)
-      setJobs(response.data)
-      setFilteredJobs(response.data)
+      // Filter out completed and archived jobs - only show active jobs
+      const activeJobs = response.data.filter(
+        (job) => job.status === 'pending' || job.status === 'in_progress'
+      )
+      setJobs(activeJobs)
+      setFilteredJobs(activeJobs)
     } catch (error) {
       console.error('Error fetching jobs:', error)
     } finally {
@@ -100,11 +104,6 @@ const Jobs = () => {
         text: 'text-yellow-800',
         label: 'In Progress',
       },
-      completed: {
-        bg: 'bg-green-100',
-        text: 'text-green-800',
-        label: 'Completed',
-      },
       archived: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Archived' },
     }
     return badges[status] || badges.pending
@@ -135,7 +134,7 @@ const Jobs = () => {
       in_progress: {
         title: 'Move Job to In Progress?',
         message:
-          '⚠️ You will no longer be able to add new annotation data. Annotators will be able to start working on assigned tasks. Are you sure?',
+          'You will no longer be able to add new annotation data. Annotators will be able to start working on assigned tasks. Are you sure?',
       },
       completed: {
         title: 'Mark Job as Completed?',
