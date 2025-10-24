@@ -176,7 +176,13 @@ async def get_interview_messages(interview_id: str):
         raise HTTPException(status_code=404, detail="Interview not found")
 
     if not interview.transcript:
+        logger.warning(f"Interview {interview_id} has no transcript data")
         raise HTTPException(status_code=404, detail="Interview has no transcript data")
+
+    # Log transcript details for debugging
+    user_entries = [entry for entry in interview.transcript if entry.get("speaker") == "user"]
+    ai_entries = [entry for entry in interview.transcript if entry.get("speaker") == "assistant"]
+    logger.info(f"📋 Retrieving transcript for interview {interview_id}: {len(interview.transcript)} total entries ({len(user_entries)} user, {len(ai_entries)} AI)")
 
     # Convert transcript format: {speaker: "user"/"assistant", text: "...", timestamp: ...}
     # to message format: {role: "user"/"assistant", content: "...", timestamp: ...}
