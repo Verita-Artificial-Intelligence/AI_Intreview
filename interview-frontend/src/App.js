@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Onboarding from './pages/Onboarding'
+import JobApplicationOnboarding from './pages/JobApplicationOnboarding'
 import Marketplace from './pages/Marketplace'
 import Jobs from './pages/Jobs'
 import Annotate from './pages/Annotate'
@@ -32,6 +33,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Onboarding />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/job-application-onboarding"
+              element={
+                <ProtectedRoute>
+                  <JobApplicationOnboarding />
                 </ProtectedRoute>
               }
             />

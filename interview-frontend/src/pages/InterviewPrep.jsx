@@ -243,7 +243,7 @@ const InterviewPrep = () => {
             Go back
           </Button>
           <Button
-            onClick={() => navigate('/marketplace')}
+            onClick={() => navigate('/')}
             variant="outline"
             size="sm"
             className="rounded-lg"

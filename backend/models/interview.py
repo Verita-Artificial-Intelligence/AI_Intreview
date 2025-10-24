@@ -66,6 +66,7 @@ class Interview(BaseModel):
     custom_exercise_prompt: Optional[str] = None
     resume_text: Optional[str] = None
     acceptance_status: AcceptanceStatus = "pending"
+    availability_confirmed: Optional[bool] = None  # Per-job availability confirmation
 
     @field_validator('interview_type', mode='before')
     @classmethod
@@ -84,6 +85,8 @@ class InterviewCreate(BaseModel):
     candidate_id: str
     job_id: Optional[str] = None
     resume_text: Optional[str] = None
+    status: Optional[InterviewStatus] = None
+    availability_confirmed: Optional[bool] = None  # Per-job availability confirmation
 
     # Optional overrides - only use if creating interview without a job
     # If job_id is provided, these will be inherited from the job
