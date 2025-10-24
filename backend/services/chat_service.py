@@ -54,7 +54,7 @@ class ChatService:
             from utils import parse_from_mongo
 
             interview_obj = Interview(**parse_from_mongo(interview))
-            system_message = InterviewService.get_interview_instructions(interview_obj)
+            system_message = await InterviewService.get_interview_instructions(interview_obj)
 
             messages = [{"role": "system", "content": system_message}]
 

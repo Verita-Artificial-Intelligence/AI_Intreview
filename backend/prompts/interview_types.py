@@ -15,7 +15,8 @@ def get_interview_type_config(
     skills: Optional[List[Dict[str, str]]] = None,
     resume_text: Optional[str] = None,
     custom_questions: Optional[List[str]] = None,
-    custom_exercise_prompt: Optional[str] = None
+    custom_exercise_prompt: Optional[str] = None,
+    role_description: Optional[str] = None
 ) -> Dict[str, str]:
     """
     Get the system instructions and initial greeting for a specific interview type.
@@ -28,6 +29,7 @@ def get_interview_type_config(
         resume_text: Resume content (for resume_based type)
         custom_questions: List of custom questions (for custom_questions type)
         custom_exercise_prompt: Custom exercise description (for custom_exercise type)
+        role_description: Detailed description of the role (optional)
 
     Returns:
         Dict with 'system_instructions' and 'initial_greeting' keys
@@ -47,7 +49,8 @@ def get_interview_type_config(
         skills=skills,
         resume_text=resume_text,
         custom_questions=custom_questions,
-        custom_exercise_prompt=custom_exercise_prompt
+        custom_exercise_prompt=custom_exercise_prompt,
+        role_description=role_description
     )
 
 
@@ -70,6 +73,7 @@ def _build_base_prompt(
     candidate_name: str,
     position: str,
     skills: Optional[List[Dict[str, str]]] = None,
+    role_description: Optional[str] = None,
 ) -> str:
     """Compose the shared interviewer instructions with candidate context."""
     skill_names: List[str] = []
@@ -82,27 +86,29 @@ def _build_base_prompt(
         position=position or "Creative Professional",
         candidate_name=candidate_name or "the candidate",
         candidate_skills=skill_names,
+        role_description=role_description or "a creative role at our company",
     )
 
 
-def _get_standard_config(candidate_name: str, position: str, skills: Optional[List[Dict[str, str]]] = None, **kwargs) -> Dict[str, str]:
+def _get_standard_config(candidate_name: str, position: str, skills: Optional[List[Dict[str, str]]] = None, role_description: Optional[str] = None, **kwargs) -> Dict[str, str]:
     """Standard conversational interview configuration."""
 
     skills_section = _format_skills_section(skills)
-    base_prompt = _build_base_prompt(candidate_name, position, skills)
+    base_prompt = _build_base_prompt(candidate_name, position, skills, role_description)
+
+    # Extract role requirements from skills for more focused questioning
+    role_requirements = []
+    for skill in skills or []:
+        if skill.get("name"):
+            role_requirements.append(skill["name"])
 
     type_guidance = (
-        f"Standard interview focus for the {position} role:\n"
-        "- Conduct a direct conversation that evaluates the candidate's creative thinking and fit.\n"
-        "- Ask open-ended questions about their portfolio, past projects, and creative decision-making.\n"
-        "- When answers are brief or vague, immediately push for specifics and concrete examples.\n\n"
-        "Interview structure to cover:\n"
-        "1. Background, experience, and portfolio highlights\n"
-        "2. Creative approach and process on past projects\n"
-        f"3. Collaboration with other creatives and stakeholders{' with emphasis on the skills detailed below' if skills_section else ''}\n"
-        "4. Case studies that probe their decision-making and impact\n"
-        "5. Creative philosophy, inspiration, and growth mindset\n"
-        "6. Opportunity for their questions before closing"
+        f"Conversation approach for the {position} role:\n"
+        "- Have a natural conversation that explores the candidate's relevant experience and thinking.\n"
+        "- Ask about their past work, creative decisions, and how they approach challenges.\n"
+        "- When answers are brief or vague, immediately push for specifics and concrete examples.\n"
+        "- Let the conversation flow naturally while covering key areas like their background, approach to projects, collaboration with others, and how they've grown in their work.\n"
+        "- Don't make it feel like you're going through a checklist - be genuinely curious about their experience."
     )
 
     if skills_section:
@@ -112,10 +118,10 @@ def _get_standard_config(candidate_name: str, position: str, skills: Optional[Li
 
     system_instructions = f"{base_prompt}\n\n{type_guidance}"
 
+    # Generate role-specific initial greeting
     initial_greeting = (
         f"Hello {candidate_name}, thank you for joining me today. I'm Alex, and I'll be interviewing you for the {position} position. "
-        "Before we wrap later, I'll outline the next steps so we can close the call together. "
-        "To start, could you walk me through your creative background and what draws you to this role?"
+        f"To get us started, I'd love to hear about some of your most relevant work for this role. What's a project you've worked on that you think really showcases your fit for this position?"
     )
 
     return {
@@ -124,24 +130,25 @@ def _get_standard_config(candidate_name: str, position: str, skills: Optional[Li
     }
 
 
-def _get_human_data_config(candidate_name: str, position: str, skills: Optional[List[Dict[str, str]]] = None, **kwargs) -> Dict[str, str]:
+def _get_human_data_config(candidate_name: str, position: str, skills: Optional[List[Dict[str, str]]] = None, role_description: Optional[str] = None, **kwargs) -> Dict[str, str]:
     """Design critique and feedback exercise configuration."""
 
     skills_section = _format_skills_section(skills)
-    base_prompt = _build_base_prompt(candidate_name, position, skills)
+    base_prompt = _build_base_prompt(candidate_name, position, skills, role_description)
+
+    # Extract role requirements from skills for more focused questioning
+    role_requirements = []
+    for skill in skills or []:
+        if skill.get("name"):
+            role_requirements.append(skill["name"])
 
     type_guidance = (
-        f"Design critique interview focus for the {position} role:\n"
-        "- Assess the candidate's experience with critique, feedback, and creative direction.\n"
-        "- Evaluate their taste, judgment, and understanding of design principles.\n"
-        "- Present design scenarios and push them for clear, actionable feedback with specific reasoning.\n"
-        "- Explore how they give and receive critique in collaborative settings.\n\n"
-        "Conversation outline:\n"
-        "1. Background in providing and receiving design feedback\n"
-        "2. Principles and aesthetics they prioritize when evaluating work\n"
-        "3. Practical critique exercise where you describe a scenario and ask for their recommendations\n"
-        "4. Discussion of their reasoning, communication style, and decision-making\n"
-        "5. Reflection on subjective choices, collaboration, and iteration"
+        f"Conversation approach for the {position} role:\n"
+        "- Explore the candidate's experience with giving and receiving creative feedback.\n"
+        "- Understand their taste, judgment, and how they think about design.\n"
+        "- At some point, present a design scenario and ask for their feedback - push for clear reasoning and specifics.\n"
+        "- Be curious about how they approach critique in collaborative settings and how they communicate their ideas.\n"
+        "- Let the conversation flow naturally rather than following a rigid structure."
     )
 
     if skills_section:
@@ -151,11 +158,11 @@ def _get_human_data_config(candidate_name: str, position: str, skills: Optional[
 
     system_instructions = f"{base_prompt}\n\n{type_guidance}"
 
+    # Generate role-specific initial greeting
     initial_greeting = (
-        f"Hello {candidate_name}, thank you for joining me today. I'm Alex, and I'll be assessing your design critique skills and creative feedback abilities for the {position} role. "
-        "We'll talk through your experience and work through a practical critique exercise. "
-        "Before we wrap later, I'll explain what happens next so we can close the call cleanly together. "
-        "Could you start by telling me about your experience with design critique and creative feedback?"
+        f"Hello {candidate_name}, thank you for joining me today. I'm Alex, and I'll be interviewing you for the {position} role. "
+        "We'll talk through your experience with design critique and creative feedback, and I'll have you work through a practical exercise as well. "
+        "To start, tell me about a time when you had to give design feedback or creative direction on a project. What was the situation and how did you approach it?"
     )
 
     return {
@@ -211,25 +218,26 @@ When you've completed all questions, thank them briefly, explain the hiring team
     }
 
 
-def _get_custom_exercise_config(candidate_name: str, position: str, custom_exercise_prompt: Optional[str] = None, skills: Optional[List[Dict[str, str]]] = None, **kwargs) -> Dict[str, str]:
+def _get_custom_exercise_config(candidate_name: str, position: str, custom_exercise_prompt: Optional[str] = None, skills: Optional[List[Dict[str, str]]] = None, role_description: Optional[str] = None, **kwargs) -> Dict[str, str]:
     """Custom portfolio/asset evaluation interview configuration."""
 
     skills_section = _format_skills_section(skills)
     exercise_description = custom_exercise_prompt or "A custom creative brief or portfolio evaluation will be provided during the interview."
-    base_prompt = _build_base_prompt(candidate_name, position, skills)
+    base_prompt = _build_base_prompt(candidate_name, position, skills, role_description)
+
+    # Extract role requirements from skills for more focused questioning
+    role_requirements = []
+    for skill in skills or []:
+        if skill.get("name"):
+            role_requirements.append(skill["name"])
 
     type_guidance = (
-        f"Custom creative exercise for the {position} role:\n"
-        f"- Present the brief directly: {exercise_description}\n"
-        "- Allow clarifying questions so the candidate understands the expectations.\n"
-        "- Evaluate their creative approach, problem-solving, and communication as they respond.\n"
-        "- Challenge their decisions and trade-offs. Push for deeper rationale behind their ideas.\n"
-        "- When their answer is vague, ask them to iterate or expand with specific details.\n\n"
-        "Evaluation priorities:\n"
-        "- Understanding of the brief and constraints\n"
-        "- Originality and quality of their proposed solution\n"
-        "- Clarity in articulating their creative vision and process\n"
-        "- How they respond to critical feedback"
+        f"Conversation approach for the {position} role:\n"
+        f"- You've presented this creative challenge: {exercise_description}\n"
+        "- Let them ask clarifying questions if needed.\n"
+        "- As they work through it, be curious about their thinking - challenge their decisions, ask why they made certain choices.\n"
+        "- If they're vague, push them to be more specific or iterate on their ideas.\n"
+        "- Explore how they understand the constraints, the creativity of their approach, and how clearly they can articulate their thinking."
     )
 
     if skills_section:
@@ -237,10 +245,11 @@ def _get_custom_exercise_config(candidate_name: str, position: str, custom_exerc
 
     system_instructions = f"{base_prompt}\n\n{type_guidance}"
 
+    # Generate role-specific initial greeting
     initial_greeting = (
-        f"Hello {candidate_name}, thank you for joining me today. I'm Alex, and I'll be conducting a custom creative evaluation for the {position} position. "
-        f"I'll present you with a specific brief or portfolio evaluation. Let me explain the creative challenge: {custom_exercise_prompt if custom_exercise_prompt else 'I have a special creative brief prepared for you.'} "
-        "Once we've wrapped up the exercise, I'll outline the next steps so we can close the session together."
+        f"Hello {candidate_name}, thank you for joining me today. I'm Alex, and I'll be interviewing you for the {position} position. "
+        f"I have a creative challenge I'd like you to work through. Here it is: {custom_exercise_prompt if custom_exercise_prompt else 'I have a special creative brief prepared for you.'} "
+        "Take a moment to think about it, and then walk me through your approach."
     )
 
     return {

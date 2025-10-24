@@ -205,6 +205,14 @@ async def websocket_endpoint(websocket: WebSocket):
                             interview_doc["skills"] = job.get("skills") or None
                             interview_doc["custom_questions"] = job.get("custom_questions") or None
                             interview_doc["custom_exercise_prompt"] = job.get("custom_exercise_prompt") or None
+
+                            # Generate summary of job description for efficient prompt usage
+                            job_description = job.get("description")
+                            if job_description:
+                                from services.interview_service import InterviewService
+                                job_description_summary = await InterviewService.summarize_job_description(job_description)
+                                interview_doc["job_description_summary"] = job_description_summary
+
                             logger.info(f"Loaded job config: type={job.get('interview_type', 'standard')}, custom_questions={len(job.get('custom_questions') or [])}, skills={len(job.get('skills') or [])}")
 
                     await interviews_collection.insert_one(interview_doc)
@@ -245,9 +253,9 @@ async def websocket_endpoint(websocket: WebSocket):
         elif interview_type == "custom_exercise" and custom_exercise_prompt:
             first_question_guidance = f"Present this creative brief: {custom_exercise_prompt}"
         elif interview_type == "human_data":
-            first_question_guidance = "Ask about their experience with design critique and giving creative feedback."
+            first_question_guidance = f"Ask about their experience with design critique and giving creative feedback for the {job_title} role."
         else:  # standard or fallback
-            first_question_guidance = "Ask about their creative background and what draws them to this role."
+            first_question_guidance = f"Ask about their relevant experience for the {job_title} position and what draws them to the {job_title} role specifically."
 
         # Create OpenAI connection
         realtime = RealtimeService(
@@ -521,7 +529,7 @@ async def get_interview_instructions(interview_id: Optional[str]) -> str:
         from utils import parse_from_mongo
 
         interview = Interview(**parse_from_mongo(interview_doc))
-        instructions = InterviewService.get_interview_instructions(interview)
+        instructions = await InterviewService.get_interview_instructions(interview)
 
         interview_type = interview_doc.get("interview_type", "standard")
         custom_questions_count = len(interview_doc.get("custom_questions") or [])
