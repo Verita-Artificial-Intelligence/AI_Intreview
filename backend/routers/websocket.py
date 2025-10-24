@@ -487,28 +487,36 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
                     )
 
                 # Send sanitized chunk to OpenAI for VAD and transcription
-                await realtime.send_event({
-                    "type": "input_audio_buffer.append",
-                    "audio": forward_audio_b64
-                })
+                try:
+                    await realtime.send_event({
+                        "type": "input_audio_buffer.append",
+                        "audio": forward_audio_b64
+                    })
+                except RuntimeError as e:
+                    logger.warning(f"Failed to send audio chunk: {e}")
+                    break  # WebSocket closed, stop processing
 
             elif event_type == "user_turn_end":
                 if speech_monitor.can_commit():
                     # Explicit end of user's turn -> commit audio buffer
                     speech_duration = speech_monitor.speech_ms
                     silence_ms = speech_monitor.current_silence_ms()
-                    await realtime.send_event({
-                        "type": "input_audio_buffer.commit"
-                    })
-                    speech_monitor.mark_commit_success()
-                    logger.debug(
-                        "Committed audio buffer after %.0fms of detected speech",
-                        speech_duration,
-                    )
-                    logger.debug(
-                        "Silence prior to commit: %.0fms",
-                        silence_ms,
-                    )
+                    try:
+                        await realtime.send_event({
+                            "type": "input_audio_buffer.commit"
+                        })
+                        speech_monitor.mark_commit_success()
+                        logger.debug(
+                            "Committed audio buffer after %.0fms of detected speech",
+                            speech_duration,
+                        )
+                        logger.debug(
+                            "Silence prior to commit: %.0fms",
+                            silence_ms,
+                        )
+                    except RuntimeError as e:
+                        logger.warning(f"Failed to commit audio buffer: {e}")
+                        break
                 else:
                     false_turns = speech_monitor.register_false_turn()
                     logger.info(
@@ -533,15 +541,23 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
             elif event_type == "clear_buffer":
                 # Clear any partial audio buffered on the server
                 speech_monitor.reset_turn()
-                await realtime.send_event({
-                    "type": "input_audio_buffer.clear"
-                })
+                try:
+                    await realtime.send_event({
+                        "type": "input_audio_buffer.clear"
+                    })
+                except RuntimeError as e:
+                    logger.warning(f"Failed to clear audio buffer: {e}")
+                    break
 
             elif event_type == "barge_in":
                 # Interrupt current model response
-                await realtime.send_event({
-                    "type": "response.cancel"
-                })
+                try:
+                    await realtime.send_event({
+                        "type": "response.cancel"
+                    })
+                except RuntimeError as e:
+                    logger.warning(f"Failed to cancel response: {e}")
+                    break
 
             elif event_type == "ai_chunk_played":
                 if audio_buffer is not None:
@@ -762,7 +778,7 @@ async def forward_openai_to_client(
                         if ctype == "input_audio_transcription":
                             extracted_text = c.get("transcript") or c.get("text")
                             logger.info(f"      transcript: '{extracted_text[:100] if extracted_text else 'EMPTY'}'")
-                        elif ctype == "input_text" and not extracted_text:
+                        elif ctype in ("input_text", "text") and not extracted_text:
                             extracted_text = c.get("text")
                             logger.info(f"      text: '{extracted_text[:100] if extracted_text else 'EMPTY'}'")
                     if _merge_transcript_chunk(
