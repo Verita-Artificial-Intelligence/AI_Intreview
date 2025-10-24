@@ -12,6 +12,8 @@ import axios from 'axios'
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
 const API = `${BACKEND_URL}/api`
 
+// CENTRALIZED INTERVIEW TYPE DEFINITIONS
+// These definitions match backend/config/interview_type_definitions.py exactly
 const INTERVIEW_TYPES = [
   {
     id: 'standard',
@@ -20,37 +22,16 @@ const INTERVIEW_TYPES = [
     icon: User,
   },
   {
-    id: 'resume_based',
-    title: 'Interview based on portfolio/resume',
-    description: 'This interview will be solely based on candidate\'s portfolio, resume, and past work.',
-    icon: FileText,
-  },
-  {
     id: 'human_data',
     title: 'Design critique & feedback exercise',
     description: 'This is a conversational interview and a design feedback/critique exercise to assess creative direction and feedback skills',
     icon: Brain,
   },
   {
-    id: 'software_engineer',
-    title: 'Creative project exercise',
-    description: 'This is a conversational interview and a practical creative task to test artistic and design capabilities',
-    icon: Code,
-  },
-]
-
-const OTHER_INTERVIEW_TYPES = [
-  {
     id: 'custom_questions',
     title: 'Custom questions only',
     description: 'In this interview, you get to add/edit up to 20 custom questions tailored to your role',
     icon: MessageSquare,
-  },
-  {
-    id: 'coding_exercise',
-    title: 'Creative exercise only',
-    description: 'This is a focused creative exercise or design challenge that is 25 mins',
-    icon: Terminal,
   },
   {
     id: 'custom_exercise',
@@ -73,7 +54,6 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
   const [selectedJob, setSelectedJob] = useState(null)
   const [loadingJobs, setLoadingJobs] = useState(true)
   const [selectedType, setSelectedType] = useState('standard')
-  const [showOtherTypes, setShowOtherTypes] = useState(false)
   const [skills, setSkills] = useState(createEmptySkills)
   const [customQuestions, setCustomQuestions] = useState([''])
   const [customExercisePrompt, setCustomExercisePrompt] = useState('')
@@ -98,7 +78,6 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
   useEffect(() => {
     if (!selectedJob) {
       setSelectedType('standard')
-      setShowOtherTypes(false)
       setSkills(createEmptySkills())
       setCustomQuestions([''])
       setCustomExercisePrompt('')
@@ -107,7 +86,6 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
 
     const jobType = selectedJob.interview_type || 'standard'
     setSelectedType(jobType)
-    setShowOtherTypes(false)
 
     if (Array.isArray(selectedJob.skills) && selectedJob.skills.length > 0) {
       const mappedSkills = selectedJob.skills.map((skill) => ({
@@ -411,46 +389,6 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
           )
         })}
       </div>
-
-      <button
-        onClick={() => setShowOtherTypes(!showOtherTypes)}
-        className="w-full p-3 text-sm font-medium text-neutral-700 hover:bg-neutral-50 rounded-lg border border-neutral-200 flex items-center justify-between"
-      >
-        <span>Other interview type</span>
-        <span className="text-neutral-500">{showOtherTypes ? '▲' : '▼'}</span>
-      </button>
-
-      {showOtherTypes && (
-        <div className="space-y-3 pt-2">
-          {OTHER_INTERVIEW_TYPES.map((type) => {
-            const Icon = type.icon
-            const isSelected = selectedType === type.id
-
-            return (
-              <Card
-                key={type.id}
-                onClick={() => handleTypeSelect(type.id)}
-                className={`p-4 cursor-pointer transition-all ${cardStyles.default} ${
-                  isSelected ? 'border-2 border-brand-500 bg-brand-50' : 'hover:border-brand-300'
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-lg ${isSelected ? 'bg-brand-100 text-brand-600' : 'bg-neutral-100 text-neutral-600'}`}>
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <h4 className="font-semibold text-sm text-neutral-900">{type.title}</h4>
-                      {isSelected && <CheckCircle className="w-5 h-5 text-brand-500 flex-shrink-0" />}
-                    </div>
-                    <p className="text-xs text-neutral-600 mt-1">{type.description}</p>
-                  </div>
-                </div>
-              </Card>
-            )
-          })}
-        </div>
-      )}
 
       <div className="flex justify-between gap-2 pt-4">
         <Button onClick={handleBack} variant="outline" className="rounded-lg">

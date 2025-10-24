@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import Optional, Literal, List, Dict, Any
 from datetime import datetime, timezone
 import uuid
+from config_definitions.interview_type_definitions import DEPRECATED_INTERVIEW_TYPES
 
 # Import interview configuration types from job model
 from .job import InterviewType, SkillDefinition
@@ -71,14 +72,8 @@ class Interview(BaseModel):
     @field_validator('interview_type', mode='before')
     @classmethod
     def migrate_old_interview_types(cls, v):
-        """Migrate deprecated interview types to standard"""
-        # Map old types to new types
-        migration_map = {
-            'resume_based': 'standard',
-            'software_engineer': 'standard',
-            'coding_exercise': 'standard',
-        }
-        return migration_map.get(v, v)
+        """Migrate deprecated interview types using centralized config"""
+        return DEPRECATED_INTERVIEW_TYPES.get(v, v)
 
 
 class InterviewCreate(BaseModel):
