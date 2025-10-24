@@ -10,6 +10,7 @@ from routers import (
     profile,
     interviews,
     candidates,
+    chat,
     audio,
     websocket,
     uploads,
@@ -53,6 +54,7 @@ app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(profile.router, prefix="/api/profile", tags=["User Profile"])
 app.include_router(interviews.router, prefix="/api/interviews", tags=["Interviews"])
 app.include_router(candidates.router, prefix="/api/candidates", tags=["Candidates"])
+app.include_router(chat.router, prefix="/api", tags=["Chat"])
 app.include_router(jobs.router, prefix="/api/jobs", tags=["Jobs"])
 app.include_router(annotations.router, prefix="/api/annotations", tags=["Annotations"])
 app.include_router(annotation_data.router, prefix="/api/annotation-data", tags=["Annotation Data"])

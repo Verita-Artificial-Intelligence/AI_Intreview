@@ -122,7 +122,7 @@ class RealtimeService:
             },
         }
         await self.send_event(config)
-        logger.info("Session configured with input_audio_transcription")
+        logger.info("Session configured with input_audio_transcription: whisper-1")
 
     async def update_turn_detection(self, silence_duration_ms: int) -> None:
         """
@@ -147,6 +147,9 @@ class RealtimeService:
         event = {
             "type": "session.update",
             "session": {
+                "input_audio_transcription": {
+                    "model": "whisper-1"
+                },
                 "turn_detection": {
                     "type": "server_vad",
                     "silence_duration_ms": target,
