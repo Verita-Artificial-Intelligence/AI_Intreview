@@ -108,9 +108,8 @@ export class VideoRecorder {
   }
 
   private cleanup(): void {
-    // Stop combined stream tracks
+    // Just release the reference, don't stop tracks we don't own
     if (this.combinedStream) {
-      this.combinedStream.getTracks().forEach((track) => track.stop());
       this.combinedStream = null;
     }
 

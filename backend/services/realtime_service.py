@@ -70,9 +70,8 @@ class RealtimeService:
                 url,
                 additional_headers=headers,
                 subprotocols=["realtime"],
-                ping_interval=10,
-                ping_timeout=30,
-                close_timeout=5,
+                ping_interval=None,  # Disable client pings, let OpenAI handle keepalive
+                close_timeout=10,
             )
 
             self.connected = True
@@ -94,20 +93,16 @@ class RealtimeService:
         config = {
             "type": "session.update",
             "session": {
-                "type": "realtime",
-                "model": self.model,
                 "instructions": self.instructions,
+                "voice": self.voice,
+                "input_audio_format": "pcm16",
+                "output_audio_format": "pcm16",
                 "input_audio_transcription": {
-                    "model": "whisper-small"
+                    "model": "whisper-1"
                 },
-                "audio": {
-                    "output": {"voice": self.voice},
-                    "input": {
-                        "turn_detection": {
-                            "type": "server_vad",
-                            "silence_duration_ms": self._current_silence_duration_ms
-                        }
-                    }
+                "turn_detection": {
+                    "type": "server_vad",
+                    "silence_duration_ms": self._current_silence_duration_ms
                 },
                 "tools": [
                     {
@@ -142,13 +137,9 @@ class RealtimeService:
         event = {
             "type": "session.update",
             "session": {
-                "audio": {
-                    "input": {
-                        "turn_detection": {
-                            "type": "server_vad",
-                            "silence_duration_ms": target,
-                        }
-                    }
+                "turn_detection": {
+                    "type": "server_vad",
+                    "silence_duration_ms": target,
                 }
             },
         }
@@ -212,7 +203,12 @@ class RealtimeService:
         if not self.ws or not self.connected:
             raise RuntimeError("WebSocket not connected")
 
-        await self.ws.send(json.dumps(event))
+        try:
+            await self.ws.send(json.dumps(event))
+        except websockets.exceptions.ConnectionClosed as e:
+            self.connected = False
+            logger.warning(f"WebSocket closed while sending event: {e}")
+            raise RuntimeError("WebSocket not connected") from e
 
     async def iter_events(self) -> AsyncIterator[Dict[str, Any]]:
         """Iterate over events from OpenAI."""
