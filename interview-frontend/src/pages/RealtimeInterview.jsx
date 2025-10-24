@@ -55,6 +55,8 @@ export default function RealtimeInterview() {
   const [showWrapUp, setShowWrapUp] = useState(false);
   const [wrapUpMessage, setWrapUpMessage] = useState('');
   const mutedRef = useRef(false);
+  const aiPlayingRef = useRef(false);
+  const aiFinishedTimeRef = useRef(0);
 
   // Initialize services on mount
   useEffect(() => {
@@ -125,11 +127,14 @@ export default function RealtimeInterview() {
 
       // Set up audio player callbacks
       audioPlayerRef.current.onPlaybackStart(() => {
+        aiPlayingRef.current = true;
         setAIPlaying(true);
         setStatus('speaking');
       });
 
       audioPlayerRef.current.onPlaybackEnd(() => {
+        aiPlayingRef.current = false;
+        aiFinishedTimeRef.current = Date.now();
         setAIPlaying(false);
         setStatus('listening');
       });
@@ -320,9 +325,19 @@ export default function RealtimeInterview() {
 
     audioCaptureRef.current.start(
       (seq, audioB64, timestamp) => {
-        // Only send audio when not muted; OpenAI handles VAD
+        // Check if we should send audio to OpenAI
+        // Don't send if:
+        // 1. Microphone is muted by user
+        // 2. AI is currently speaking (prevent echo/self-hearing)
+        // 3. Within 300ms after AI finished speaking (brief guard period)
+        const timeSinceAIFinished = Date.now() - aiFinishedTimeRef.current;
+        const shouldSendToOpenAI = 
+          !mutedRef.current && 
+          !aiPlayingRef.current &&
+          timeSinceAIFinished > 150;
+
         if (
-          !mutedRef.current &&
+          shouldSendToOpenAI &&
           wsClientRef.current &&
           wsClientRef.current.isConnected()
         ) {
