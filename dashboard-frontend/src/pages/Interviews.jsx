@@ -4,9 +4,14 @@ import axios from 'axios'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Briefcase, Trash2, X, Search } from 'lucide-react'
+import { Briefcase, Trash2, X, Search, MessagesSquare } from 'lucide-react'
 import Sidebar from '@/components/Sidebar'
-import { cardStyles, containers, getStatusClass, getStatusLabel } from '@/lib/design-system'
+import {
+  cardStyles,
+  containers,
+  getStatusClass,
+  getStatusLabel,
+} from '@/lib/design-system'
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
 const API = `${BACKEND_URL}/api`
@@ -76,7 +81,9 @@ const Interviews = () => {
     setSearchParams({})
   }
 
-  const filteredCandidate = candidateFilter ? getCandidate(candidateFilter) : null
+  const filteredCandidate = candidateFilter
+    ? getCandidate(candidateFilter)
+    : null
   const filteredJob = jobFilter ? getJob(jobFilter) : null
 
   const getPageTitle = () => {
@@ -86,8 +93,10 @@ const Interviews = () => {
   }
 
   const getPageDescription = () => {
-    if (filteredCandidate) return `Showing all interviews for ${filteredCandidate.name}`
-    if (filteredJob) return `Showing all interviews for ${filteredJob.title} position`
+    if (filteredCandidate)
+      return `Showing all interviews for ${filteredCandidate.name}`
+    if (filteredJob)
+      return `Showing all interviews for ${filteredJob.title} position`
     return 'View and manage all candidate interviews'
   }
 
@@ -107,41 +116,41 @@ const Interviews = () => {
       <Sidebar />
 
       {/* Main Content */}
-      <main className="ml-64 overflow-y-auto bg-white">
-        <div className={`${containers.lg} mx-auto px-8 py-12`}>
+      <main className="ml-64 overflow-y-auto">
+        <div className="max-w-7xl mx-auto px-6 py-8">
           {/* Header */}
-          <div className="mb-12">
-            <div className="flex items-center justify-between mb-3">
-              <h1 className="text-5xl font-bold text-neutral-900 tracking-tight leading-tight">
-                {getPageTitle()}
-              </h1>
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-semibold text-neutral-900 mb-1">
+                  {getPageTitle()}
+                </h1>
+                <p className="text-sm text-gray-500">{getPageDescription()}</p>
+              </div>
               {(candidateFilter || jobFilter) && (
                 <Button
                   onClick={clearFilter}
                   variant="outline"
-                  className="h-11 rounded-lg"
+                  className="h-9 text-sm rounded-lg border-gray-300 hover:bg-gray-50"
                 >
                   <X className="w-4 h-4 mr-2" />
                   Clear Filter
                 </Button>
               )}
             </div>
-            <p className="text-lg text-neutral-600 font-light">
-              {getPageDescription()}
-            </p>
           </div>
 
           {/* Search Bar */}
           {interviews.length > 0 && (
-            <div className="mb-8">
+            <div className="mb-4">
               <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-5 h-5" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   type="text"
                   placeholder="Search by candidate, job title, or position..."
                   value={interviewSearch}
                   onChange={(e) => setInterviewSearch(e.target.value)}
-                  className="pl-10 h-11 rounded-lg border-neutral-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 text-base"
+                  className="pl-9 h-10 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 text-sm"
                 />
               </div>
             </div>
@@ -149,34 +158,45 @@ const Interviews = () => {
 
           {/* Interviews Grid */}
           {loading ? (
-            <p className="text-sm text-neutral-600">Loading interviews...</p>
+            <p className="text-sm text-gray-600">Loading interviews...</p>
           ) : interviews.length === 0 ? (
-            <Card className={`p-8 text-center ${cardStyles.default}`}>
-              <Briefcase className="w-12 h-12 mx-auto mb-3 text-neutral-300" />
-              <h3 className="text-lg font-display font-semibold mb-2 text-neutral-900">
-                No Interviews Yet
-              </h3>
-              <p className="text-sm text-neutral-600">
+            <Card className="p-8 text-center bg-white border border-gray-200 rounded-lg shadow-sm">
+              <MessagesSquare
+                className="w-10 h-10 mx-auto mb-3 text-gray-300"
+                strokeWidth={1.5}
+              />
+              <p className="text-sm text-gray-600 mb-4">
                 {filteredCandidate
-                  ? `No interviews have been conducted with ${filteredCandidate.name} yet.`
+                  ? `No interviews have been conducted with ${filteredCandidate.name} yet`
                   : filteredJob
-                  ? `No interviews have been conducted for the ${filteredJob.title} position yet.`
-                  : 'Start creating interviews from the candidates page.'}
+                    ? `No interviews have been conducted for the ${filteredJob.title} position yet`
+                    : 'No interviews yet. Start creating interviews from the candidates page'}
               </p>
+              {!filteredCandidate && !filteredJob && (
+                <Button
+                  onClick={() => navigate('/candidates')}
+                  variant="outline"
+                  size="sm"
+                  className="rounded-lg font-normal text-xs h-8 px-3"
+                >
+                  View Candidates
+                </Button>
+              )}
             </Card>
           ) : displayedInterviews.length === 0 ? (
-            <Card className={`p-8 text-center ${cardStyles.default}`}>
-              <Search className="w-12 h-12 mx-auto mb-3 text-neutral-300" />
-              <h3 className="text-lg font-display font-semibold mb-2 text-neutral-900">
-                No Results Found
-              </h3>
-              <p className="text-sm text-neutral-600 mb-3">
-                No interviews match your search. Try different keywords!
+            <Card className="p-8 text-center bg-white border border-gray-200 rounded-lg shadow-sm">
+              <MessagesSquare
+                className="w-10 h-10 mx-auto mb-3 text-gray-300"
+                strokeWidth={1.5}
+              />
+              <p className="text-sm text-gray-600 mb-4">
+                No interviews match your search. Try different keywords
               </p>
               <Button
                 onClick={() => setInterviewSearch('')}
                 variant="outline"
-                className="rounded-lg"
+                size="sm"
+                className="rounded-lg font-normal text-xs h-8 px-3"
               >
                 Clear Search
               </Button>
@@ -186,7 +206,7 @@ const Interviews = () => {
               {displayedInterviews.map((interview) => (
                 <Card
                   key={interview.id}
-                  className="p-6 hover:shadow-lg transition-shadow relative group flex flex-col"
+                  className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow relative group flex flex-col"
                 >
                   <button
                     onClick={() => handleDeleteInterview(interview.id)}
@@ -207,7 +227,9 @@ const Interviews = () => {
                             {interview.candidate_name || 'Unknown'}
                           </h3>
                           <p className="text-sm text-neutral-600 truncate">
-                            {interview.job_title || interview.position || 'General Interview'}
+                            {interview.job_title ||
+                              interview.position ||
+                              'General Interview'}
                           </p>
                         </div>
                       </div>
@@ -226,15 +248,15 @@ const Interviews = () => {
                             interview.acceptance_status === 'accepted'
                               ? 'bg-green-100 text-green-700 border border-green-300'
                               : interview.acceptance_status === 'rejected'
-                              ? 'bg-red-100 text-red-700 border border-red-300'
-                              : 'bg-gray-100 text-gray-700 border border-gray-300'
+                                ? 'bg-red-100 text-red-700 border border-red-300'
+                                : 'bg-gray-100 text-gray-700 border border-gray-300'
                           }`}
                         >
                           {interview.acceptance_status === 'accepted'
                             ? 'Accepted'
                             : interview.acceptance_status === 'rejected'
-                            ? 'Rejected'
-                            : 'Pending Review'}
+                              ? 'Rejected'
+                              : 'Pending Review'}
                         </span>
                       )}
                     </div>

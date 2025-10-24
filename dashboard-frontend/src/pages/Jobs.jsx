@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
-import { Briefcase, Plus, Search, Trash2, FileText } from 'lucide-react'
+import {
+  Briefcase,
+  Plus,
+  Search,
+  Trash2,
+  FileText,
+  MessagesSquare,
+} from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -116,8 +123,16 @@ const Jobs = () => {
   const getStatusBadge = (status) => {
     const badges = {
       pending: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Pending' },
-      in_progress: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'In Progress' },
-      completed: { bg: 'bg-green-100', text: 'text-green-800', label: 'Completed' },
+      in_progress: {
+        bg: 'bg-yellow-100',
+        text: 'text-yellow-800',
+        label: 'In Progress',
+      },
+      completed: {
+        bg: 'bg-green-100',
+        text: 'text-green-800',
+        label: 'Completed',
+      },
       archived: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Archived' },
     }
     return badges[status] || badges.pending
@@ -147,18 +162,26 @@ const Jobs = () => {
     const messages = {
       in_progress: {
         title: 'Move Job to In Progress?',
-        message: '⚠️ You will no longer be able to add new annotation data. Annotators will be able to start working on assigned tasks. Are you sure?',
+        message:
+          '⚠️ You will no longer be able to add new annotation data. Annotators will be able to start working on assigned tasks. Are you sure?',
       },
       completed: {
         title: 'Mark Job as Completed?',
-        message: 'All annotation work for this job will be marked as complete. Make sure all tasks are finished.',
+        message:
+          'All annotation work for this job will be marked as complete. Make sure all tasks are finished.',
       },
       archived: {
         title: 'Archive This Job?',
-        message: 'This job will be moved to archived jobs. You can view it later in the archived section.',
+        message:
+          'This job will be moved to archived jobs. You can view it later in the archived section.',
       },
     }
-    return messages[nextStatus] || { title: 'Change Status?', message: 'Are you sure?' }
+    return (
+      messages[nextStatus] || {
+        title: 'Change Status?',
+        message: 'Are you sure?',
+      }
+    )
   }
 
   const handleStatusChange = async (job) => {
@@ -209,73 +232,86 @@ const Jobs = () => {
       <Sidebar />
 
       {/* Main Content */}
-      <main className="ml-64 overflow-y-auto bg-white">
-        <div className="max-w-7xl mx-auto px-8 py-12">
+      <main className="ml-64 overflow-y-auto">
+        <div className="max-w-7xl mx-auto px-6 py-8">
           {/* Header */}
-          <div className="mb-12">
-            <h1 className="text-5xl font-bold text-neutral-900 mb-3 tracking-tight leading-tight">
-              Job Openings
-            </h1>
-            <p className="text-lg text-neutral-600 font-light">
-              Manage your open positions and interview configurations
-            </p>
-          </div>
-
-          {/* Create Job Button */}
-          <div className="mb-8">
-            <Button
-              onClick={() => setShowJobForm(true)}
-              className="bg-brand-500 hover:bg-brand-600 text-white rounded-lg h-12 px-6"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Create Job
-            </Button>
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-semibold text-neutral-900 mb-1">
+                  Jobs
+                </h1>
+                <p className="text-sm text-gray-500">
+                  Manage your open positions and interview configurations
+                </p>
+              </div>
+              <Button
+                onClick={() => setShowJobForm(true)}
+                className="rounded-lg font-medium bg-blue-500 hover:bg-blue-600 text-white h-10 px-5 shadow-sm hover:shadow transition-shadow"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Job
+              </Button>
+            </div>
           </div>
 
           {/* Search */}
-          <div className="mb-8">
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-5 h-5" />
-              <Input
-                type="text"
-                placeholder="Search jobs by title, type, or description..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-11 rounded-lg border-neutral-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 text-base"
-              />
+          {jobs.length > 0 && (
+            <div className="mb-4">
+              <div className="relative max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  type="text"
+                  placeholder="Search jobs by title, type, or description..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 h-10 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 text-sm"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Jobs Grid */}
           {loading ? (
-            <div className="text-center py-12">
-              <p className="text-neutral-600">Loading jobs...</p>
-            </div>
+            <p className="text-sm text-gray-600">Loading jobs...</p>
           ) : filteredJobs.length === 0 ? (
-            <div className="text-center py-12">
-              <Briefcase className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
-              <p className="text-neutral-600 mb-4">
+            <Card className="p-8 text-center bg-white border border-gray-200 rounded-lg shadow-sm">
+              <MessagesSquare
+                className="w-10 h-10 mx-auto mb-3 text-gray-300"
+                strokeWidth={1.5}
+              />
+              <p className="text-sm text-gray-600 mb-4">
                 {searchQuery
                   ? 'No jobs found matching your search'
-                  : 'No jobs yet'}
+                  : 'No jobs yet. Create your first job posting to get started'}
               </p>
-              {!searchQuery && (
+              {!searchQuery ? (
                 <Button
                   onClick={() => setShowJobForm(true)}
                   variant="outline"
-                  className="rounded-lg"
+                  size="sm"
+                  className="rounded-lg font-normal text-xs h-8 px-3"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="w-3.5 h-3.5 mr-1.5" />
                   Create Your First Job
                 </Button>
+              ) : (
+                <Button
+                  onClick={() => setSearchQuery('')}
+                  variant="outline"
+                  size="sm"
+                  className="rounded-lg font-normal text-xs h-8 px-3"
+                >
+                  Clear Search
+                </Button>
               )}
-            </div>
+            </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredJobs.map((job) => (
                 <Card
                   key={job.id}
-                  className="p-6 hover:shadow-lg transition-shadow relative group flex flex-col"
+                  className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow relative group flex flex-col"
                 >
                   {/* Delete Button */}
                   <button
@@ -393,11 +429,15 @@ const Jobs = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Job</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{jobToDelete?.title}"? This will also delete all associated interviews. This action cannot be undone.
+              Are you sure you want to delete "{jobToDelete?.title}"? This will
+              also delete all associated interviews. This action cannot be
+              undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setJobToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setJobToDelete(null)}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteJob}
               className="bg-red-500 hover:bg-red-600"

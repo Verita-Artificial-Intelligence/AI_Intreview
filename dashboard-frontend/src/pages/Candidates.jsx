@@ -4,7 +4,15 @@ import axios from 'axios'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Users, Search, Mail, Award, PlayCircle, Trash2 } from 'lucide-react'
+import {
+  Users,
+  Search,
+  Mail,
+  Award,
+  PlayCircle,
+  Trash2,
+  MessagesSquare,
+} from 'lucide-react'
 import InterviewCreationModal from '@/components/InterviewCreationModal'
 import Sidebar from '@/components/Sidebar'
 import { cardStyles, containers } from '@/lib/design-system'
@@ -50,7 +58,9 @@ const Candidates = () => {
     return (
       candidate.name.toLowerCase().includes(searchLower) ||
       candidate.position.toLowerCase().includes(searchLower) ||
-      candidate.skills.some((skill) => skill.toLowerCase().includes(searchLower))
+      candidate.skills.some((skill) =>
+        skill.toLowerCase().includes(searchLower)
+      )
     )
   })
 
@@ -61,7 +71,9 @@ const Candidates = () => {
 
   const handleInterviewCreated = (interview) => {
     fetchData()
-    navigate(`/audio-interview/${interview.id}`, { state: { from: 'candidates' } })
+    navigate(`/audio-interview/${interview.id}`, {
+      state: { from: 'candidates' },
+    })
   }
 
   const handleViewInterviews = (candidateId) => {
@@ -69,33 +81,33 @@ const Candidates = () => {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-100">
+    <div className="min-h-screen bg-white">
       <Sidebar />
 
       {/* Main Content */}
-      <main className="ml-64 overflow-y-auto bg-neutral-100">
-        <div className={`${containers.lg} mx-auto px-8 py-12`}>
+      <main className="ml-64 overflow-y-auto">
+        <div className="max-w-7xl mx-auto px-6 py-8">
           {/* Header */}
-          <div className="mb-12">
-            <h1 className="text-5xl font-bold text-neutral-900 mb-3 tracking-tight leading-tight">
-              Candidate Marketplace
+          <div className="mb-6">
+            <h1 className="text-2xl font-semibold text-neutral-900 mb-1">
+              Candidates
             </h1>
-            <p className="text-lg text-neutral-600 font-light">
+            <p className="text-sm text-gray-500">
               Browse and manage your candidate pool
             </p>
           </div>
 
           {/* Search */}
           {candidates.length > 0 && (
-            <div className="mb-8">
+            <div className="mb-4">
               <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-5 h-5" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   type="text"
                   placeholder="Search by name, position, or skills..."
                   value={candidateSearch}
                   onChange={(e) => setCandidateSearch(e.target.value)}
-                  className="pl-10 h-11 rounded-lg border-neutral-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 text-base"
+                  className="pl-9 h-10 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 text-sm"
                 />
               </div>
             </div>
@@ -103,30 +115,40 @@ const Candidates = () => {
 
           {/* Candidates Grid */}
           {loading ? (
-            <p className="text-sm text-neutral-600">Loading candidates...</p>
+            <p className="text-sm text-gray-600">Loading candidates...</p>
           ) : candidates.length === 0 ? (
-            <Card className={`p-8 text-center ${cardStyles.default} bg-white/95 border border-neutral-300 shadow-xl shadow-blue-100`}>
-              <Users className="w-12 h-12 mx-auto mb-3 text-neutral-300" />
-              <h3 className="text-lg font-display font-semibold mb-2 text-neutral-900">
-                No Candidates Yet
-              </h3>
-              <p className="text-sm text-neutral-600">
-                Candidates will appear here when they apply to your job postings.
+            <Card className="p-8 text-center bg-white border border-gray-200 rounded-lg shadow-sm">
+              <Users
+                className="w-10 h-10 mx-auto mb-3 text-gray-300"
+                strokeWidth={1.5}
+              />
+              <p className="text-sm text-gray-600 mb-4">
+                No candidates yet. Candidates will appear here when they apply
+                to your job postings
               </p>
+              <Button
+                onClick={() => navigate('/jobs')}
+                variant="outline"
+                size="sm"
+                className="rounded-lg font-normal text-xs h-8 px-3"
+              >
+                View Jobs
+              </Button>
             </Card>
           ) : filteredCandidates.length === 0 ? (
-            <Card className={`p-8 text-center ${cardStyles.default} bg-white/95 border border-neutral-300 shadow-xl shadow-blue-100`}>
-              <Search className="w-12 h-12 mx-auto mb-3 text-neutral-300" />
-              <h3 className="text-lg font-display font-semibold mb-2 text-neutral-900">
-                No Results Found
-              </h3>
-              <p className="text-sm text-neutral-600 mb-3">
-                No candidates match your search. Try different keywords!
+            <Card className="p-8 text-center bg-white border border-gray-200 rounded-lg shadow-sm">
+              <MessagesSquare
+                className="w-10 h-10 mx-auto mb-3 text-gray-300"
+                strokeWidth={1.5}
+              />
+              <p className="text-sm text-gray-600 mb-4">
+                No candidates match your search. Try different keywords
               </p>
               <Button
                 onClick={() => setCandidateSearch('')}
                 variant="outline"
-                className="rounded-lg"
+                size="sm"
+                className="rounded-lg font-normal text-xs h-8 px-3"
               >
                 Clear Search
               </Button>
@@ -139,7 +161,7 @@ const Candidates = () => {
                 return (
                   <Card
                     key={candidate.id}
-                    className={`group relative overflow-hidden p-6 ${cardStyles.default} flex flex-col bg-white shadow-xl shadow-blue-100/80 border border-neutral-300 hover:border-brand-300 hover:shadow-2xl hover:shadow-blue-200 transition-all`}
+                    className="group relative overflow-hidden p-6 flex flex-col bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow"
                   >
                     <div className="flex items-start gap-3 mb-4">
                       <div className="w-12 h-12 rounded-full flex items-center justify-center text-base font-bold text-white bg-gradient-to-br from-brand-400 to-brand-600 flex-shrink-0">
@@ -194,7 +216,8 @@ const Candidates = () => {
                     {interviewCount > 0 && (
                       <div className="flex flex-col gap-2">
                         <span className="text-xs text-neutral-600">
-                          {interviewCount} {interviewCount === 1 ? 'interview' : 'interviews'}
+                          {interviewCount}{' '}
+                          {interviewCount === 1 ? 'interview' : 'interviews'}
                         </span>
                         <Button
                           onClick={() => handleViewInterviews(candidate.id)}

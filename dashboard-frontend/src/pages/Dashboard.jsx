@@ -22,6 +22,7 @@ import {
   Eye,
   Star,
   MessagesSquare,
+  MoveUpRight,
 } from 'lucide-react'
 import {
   AlertDialog,
@@ -386,10 +387,11 @@ const Dashboard = () => {
               </div>
               <Button
                 onClick={() => navigate('/annotators')}
-                variant="outline"
-                className="h-9 text-sm rounded-lg border-gray-300 hover:bg-gray-50"
+                variant="link-arrow"
+                className="h-9 text-sm gap-1.5 px-0"
               >
                 View All Annotators
+                <MoveUpRight className="w-4 h-4" />
               </Button>
             </div>
 
@@ -446,7 +448,7 @@ const Dashboard = () => {
               </p>
             ) : annotatorStats.length === 0 ? (
               <Card className="p-8 text-center bg-white border border-gray-200 rounded-lg shadow-sm">
-                <MessagesSquare
+                <Users
                   className="w-10 h-10 mx-auto mb-3 text-gray-300"
                   strokeWidth={1.5}
                 />
@@ -468,7 +470,6 @@ const Dashboard = () => {
                     size="sm"
                     className="rounded-lg font-normal text-xs h-8 px-3"
                   >
-                    <Users className="w-3.5 h-3.5 mr-1.5" />
                     Manage Annotators
                   </Button>
                 )}
