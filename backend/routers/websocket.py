@@ -53,9 +53,28 @@ def _merge_transcript_chunk(
         return False
 
     if transcript and transcript[-1].get("speaker") == speaker:
+        current_text = transcript[-1].get("text", "")
+
+        # Smart handling for final events:
+        # If final text is substantially similar to current (delta-built) text, replace it.
+        # Otherwise, this is likely a new turn from same speaker, so don't merge.
         if final and replace_on_final:
-            transcript[-1]["text"] = text
+            # Check if current text is a prefix of final text (deltas were building up)
+            if current_text and text.startswith(current_text.strip()):
+                # Delta→final flow: replace accumulated deltas with authoritative final
+                transcript[-1]["text"] = text
+            elif current_text == text:
+                # Duplicate final event: just replace
+                transcript[-1]["text"] = text
+            elif len(current_text) > 0 and len(text) > 10:
+                # Different substantial text from same speaker = likely new turn
+                # Create new entry instead of replacing
+                transcript.append({"speaker": speaker, "text": text})
+            else:
+                # Default: replace as originally intended
+                transcript[-1]["text"] = text
         else:
+            # Non-final or no replace: append
             transcript[-1]["text"] += text
     else:
         transcript.append({"speaker": speaker, "text": text})
@@ -786,7 +805,7 @@ async def forward_openai_to_client(
                         "user",
                         extracted_text,
                         final=True,
-                        replace_on_final=True,
+                        replace_on_final=False,
                     ):
                         logger.info(f"USER transcript added: '{extracted_text[:50]}...' (total entries: {len(transcript)})")
                         if not await safe_send({
@@ -812,7 +831,7 @@ async def forward_openai_to_client(
                     "user",
                     transcript_text,
                     final=True,
-                    replace_on_final=True,
+                    replace_on_final=False,
                 ):
                     logger.info(f"USER transcript added (from .completed event): '{transcript_text[:50]}...' (total entries: {len(transcript)})")
 
@@ -869,7 +888,7 @@ async def forward_openai_to_client(
                     "user",
                     transcript_text,
                     final=True,
-                    replace_on_final=True,
+                    replace_on_final=False,
                 ):
                     logger.info(f"USER transcript finalized (response.* event). Current length: {len(transcript)}")
 
