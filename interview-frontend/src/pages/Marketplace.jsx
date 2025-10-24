@@ -28,6 +28,19 @@ const Marketplace = () => {
   const [filterMode, setFilterMode] = useState('newest')
   const [selectedJob, setSelectedJob] = useState(null)
 
+  const getInterviewTypeLabel = (type) => {
+    const labels = {
+      standard: 'Standard Interview',
+      resume_based: 'Portfolio/Resume Based',
+      human_data: 'Design Critique',
+      software_engineer: 'Creative Project',
+      custom_questions: 'Custom Questions',
+      coding_exercise: 'Creative Exercise',
+      custom_exercise: 'Custom Creative Exercise',
+    }
+    return labels[type] || type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
+  }
+
   useEffect(() => {
     fetchJobs()
   }, [])
@@ -398,7 +411,7 @@ const Marketplace = () => {
                     Interview Type
                   </h4>
                   <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-sm">
-                    {selectedJob.interview_type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+                    {getInterviewTypeLabel(selectedJob.interview_type)}
                   </Badge>
                 </div>
               )}
