@@ -225,6 +225,30 @@ async def websocket_endpoint(websocket: WebSocket):
         # Get interview-specific instructions
         instructions = await get_interview_instructions(interview_id)
 
+        # Get interview details for seed message
+        interviews_collection = get_interviews_collection()
+        interview_doc = await interviews_collection.find_one({"id": interview_id}) if interview_id else None
+
+        candidate_full_name = interview_doc.get("candidate_name", "the candidate") if interview_doc else candidate_name or "the candidate"
+        # Extract first name only
+        candidate_first_name = candidate_full_name.split()[0] if candidate_full_name and " " in candidate_full_name else candidate_full_name
+
+        job_title = interview_doc.get("job_title", "this position") if interview_doc else "this position"
+        interview_type = interview_doc.get("interview_type", "standard") if interview_doc else "standard"
+        custom_questions = interview_doc.get("custom_questions", []) if interview_doc else []
+        custom_exercise_prompt = interview_doc.get("custom_exercise_prompt", "") if interview_doc else ""
+
+        # Map interview type to question guidance (natural, not mentioning the interview structure)
+        # For custom_questions and custom_exercise, inject the actual content
+        if interview_type == "custom_questions" and custom_questions:
+            first_question_guidance = f"Ask this question naturally: {custom_questions[0]}"
+        elif interview_type == "custom_exercise" and custom_exercise_prompt:
+            first_question_guidance = f"Present this creative brief: {custom_exercise_prompt}"
+        elif interview_type == "human_data":
+            first_question_guidance = "Ask about their experience with design critique and giving creative feedback."
+        else:  # standard or fallback
+            first_question_guidance = "Ask about their creative background and what draws them to this role."
+
         # Create OpenAI connection
         realtime = RealtimeService(
             api_key=settings.OPENAI_API_KEY,
@@ -247,18 +271,21 @@ async def websocket_endpoint(websocket: WebSocket):
         logger.info(f"Session ready: {session_id}")
 
         # Seed initial turn so the model starts proactively
+        # Include actual candidate name (first name only), position, and interview type guidance
+        seed_prompt = f"Please introduce yourself as Alex and say: 'Hello {candidate_first_name}, thank you for joining me today. I'm Alex, and I'll be interviewing you for the {job_title} position.' Then for your first question: {first_question_guidance}"
+        logger.info(f"=== SEED MESSAGE ===\n{seed_prompt}\n=== END SEED MESSAGE ===")
         await realtime.send_event({
             "type": "conversation.item.create",
             "item": {
                 "type": "message",
                 "role": "user",
                 "content": [
-                    { "type": "input_text", "text": "Please begin the interview with a brief greeting and the first creative-focused question." }
+                    { "type": "input_text", "text": seed_prompt }
                 ]
             }
         })
         await realtime.send_event({"type": "response.create"})
-        logger.info("Seeded message item and sent response.create to AI")
+        logger.info(f"Seeded message with greeting for {candidate_name} / {job_title}")
 
         # Start bidirectional forwarding with audio buffering
         openai_task = asyncio.create_task(
@@ -500,7 +527,7 @@ async def get_interview_instructions(interview_id: Optional[str]) -> str:
         custom_questions_count = len(interview_doc.get("custom_questions") or [])
         skills_count = len(interview_doc.get("skills") or [])
         logger.info(f"Using {interview_type} interview instructions for interview {interview_id} (custom_questions: {custom_questions_count}, skills: {skills_count})")
-        logger.debug(f"Instructions preview: {instructions[:200]}...")
+        logger.info(f"=== FULL SYSTEM PROMPT ===\n{instructions}\n=== END SYSTEM PROMPT ===")
 
         return instructions
 
