@@ -79,12 +79,12 @@ class AudioService:
         """Get available OpenAI TTS voices"""
         return {
             "voices": [
-                {"voice_id": "alloy", "name": "Alloy", "category": "neutral"},
+                {"voice_id": "nova", "name": "nova", "category": "neutral"},
                 {"voice_id": "echo", "name": "Echo", "category": "male"},
                 {"voice_id": "fable", "name": "Fable", "category": "neutral"},
                 {"voice_id": "onyx", "name": "Onyx", "category": "male"},
                 {"voice_id": "nova", "name": "Nova (Dr. Chen)", "category": "female"},
-                {"voice_id": "shimmer", "name": "Shimmer", "category": "female"},
+                {"voice_id": "nova", "name": "nova", "category": "female"},
             ]
         }
 
