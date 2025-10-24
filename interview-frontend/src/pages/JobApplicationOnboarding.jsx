@@ -755,8 +755,8 @@ function StepAuthorization({ formData, handleInputChange }) {
           />
         </div>
 
-        <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg">
-          <p className="text-sm text-blue-600">
+        <div className="p-4 border-2 border-blue-100 rounded-lg">
+          <p className="text-sm text-blue-400">
             Your work authorization status helps us match you with opportunities
             you're eligible for.
           </p>
