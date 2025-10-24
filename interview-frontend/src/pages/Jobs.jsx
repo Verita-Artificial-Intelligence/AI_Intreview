@@ -6,7 +6,13 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Briefcase, CheckCircle, Clock, ArrowRight, FileText } from 'lucide-react'
+import {
+  Briefcase,
+  CheckCircle,
+  Clock,
+  ArrowRight,
+  FileText,
+} from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
@@ -31,12 +37,12 @@ export default function Jobs() {
       setLoading(true)
       const [interviewsRes, annotationsRes, jobsRes] = await Promise.all([
         axios.get(`${API}/interviews`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         }),
         axios.get(`${API}/annotations/user/${user?.id}`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         }),
-        axios.get(`${API}/jobs`)
+        axios.get(`${API}/jobs`),
       ])
 
       // Filter interviews for current user
@@ -58,7 +64,7 @@ export default function Jobs() {
   }
 
   const getJobStatus = (jobId) => {
-    const job = jobs.find(j => j.id === jobId)
+    const job = jobs.find((j) => j.id === jobId)
     return job?.status || 'pending'
   }
 
@@ -68,9 +74,21 @@ export default function Jobs() {
 
   const getStatusBadge = (status) => {
     const badges = {
-      scheduled: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Scheduled' },
-      in_progress: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'In Progress' },
-      completed: { bg: 'bg-green-100', text: 'text-green-800', label: 'Completed' },
+      scheduled: {
+        bg: 'bg-blue-100',
+        text: 'text-blue-800',
+        label: 'Scheduled',
+      },
+      in_progress: {
+        bg: 'bg-yellow-100',
+        text: 'text-yellow-800',
+        label: 'In Progress',
+      },
+      completed: {
+        bg: 'bg-green-100',
+        text: 'text-green-800',
+        label: 'Completed',
+      },
       pending: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Pending' },
     }
     return badges[status] || badges.pending
@@ -80,9 +98,21 @@ export default function Jobs() {
     const badges = {
       pending: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Pending' },
       assigned: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Assigned' },
-      in_progress: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'In Progress' },
-      completed: { bg: 'bg-green-100', text: 'text-green-800', label: 'Completed' },
-      reviewed: { bg: 'bg-purple-100', text: 'text-purple-800', label: 'Reviewed' },
+      in_progress: {
+        bg: 'bg-yellow-100',
+        text: 'text-yellow-800',
+        label: 'In Progress',
+      },
+      completed: {
+        bg: 'bg-green-100',
+        text: 'text-green-800',
+        label: 'Completed',
+      },
+      reviewed: {
+        bg: 'bg-purple-100',
+        text: 'text-purple-800',
+        label: 'Reviewed',
+      },
     }
     return badges[status] || badges.pending
   }
@@ -102,7 +132,12 @@ export default function Jobs() {
     // 1. There are active tasks, OR
     // 2. Interview is still in progress, OR
     // 3. No tasks have been created yet for this accepted candidate (waiting for admin to create tasks)
-    return hasActiveTasks || interview.status === 'in_progress' || interview.status === 'scheduled' || tasks.length === 0
+    return (
+      hasActiveTasks ||
+      interview.status === 'in_progress' ||
+      interview.status === 'scheduled' ||
+      tasks.length === 0
+    )
   })
 
   // Completed: accepted interviews where all annotation tasks are completed
@@ -112,9 +147,9 @@ export default function Jobs() {
     // 1. Interview is completed, AND
     // 2. There ARE tasks (not just accepted with no tasks yet), AND
     // 3. All tasks are completed or reviewed
-    const allTasksCompleted = tasks.length > 0 && tasks.every(
-      (t) => t.status === 'completed' || t.status === 'reviewed'
-    )
+    const allTasksCompleted =
+      tasks.length > 0 &&
+      tasks.every((t) => t.status === 'completed' || t.status === 'reviewed')
     return interview.status === 'completed' && allTasksCompleted
   })
 
@@ -123,30 +158,37 @@ export default function Jobs() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="min-h-screen bg-white">
       <Sidebar />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto bg-white">
-        <div className="max-w-6xl mx-auto px-8 py-12">
+      <main className="ml-64 overflow-y-auto">
+        <div className="max-w-7xl mx-auto px-6 py-8">
           {/* Header */}
-          <div className="mb-12">
-            <h1 className="text-5xl font-bold text-neutral-900 mb-2 tracking-tight leading-tight">
+          <div className="mb-6">
+            <h1 className="text-2xl font-semibold text-neutral-900 mb-1">
               Your Jobs
             </h1>
-            <p className="text-lg text-neutral-600 font-light">
+            <p className="text-sm text-gray-500">
               Track active projects and complete creative tasks to earn
             </p>
           </div>
 
           {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="space-y-4"
+          >
             <TabsList className="grid w-full max-w-md grid-cols-2">
               <TabsTrigger value="active" className="flex items-center gap-2">
                 <Briefcase className="w-4 h-4" />
                 Active Jobs ({activeInterviews.length})
               </TabsTrigger>
-              <TabsTrigger value="completed" className="flex items-center gap-2">
+              <TabsTrigger
+                value="completed"
+                className="flex items-center gap-2"
+              >
                 <CheckCircle className="w-4 h-4" />
                 Completed ({completedInterviews.length})
               </TabsTrigger>
@@ -155,41 +197,54 @@ export default function Jobs() {
             {/* Active Jobs Tab */}
             <TabsContent value="active" className="space-y-4">
               {loading ? (
-                <div className="text-center py-12">
-                  <p className="text-neutral-600">Loading jobs...</p>
-                </div>
+                <p className="text-sm text-gray-600">Loading jobs...</p>
               ) : activeInterviews.length === 0 ? (
-                <Card className="p-12 text-center">
-                  <Briefcase className="w-12 h-12 text-neutral-300 mx-auto mb-3" />
-                  <p className="text-neutral-600 mb-4">No active jobs yet</p>
+                <Card className="p-8 text-center bg-white border border-gray-200 rounded-lg shadow-sm">
+                  <Briefcase
+                    className="w-10 h-10 mx-auto mb-3 text-gray-300"
+                    strokeWidth={1.5}
+                  />
+                  <p className="text-sm text-gray-600 mb-4">
+                    No active jobs yet
+                  </p>
                   <Button
                     onClick={() => navigate('/')}
-                    className="bg-blue-500 hover:bg-blue-600 text-white"
+                    size="sm"
+                    className="rounded-lg bg-brand-500 hover:bg-brand-600 text-white h-9 px-3 text-sm"
                   >
                     Browse Opportunities
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Card>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {activeInterviews.map((interview) => {
                     const tasks = getJobAnnotationTasks(interview.job_id)
                     const activeTasks = tasks.filter(
-                      (t) => t.status === 'assigned' || t.status === 'in_progress'
+                      (t) =>
+                        t.status === 'assigned' || t.status === 'in_progress'
                     )
 
                     return (
-                      <Card key={interview.id} className="p-8 border border-neutral-200 hover:border-neutral-300 transition-all">
-                        <div className="flex justify-between items-start mb-6">
+                      <Card
+                        key={interview.id}
+                        className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex justify-between items-start mb-4">
                           <div className="flex-1">
-                            <h3 className="text-2xl font-bold text-neutral-900 mb-2 tracking-tight">
+                            <h3 className="text-lg font-semibold text-neutral-900 mb-1">
                               {interview.job_title || interview.position}
                             </h3>
-                            <p className="text-sm text-neutral-600">
-                              {interview.job_id.slice(0, 8)}... • Created {new Date(interview.created_at).toLocaleDateString()}
+                            <p className="text-sm text-gray-600">
+                              {interview.job_id.slice(0, 8)}... • Created{' '}
+                              {new Date(
+                                interview.created_at
+                              ).toLocaleDateString()}
                             </p>
                           </div>
-                          <Badge className={`${getStatusBadge(interview.status).bg} ${getStatusBadge(interview.status).text} font-medium`}>
+                          <Badge
+                            className={`${getStatusBadge(interview.status).bg} ${getStatusBadge(interview.status).text} text-xs font-medium px-2.5 py-1`}
+                          >
                             {getStatusBadge(interview.status).label}
                           </Badge>
                         </div>
@@ -199,12 +254,15 @@ export default function Jobs() {
                           // If no tasks, show "Tasks Being Prepared"
                           if (tasks.length === 0) {
                             return (
-                              <div className="mt-8 pt-8 border-t border-neutral-200">
-                                <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg text-center">
-                                  <Clock className="w-8 h-8 text-blue-600 mx-auto mb-3" />
-                                  <p className="text-sm font-medium text-blue-900 mb-1">Tasks Being Prepared</p>
+                              <div className="mt-4 pt-4 border-t border-gray-200">
+                                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
+                                  <Clock className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+                                  <p className="text-sm font-medium text-blue-900 mb-0.5">
+                                    Tasks Being Prepared
+                                  </p>
                                   <p className="text-xs text-blue-700">
-                                    Your annotation tasks are being set up. Check back soon to start working!
+                                    Your annotation tasks are being set up.
+                                    Check back soon to start working!
                                   </p>
                                 </div>
                               </div>
@@ -214,40 +272,58 @@ export default function Jobs() {
                           // Show active tasks (assigned or in_progress)
                           if (activeTasks.length > 0) {
                             return (
-                              <div className="mt-8 pt-8 border-t border-neutral-200">
-                                <div className="flex items-baseline gap-2 mb-6">
-                                  <span className="text-3xl font-bold text-neutral-900">{activeTasks.length}</span>
-                                  <p className="text-base font-medium text-neutral-600">Active Creative Task{activeTasks.length !== 1 ? 's' : ''}</p>
+                              <div className="mt-4 pt-4 border-t border-gray-200">
+                                <div className="flex items-baseline gap-2 mb-3">
+                                  <span className="text-xl font-semibold text-neutral-900">
+                                    {activeTasks.length}
+                                  </span>
+                                  <p className="text-sm font-medium text-gray-600">
+                                    Active Creative Task
+                                    {activeTasks.length !== 1 ? 's' : ''}
+                                  </p>
                                 </div>
-                                <div className="space-y-3">
+                                <div className="space-y-2">
                                   {activeTasks.map((task) => (
                                     <div
                                       key={task.id}
-                                      className="flex items-center justify-between p-4 bg-white border border-neutral-200 rounded-lg hover:border-neutral-300 hover:shadow-sm transition-all"
+                                      className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:bg-white hover:shadow-sm transition-all"
                                     >
-                                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                                      <div className="flex items-center gap-3 flex-1 min-w-0">
                                         <div className="p-2 bg-blue-100 rounded-lg text-blue-600 flex-shrink-0">
-                                          <FileText className="w-5 h-5" />
+                                          <FileText className="w-4 h-4" />
                                         </div>
                                         <div className="min-w-0">
-                                          <p className="text-sm font-semibold text-neutral-900 truncate">
-                                            {task.data_to_annotate?.title || 'Creative Task'}
+                                          <p className="text-sm font-medium text-neutral-900 truncate">
+                                            {task.data_to_annotate?.title ||
+                                              'Creative Task'}
                                           </p>
-                                          <p className="text-xs text-neutral-600 mt-1">
-                                            {task.data_to_annotate?.data_type || 'Unknown'} • {task.id.slice(0, 8)}...
+                                          <p className="text-xs text-gray-600">
+                                            {task.data_to_annotate?.data_type ||
+                                              'Unknown'}{' '}
+                                            • {task.id.slice(0, 8)}...
                                           </p>
                                         </div>
                                       </div>
-                                      <div className="flex items-center gap-3 ml-4">
-                                        <Badge className={`${getAnnotationStatusBadge(task.status).bg} ${getAnnotationStatusBadge(task.status).text} font-medium`}>
-                                          {getAnnotationStatusBadge(task.status).label}
+                                      <div className="flex items-center gap-2 ml-4">
+                                        <Badge
+                                          className={`${getAnnotationStatusBadge(task.status).bg} ${getAnnotationStatusBadge(task.status).text} text-xs font-medium px-2.5 py-1`}
+                                        >
+                                          {
+                                            getAnnotationStatusBadge(
+                                              task.status
+                                            ).label
+                                          }
                                         </Badge>
                                         <Button
-                                          onClick={() => handleStartAnnotation(task.id)}
+                                          onClick={() =>
+                                            handleStartAnnotation(task.id)
+                                          }
                                           size="sm"
-                                          className="bg-blue-500 hover:bg-blue-600 text-white font-medium whitespace-nowrap"
+                                          className="bg-brand-500 hover:bg-brand-600 text-white h-8 px-3 text-xs whitespace-nowrap rounded-lg"
                                         >
-                                          {task.status === 'in_progress' ? 'Continue' : 'Start'}
+                                          {task.status === 'in_progress'
+                                            ? 'Continue'
+                                            : 'Start'}
                                         </Button>
                                       </div>
                                     </div>
@@ -268,24 +344,35 @@ export default function Jobs() {
             {/* Completed Jobs Tab */}
             <TabsContent value="completed" className="space-y-4">
               {completedInterviews.length === 0 ? (
-                <Card className="p-12 text-center">
-                  <CheckCircle className="w-12 h-12 text-neutral-300 mx-auto mb-3" />
-                  <p className="text-neutral-600">No completed jobs yet</p>
+                <Card className="p-8 text-center bg-white border border-gray-200 rounded-lg shadow-sm">
+                  <CheckCircle
+                    className="w-10 h-10 mx-auto mb-3 text-gray-300"
+                    strokeWidth={1.5}
+                  />
+                  <p className="text-sm text-gray-600">No completed jobs yet</p>
                 </Card>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {completedInterviews.map((interview) => (
-                    <Card key={interview.id} className="p-6">
+                    <Card
+                      key={interview.id}
+                      className="p-5 bg-white border border-gray-200 rounded-lg shadow-sm"
+                    >
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="text-lg font-semibold text-neutral-900">
+                          <h3 className="text-base font-semibold text-neutral-900 mb-1">
                             {interview.job_title || interview.position}
                           </h3>
-                          <p className="text-sm text-neutral-600 mt-1">
-                            Completed on {new Date(interview.completed_at).toLocaleDateString()}
+                          <p className="text-sm text-gray-600">
+                            Completed on{' '}
+                            {new Date(
+                              interview.completed_at
+                            ).toLocaleDateString()}
                           </p>
                         </div>
-                        <Badge className="bg-green-100 text-green-800">Completed</Badge>
+                        <Badge className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-1">
+                          Completed
+                        </Badge>
                       </div>
                     </Card>
                   ))}

@@ -6,15 +6,7 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import {
-  Save,
-  Edit2,
-  Plus,
-  X,
-  FileText,
-  Download,
-  Upload,
-} from 'lucide-react'
+import { Save, Edit2, Plus, X, FileText, Download, Upload } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
@@ -61,7 +53,7 @@ export default function Profile() {
     try {
       setLoading(true)
       const response = await axios.get(`${API}/profile/me`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       })
 
       setProfileData({
@@ -84,9 +76,9 @@ export default function Profile() {
   }
 
   const toggleSection = (section) => {
-    setEditingSections(prev => ({
+    setEditingSections((prev) => ({
       ...prev,
-      [section]: !prev[section]
+      [section]: !prev[section],
     }))
   }
 
@@ -99,16 +91,27 @@ export default function Profile() {
         name: profileData.name,
         bio: profileData.bio,
         expertise: profileData.expertise,
-        education: profileData.education.length > 0 ? profileData.education : undefined,
-        work_experience: profileData.work_experience.length > 0 ? profileData.work_experience : undefined,
-        projects: profileData.projects.length > 0 ? profileData.projects : undefined,
-        publications: profileData.publications.length > 0 ? profileData.publications : undefined,
-        certifications: profileData.certifications.length > 0 ? profileData.certifications : undefined,
+        education:
+          profileData.education.length > 0 ? profileData.education : undefined,
+        work_experience:
+          profileData.work_experience.length > 0
+            ? profileData.work_experience
+            : undefined,
+        projects:
+          profileData.projects.length > 0 ? profileData.projects : undefined,
+        publications:
+          profileData.publications.length > 0
+            ? profileData.publications
+            : undefined,
+        certifications:
+          profileData.certifications.length > 0
+            ? profileData.certifications
+            : undefined,
         resume_url: profileData.resume_url || undefined,
       }
 
       await axios.put(`${API}/profile/complete`, updateData, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       })
 
       toggleSection(section)
@@ -129,7 +132,10 @@ export default function Profile() {
 
   // Expertise handlers
   const addExpertise = () => {
-    if (expertiseInput.trim() && !profileData.expertise.includes(expertiseInput.trim())) {
+    if (
+      expertiseInput.trim() &&
+      !profileData.expertise.includes(expertiseInput.trim())
+    ) {
       setProfileData((prev) => ({
         ...prev,
         expertise: [...prev.expertise, expertiseInput.trim()],
@@ -149,7 +155,10 @@ export default function Profile() {
   const addEducation = () => {
     setProfileData((prev) => ({
       ...prev,
-      education: [...prev.education, { school: '', degree: '', field: '', year: '' }],
+      education: [
+        ...prev.education,
+        { school: '', degree: '', field: '', year: '' },
+      ],
     }))
   }
 
@@ -173,7 +182,10 @@ export default function Profile() {
   const addWorkExperience = () => {
     setProfileData((prev) => ({
       ...prev,
-      work_experience: [...prev.work_experience, { company: '', title: '', startDate: '', endDate: '', description: '' }],
+      work_experience: [
+        ...prev.work_experience,
+        { company: '', title: '', startDate: '', endDate: '', description: '' },
+      ],
     }))
   }
 
@@ -221,7 +233,10 @@ export default function Profile() {
   const addPublication = () => {
     setProfileData((prev) => ({
       ...prev,
-      publications: [...prev.publications, { title: '', publisher: '', year: '', url: '' }],
+      publications: [
+        ...prev.publications,
+        { title: '', publisher: '', year: '', url: '' },
+      ],
     }))
   }
 
@@ -245,7 +260,10 @@ export default function Profile() {
   const addCertification = () => {
     setProfileData((prev) => ({
       ...prev,
-      certifications: [...prev.certifications, { name: '', issuer: '', year: '' }],
+      certifications: [
+        ...prev.certifications,
+        { name: '', issuer: '', year: '' },
+      ],
     }))
   }
 
@@ -267,37 +285,35 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-background">
+      <div className="min-h-screen bg-white">
         <Sidebar />
-        <main className="flex-1 flex items-center justify-center">
-          <p className="text-neutral-600">Loading profile...</p>
+        <main className="ml-64 flex items-center justify-center">
+          <p className="text-sm text-gray-600">Loading profile...</p>
         </main>
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-white">
       <Sidebar />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-5xl mx-auto px-6 py-8">
+      <main className="ml-64 overflow-y-auto">
+        <div className="max-w-7xl mx-auto px-6 py-8">
           {/* Header */}
-          <div className="flex items-end justify-between mb-8">
-            <div className="flex items-end gap-4">
-              <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-blue-400 to-blue-500 flex items-center justify-center text-white">
-                <span className="text-3xl font-bold">
+          <div className="mb-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-400 to-blue-500 flex items-center justify-center text-white flex-shrink-0">
+                <span className="text-2xl font-bold">
                   {profileData.name?.charAt(0).toUpperCase() || 'U'}
                 </span>
               </div>
-              <div className="pb-1">
-                <h1 className="text-3xl font-bold text-neutral-900 leading-tight">
+              <div>
+                <h1 className="text-2xl font-semibold text-neutral-900 mb-1">
                   {profileData.name}
                 </h1>
-                <p className="text-sm text-neutral-600 font-medium">
-                  {profileData.email}
-                </p>
+                <p className="text-sm text-gray-500">{profileData.email}</p>
               </div>
             </div>
           </div>
@@ -348,9 +364,13 @@ export default function Profile() {
                         className="h-6 px-2 text-xs"
                       >
                         {editingSections.expertise ? (
-                          <><Save className="w-3 h-3 mr-1" /> Save</>
+                          <>
+                            <Save className="w-3 h-3 mr-1" /> Save
+                          </>
                         ) : (
-                          <><Edit2 className="w-3 h-3 mr-1" /> Edit</>
+                          <>
+                            <Edit2 className="w-3 h-3 mr-1" /> Edit
+                          </>
                         )}
                       </Button>
                     </div>
@@ -380,8 +400,13 @@ export default function Profile() {
                         </div>
                         <div className="space-y-2">
                           {profileData.expertise.map((skill, index) => (
-                            <div key={index} className="flex items-center justify-between p-2 bg-blue-50 rounded">
-                              <span className="text-xs text-neutral-700">{skill}</span>
+                            <div
+                              key={index}
+                              className="flex items-center justify-between p-2 bg-blue-50 rounded"
+                            >
+                              <span className="text-xs text-neutral-700">
+                                {skill}
+                              </span>
                               <button
                                 onClick={() => removeExpertise(skill)}
                                 className="text-neutral-500 hover:text-red-600"
@@ -396,13 +421,20 @@ export default function Profile() {
                       <div className="space-y-2">
                         {profileData.expertise.length > 0 ? (
                           profileData.expertise.map((skill, index) => (
-                            <div key={index} className="flex items-center gap-2">
+                            <div
+                              key={index}
+                              className="flex items-center gap-2"
+                            >
                               <div className="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
-                              <span className="text-sm text-neutral-700">{skill}</span>
+                              <span className="text-sm text-neutral-700">
+                                {skill}
+                              </span>
                             </div>
                           ))
                         ) : (
-                          <p className="text-xs text-neutral-500 italic">No expertise added yet</p>
+                          <p className="text-xs text-neutral-500 italic">
+                            No expertise added yet
+                          </p>
                         )}
                       </div>
                     )}
@@ -414,9 +446,11 @@ export default function Profile() {
             {/* Right Column - Main Content */}
             <div className="lg:col-span-3 space-y-4">
               {/* Personal Information */}
-              <Card className="p-6 bg-white border border-neutral-200">
+              <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold text-neutral-900">Personal Information</h2>
+                  <h2 className="text-base font-semibold text-neutral-900">
+                    Personal Information
+                  </h2>
                   <Button
                     onClick={() => {
                       if (editingSections.personal) {
@@ -431,9 +465,13 @@ export default function Profile() {
                     className="text-xs"
                   >
                     {editingSections.personal ? (
-                      <><Save className="w-3 h-3 mr-1" /> Save</>
+                      <>
+                        <Save className="w-3 h-3 mr-1" /> Save
+                      </>
                     ) : (
-                      <><Edit2 className="w-3 h-3 mr-1" /> Edit</>
+                      <>
+                        <Edit2 className="w-3 h-3 mr-1" /> Edit
+                      </>
                     )}
                   </Button>
                 </div>
@@ -468,9 +506,11 @@ export default function Profile() {
               </Card>
 
               {/* Resume */}
-              <Card className="p-6 bg-white border border-neutral-200">
+              <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold text-neutral-900">Resume</h2>
+                  <h2 className="text-base font-semibold text-neutral-900">
+                    Resume
+                  </h2>
                   <Button
                     onClick={() => {
                       if (editingSections.resume) {
@@ -485,9 +525,13 @@ export default function Profile() {
                     className="text-xs"
                   >
                     {editingSections.resume ? (
-                      <><Save className="w-3 h-3 mr-1" /> Save</>
+                      <>
+                        <Save className="w-3 h-3 mr-1" /> Save
+                      </>
                     ) : (
-                      <><Edit2 className="w-3 h-3 mr-1" /> Edit</>
+                      <>
+                        <Edit2 className="w-3 h-3 mr-1" /> Edit
+                      </>
                     )}
                   </Button>
                 </div>
@@ -506,7 +550,8 @@ export default function Profile() {
                         placeholder="https://example.com/resume.pdf"
                       />
                       <p className="text-xs text-neutral-500 mt-2">
-                        Enter a public URL to your resume (Google Drive, Dropbox, personal website, etc.)
+                        Enter a public URL to your resume (Google Drive,
+                        Dropbox, personal website, etc.)
                       </p>
                     </div>
                   </div>
@@ -519,7 +564,9 @@ export default function Profile() {
                             <FileText className="w-5 h-5 text-blue-600" />
                           </div>
                           <div>
-                            <p className="font-semibold text-sm text-neutral-900">Resume</p>
+                            <p className="font-semibold text-sm text-neutral-900">
+                              Resume
+                            </p>
                             <p className="text-xs text-neutral-600 truncate max-w-md">
                               {profileData.resume_url}
                             </p>
@@ -538,7 +585,9 @@ export default function Profile() {
                     ) : (
                       <div className="flex items-center gap-3 p-4 bg-neutral-50 rounded-lg border border-neutral-200">
                         <Upload className="w-5 h-5 text-neutral-400" />
-                        <p className="text-sm text-neutral-500 italic">No resume added yet</p>
+                        <p className="text-sm text-neutral-500 italic">
+                          No resume added yet
+                        </p>
                       </div>
                     )}
                   </div>
@@ -546,9 +595,11 @@ export default function Profile() {
               </Card>
 
               {/* Bio */}
-              <Card className="p-6 bg-white border border-neutral-200">
+              <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold text-neutral-900">About</h2>
+                  <h2 className="text-base font-semibold text-neutral-900">
+                    About
+                  </h2>
                   <Button
                     onClick={() => {
                       if (editingSections.bio) {
@@ -563,9 +614,13 @@ export default function Profile() {
                     className="text-xs"
                   >
                     {editingSections.bio ? (
-                      <><Save className="w-3 h-3 mr-1" /> Save</>
+                      <>
+                        <Save className="w-3 h-3 mr-1" /> Save
+                      </>
                     ) : (
-                      <><Edit2 className="w-3 h-3 mr-1" /> Edit</>
+                      <>
+                        <Edit2 className="w-3 h-3 mr-1" /> Edit
+                      </>
                     )}
                   </Button>
                 </div>
@@ -581,9 +636,11 @@ export default function Profile() {
               </Card>
 
               {/* Education */}
-              <Card className="p-6 bg-white border border-neutral-200">
+              <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold text-neutral-900">Education</h2>
+                  <h2 className="text-base font-semibold text-neutral-900">
+                    Education
+                  </h2>
                   <Button
                     onClick={() => {
                       if (editingSections.education) {
@@ -598,9 +655,13 @@ export default function Profile() {
                     className="text-xs"
                   >
                     {editingSections.education ? (
-                      <><Save className="w-3 h-3 mr-1" /> Save</>
+                      <>
+                        <Save className="w-3 h-3 mr-1" /> Save
+                      </>
                     ) : (
-                      <><Edit2 className="w-3 h-3 mr-1" /> Edit</>
+                      <>
+                        <Edit2 className="w-3 h-3 mr-1" /> Edit
+                      </>
                     )}
                   </Button>
                 </div>
@@ -608,9 +669,14 @@ export default function Profile() {
                 {editingSections.education ? (
                   <div className="space-y-4">
                     {profileData.education.map((edu, index) => (
-                      <div key={index} className="p-4 border border-neutral-200 rounded-lg">
+                      <div
+                        key={index}
+                        className="p-4 border border-neutral-200 rounded-lg"
+                      >
                         <div className="flex justify-between items-start mb-3">
-                          <p className="text-xs font-semibold text-neutral-600">Education {index + 1}</p>
+                          <p className="text-xs font-semibold text-neutral-600">
+                            Education {index + 1}
+                          </p>
                           <button
                             onClick={() => removeEducation(index)}
                             className="text-neutral-500 hover:text-red-600"
@@ -622,25 +688,33 @@ export default function Profile() {
                           <Input
                             placeholder="School/University"
                             value={edu.school}
-                            onChange={(e) => updateEducation(index, 'school', e.target.value)}
+                            onChange={(e) =>
+                              updateEducation(index, 'school', e.target.value)
+                            }
                             className="text-sm"
                           />
                           <Input
                             placeholder="Degree"
                             value={edu.degree}
-                            onChange={(e) => updateEducation(index, 'degree', e.target.value)}
+                            onChange={(e) =>
+                              updateEducation(index, 'degree', e.target.value)
+                            }
                             className="text-sm"
                           />
                           <Input
                             placeholder="Field of Study"
                             value={edu.field}
-                            onChange={(e) => updateEducation(index, 'field', e.target.value)}
+                            onChange={(e) =>
+                              updateEducation(index, 'field', e.target.value)
+                            }
                             className="text-sm"
                           />
                           <Input
                             placeholder="Year"
                             value={edu.year}
-                            onChange={(e) => updateEducation(index, 'year', e.target.value)}
+                            onChange={(e) =>
+                              updateEducation(index, 'year', e.target.value)
+                            }
                             className="text-sm"
                           />
                         </div>
@@ -660,25 +734,38 @@ export default function Profile() {
                   <div className="space-y-3">
                     {profileData.education.length > 0 ? (
                       profileData.education.map((edu, index) => (
-                        <div key={index} className="p-4 bg-neutral-50 rounded-lg">
+                        <div
+                          key={index}
+                          className="p-4 bg-neutral-50 rounded-lg"
+                        >
                           <p className="font-semibold text-sm text-neutral-900">
                             {edu.degree} in {edu.field}
                           </p>
-                          <p className="text-sm text-neutral-600">{edu.school}</p>
-                          {edu.year && <p className="text-xs text-neutral-500 mt-1">{edu.year}</p>}
+                          <p className="text-sm text-neutral-600">
+                            {edu.school}
+                          </p>
+                          {edu.year && (
+                            <p className="text-xs text-neutral-500 mt-1">
+                              {edu.year}
+                            </p>
+                          )}
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-neutral-500 italic">No education added yet</p>
+                      <p className="text-sm text-neutral-500 italic">
+                        No education added yet
+                      </p>
                     )}
                   </div>
                 )}
               </Card>
 
               {/* Work Experience */}
-              <Card className="p-6 bg-white border border-neutral-200">
+              <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold text-neutral-900">Work Experience</h2>
+                  <h2 className="text-base font-semibold text-neutral-900">
+                    Work Experience
+                  </h2>
                   <Button
                     onClick={() => {
                       if (editingSections.workExperience) {
@@ -693,9 +780,13 @@ export default function Profile() {
                     className="text-xs"
                   >
                     {editingSections.workExperience ? (
-                      <><Save className="w-3 h-3 mr-1" /> Save</>
+                      <>
+                        <Save className="w-3 h-3 mr-1" /> Save
+                      </>
                     ) : (
-                      <><Edit2 className="w-3 h-3 mr-1" /> Edit</>
+                      <>
+                        <Edit2 className="w-3 h-3 mr-1" /> Edit
+                      </>
                     )}
                   </Button>
                 </div>
@@ -703,9 +794,14 @@ export default function Profile() {
                 {editingSections.workExperience ? (
                   <div className="space-y-4">
                     {profileData.work_experience.map((exp, index) => (
-                      <div key={index} className="p-4 border border-neutral-200 rounded-lg">
+                      <div
+                        key={index}
+                        className="p-4 border border-neutral-200 rounded-lg"
+                      >
                         <div className="flex justify-between items-start mb-3">
-                          <p className="text-xs font-semibold text-neutral-600">Experience {index + 1}</p>
+                          <p className="text-xs font-semibold text-neutral-600">
+                            Experience {index + 1}
+                          </p>
                           <button
                             onClick={() => removeWorkExperience(index)}
                             className="text-neutral-500 hover:text-red-600"
@@ -718,32 +814,62 @@ export default function Profile() {
                             <Input
                               placeholder="Company"
                               value={exp.company}
-                              onChange={(e) => updateWorkExperience(index, 'company', e.target.value)}
+                              onChange={(e) =>
+                                updateWorkExperience(
+                                  index,
+                                  'company',
+                                  e.target.value
+                                )
+                              }
                               className="text-sm"
                             />
                             <Input
                               placeholder="Job Title"
                               value={exp.title}
-                              onChange={(e) => updateWorkExperience(index, 'title', e.target.value)}
+                              onChange={(e) =>
+                                updateWorkExperience(
+                                  index,
+                                  'title',
+                                  e.target.value
+                                )
+                              }
                               className="text-sm"
                             />
                             <Input
                               placeholder="Start Date"
                               value={exp.startDate}
-                              onChange={(e) => updateWorkExperience(index, 'startDate', e.target.value)}
+                              onChange={(e) =>
+                                updateWorkExperience(
+                                  index,
+                                  'startDate',
+                                  e.target.value
+                                )
+                              }
                               className="text-sm"
                             />
                             <Input
                               placeholder="End Date"
                               value={exp.endDate}
-                              onChange={(e) => updateWorkExperience(index, 'endDate', e.target.value)}
+                              onChange={(e) =>
+                                updateWorkExperience(
+                                  index,
+                                  'endDate',
+                                  e.target.value
+                                )
+                              }
                               className="text-sm"
                             />
                           </div>
                           <Textarea
                             placeholder="Description"
                             value={exp.description}
-                            onChange={(e) => updateWorkExperience(index, 'description', e.target.value)}
+                            onChange={(e) =>
+                              updateWorkExperience(
+                                index,
+                                'description',
+                                e.target.value
+                              )
+                            }
                             className="text-sm resize-none min-h-20"
                           />
                         </div>
@@ -763,28 +889,41 @@ export default function Profile() {
                   <div className="space-y-4">
                     {profileData.work_experience.length > 0 ? (
                       profileData.work_experience.map((exp, index) => (
-                        <div key={index} className="p-4 bg-neutral-50 rounded-lg">
-                          <p className="font-semibold text-sm text-neutral-900">{exp.title}</p>
-                          <p className="text-sm text-neutral-600">{exp.company}</p>
+                        <div
+                          key={index}
+                          className="p-4 bg-neutral-50 rounded-lg"
+                        >
+                          <p className="font-semibold text-sm text-neutral-900">
+                            {exp.title}
+                          </p>
+                          <p className="text-sm text-neutral-600">
+                            {exp.company}
+                          </p>
                           <p className="text-xs text-neutral-500 mt-1">
                             {exp.startDate} - {exp.endDate}
                           </p>
                           {exp.description && (
-                            <p className="text-sm text-neutral-700 mt-2">{exp.description}</p>
+                            <p className="text-sm text-neutral-700 mt-2">
+                              {exp.description}
+                            </p>
                           )}
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-neutral-500 italic">No work experience added yet</p>
+                      <p className="text-sm text-neutral-500 italic">
+                        No work experience added yet
+                      </p>
                     )}
                   </div>
                 )}
               </Card>
 
               {/* Projects */}
-              <Card className="p-6 bg-white border border-neutral-200">
+              <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold text-neutral-900">Projects</h2>
+                  <h2 className="text-base font-semibold text-neutral-900">
+                    Projects
+                  </h2>
                   <Button
                     onClick={() => {
                       if (editingSections.projects) {
@@ -799,9 +938,13 @@ export default function Profile() {
                     className="text-xs"
                   >
                     {editingSections.projects ? (
-                      <><Save className="w-3 h-3 mr-1" /> Save</>
+                      <>
+                        <Save className="w-3 h-3 mr-1" /> Save
+                      </>
                     ) : (
-                      <><Edit2 className="w-3 h-3 mr-1" /> Edit</>
+                      <>
+                        <Edit2 className="w-3 h-3 mr-1" /> Edit
+                      </>
                     )}
                   </Button>
                 </div>
@@ -809,9 +952,14 @@ export default function Profile() {
                 {editingSections.projects ? (
                   <div className="space-y-4">
                     {profileData.projects.map((project, index) => (
-                      <div key={index} className="p-4 border border-neutral-200 rounded-lg">
+                      <div
+                        key={index}
+                        className="p-4 border border-neutral-200 rounded-lg"
+                      >
                         <div className="flex justify-between items-start mb-3">
-                          <p className="text-xs font-semibold text-neutral-600">Project {index + 1}</p>
+                          <p className="text-xs font-semibold text-neutral-600">
+                            Project {index + 1}
+                          </p>
                           <button
                             onClick={() => removeProject(index)}
                             className="text-neutral-500 hover:text-red-600"
@@ -823,19 +971,29 @@ export default function Profile() {
                           <Input
                             placeholder="Project Name"
                             value={project.name}
-                            onChange={(e) => updateProject(index, 'name', e.target.value)}
+                            onChange={(e) =>
+                              updateProject(index, 'name', e.target.value)
+                            }
                             className="text-sm"
                           />
                           <Textarea
                             placeholder="Description"
                             value={project.description}
-                            onChange={(e) => updateProject(index, 'description', e.target.value)}
+                            onChange={(e) =>
+                              updateProject(
+                                index,
+                                'description',
+                                e.target.value
+                              )
+                            }
                             className="text-sm resize-none min-h-20"
                           />
                           <Input
                             placeholder="URL (optional)"
                             value={project.url}
-                            onChange={(e) => updateProject(index, 'url', e.target.value)}
+                            onChange={(e) =>
+                              updateProject(index, 'url', e.target.value)
+                            }
                             className="text-sm"
                           />
                         </div>
@@ -855,10 +1013,17 @@ export default function Profile() {
                   <div className="space-y-3">
                     {profileData.projects.length > 0 ? (
                       profileData.projects.map((project, index) => (
-                        <div key={index} className="p-4 bg-neutral-50 rounded-lg">
-                          <p className="font-semibold text-sm text-neutral-900">{project.name}</p>
+                        <div
+                          key={index}
+                          className="p-4 bg-neutral-50 rounded-lg"
+                        >
+                          <p className="font-semibold text-sm text-neutral-900">
+                            {project.name}
+                          </p>
                           {project.description && (
-                            <p className="text-sm text-neutral-700 mt-1">{project.description}</p>
+                            <p className="text-sm text-neutral-700 mt-1">
+                              {project.description}
+                            </p>
                           )}
                           {project.url && (
                             <a
@@ -873,16 +1038,20 @@ export default function Profile() {
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-neutral-500 italic">No projects added yet</p>
+                      <p className="text-sm text-neutral-500 italic">
+                        No projects added yet
+                      </p>
                     )}
                   </div>
                 )}
               </Card>
 
               {/* Publications */}
-              <Card className="p-6 bg-white border border-neutral-200">
+              <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold text-neutral-900">Publications</h2>
+                  <h2 className="text-base font-semibold text-neutral-900">
+                    Publications
+                  </h2>
                   <Button
                     onClick={() => {
                       if (editingSections.publications) {
@@ -897,9 +1066,13 @@ export default function Profile() {
                     className="text-xs"
                   >
                     {editingSections.publications ? (
-                      <><Save className="w-3 h-3 mr-1" /> Save</>
+                      <>
+                        <Save className="w-3 h-3 mr-1" /> Save
+                      </>
                     ) : (
-                      <><Edit2 className="w-3 h-3 mr-1" /> Edit</>
+                      <>
+                        <Edit2 className="w-3 h-3 mr-1" /> Edit
+                      </>
                     )}
                   </Button>
                 </div>
@@ -907,9 +1080,14 @@ export default function Profile() {
                 {editingSections.publications ? (
                   <div className="space-y-4">
                     {profileData.publications.map((pub, index) => (
-                      <div key={index} className="p-4 border border-neutral-200 rounded-lg">
+                      <div
+                        key={index}
+                        className="p-4 border border-neutral-200 rounded-lg"
+                      >
                         <div className="flex justify-between items-start mb-3">
-                          <p className="text-xs font-semibold text-neutral-600">Publication {index + 1}</p>
+                          <p className="text-xs font-semibold text-neutral-600">
+                            Publication {index + 1}
+                          </p>
                           <button
                             onClick={() => removePublication(index)}
                             className="text-neutral-500 hover:text-red-600"
@@ -921,25 +1099,37 @@ export default function Profile() {
                           <Input
                             placeholder="Title"
                             value={pub.title}
-                            onChange={(e) => updatePublication(index, 'title', e.target.value)}
+                            onChange={(e) =>
+                              updatePublication(index, 'title', e.target.value)
+                            }
                             className="text-sm col-span-2"
                           />
                           <Input
                             placeholder="Publisher/Venue"
                             value={pub.publisher}
-                            onChange={(e) => updatePublication(index, 'publisher', e.target.value)}
+                            onChange={(e) =>
+                              updatePublication(
+                                index,
+                                'publisher',
+                                e.target.value
+                              )
+                            }
                             className="text-sm"
                           />
                           <Input
                             placeholder="Year"
                             value={pub.year}
-                            onChange={(e) => updatePublication(index, 'year', e.target.value)}
+                            onChange={(e) =>
+                              updatePublication(index, 'year', e.target.value)
+                            }
                             className="text-sm"
                           />
                           <Input
                             placeholder="URL (optional)"
                             value={pub.url}
-                            onChange={(e) => updatePublication(index, 'url', e.target.value)}
+                            onChange={(e) =>
+                              updatePublication(index, 'url', e.target.value)
+                            }
                             className="text-sm col-span-2"
                           />
                         </div>
@@ -959,10 +1149,21 @@ export default function Profile() {
                   <div className="space-y-3">
                     {profileData.publications.length > 0 ? (
                       profileData.publications.map((pub, index) => (
-                        <div key={index} className="p-4 bg-neutral-50 rounded-lg">
-                          <p className="font-semibold text-sm text-neutral-900">{pub.title}</p>
-                          <p className="text-sm text-neutral-600">{pub.publisher}</p>
-                          {pub.year && <p className="text-xs text-neutral-500 mt-1">{pub.year}</p>}
+                        <div
+                          key={index}
+                          className="p-4 bg-neutral-50 rounded-lg"
+                        >
+                          <p className="font-semibold text-sm text-neutral-900">
+                            {pub.title}
+                          </p>
+                          <p className="text-sm text-neutral-600">
+                            {pub.publisher}
+                          </p>
+                          {pub.year && (
+                            <p className="text-xs text-neutral-500 mt-1">
+                              {pub.year}
+                            </p>
+                          )}
                           {pub.url && (
                             <a
                               href={pub.url}
@@ -976,16 +1177,20 @@ export default function Profile() {
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-neutral-500 italic">No publications added yet</p>
+                      <p className="text-sm text-neutral-500 italic">
+                        No publications added yet
+                      </p>
                     )}
                   </div>
                 )}
               </Card>
 
               {/* Certifications */}
-              <Card className="p-6 bg-white border border-neutral-200">
+              <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold text-neutral-900">Certifications</h2>
+                  <h2 className="text-base font-semibold text-neutral-900">
+                    Certifications
+                  </h2>
                   <Button
                     onClick={() => {
                       if (editingSections.certifications) {
@@ -1000,9 +1205,13 @@ export default function Profile() {
                     className="text-xs"
                   >
                     {editingSections.certifications ? (
-                      <><Save className="w-3 h-3 mr-1" /> Save</>
+                      <>
+                        <Save className="w-3 h-3 mr-1" /> Save
+                      </>
                     ) : (
-                      <><Edit2 className="w-3 h-3 mr-1" /> Edit</>
+                      <>
+                        <Edit2 className="w-3 h-3 mr-1" /> Edit
+                      </>
                     )}
                   </Button>
                 </div>
@@ -1010,9 +1219,14 @@ export default function Profile() {
                 {editingSections.certifications ? (
                   <div className="space-y-4">
                     {profileData.certifications.map((cert, index) => (
-                      <div key={index} className="p-4 border border-neutral-200 rounded-lg">
+                      <div
+                        key={index}
+                        className="p-4 border border-neutral-200 rounded-lg"
+                      >
                         <div className="flex justify-between items-start mb-3">
-                          <p className="text-xs font-semibold text-neutral-600">Certification {index + 1}</p>
+                          <p className="text-xs font-semibold text-neutral-600">
+                            Certification {index + 1}
+                          </p>
                           <button
                             onClick={() => removeCertification(index)}
                             className="text-neutral-500 hover:text-red-600"
@@ -1024,19 +1238,29 @@ export default function Profile() {
                           <Input
                             placeholder="Certification Name"
                             value={cert.name}
-                            onChange={(e) => updateCertification(index, 'name', e.target.value)}
+                            onChange={(e) =>
+                              updateCertification(index, 'name', e.target.value)
+                            }
                             className="text-sm col-span-2"
                           />
                           <Input
                             placeholder="Year"
                             value={cert.year}
-                            onChange={(e) => updateCertification(index, 'year', e.target.value)}
+                            onChange={(e) =>
+                              updateCertification(index, 'year', e.target.value)
+                            }
                             className="text-sm"
                           />
                           <Input
                             placeholder="Issuing Organization"
                             value={cert.issuer}
-                            onChange={(e) => updateCertification(index, 'issuer', e.target.value)}
+                            onChange={(e) =>
+                              updateCertification(
+                                index,
+                                'issuer',
+                                e.target.value
+                              )
+                            }
                             className="text-sm col-span-3"
                           />
                         </div>
@@ -1056,14 +1280,27 @@ export default function Profile() {
                   <div className="space-y-3">
                     {profileData.certifications.length > 0 ? (
                       profileData.certifications.map((cert, index) => (
-                        <div key={index} className="p-4 bg-neutral-50 rounded-lg">
-                          <p className="font-semibold text-sm text-neutral-900">{cert.name}</p>
-                          <p className="text-sm text-neutral-600">{cert.issuer}</p>
-                          {cert.year && <p className="text-xs text-neutral-500 mt-1">{cert.year}</p>}
+                        <div
+                          key={index}
+                          className="p-4 bg-neutral-50 rounded-lg"
+                        >
+                          <p className="font-semibold text-sm text-neutral-900">
+                            {cert.name}
+                          </p>
+                          <p className="text-sm text-neutral-600">
+                            {cert.issuer}
+                          </p>
+                          {cert.year && (
+                            <p className="text-xs text-neutral-500 mt-1">
+                              {cert.year}
+                            </p>
+                          )}
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-neutral-500 italic">No certifications added yet</p>
+                      <p className="text-sm text-neutral-500 italic">
+                        No certifications added yet
+                      </p>
                     )}
                   </div>
                 )}
