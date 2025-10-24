@@ -42,12 +42,7 @@ const Login = () => {
       setRedirecting(true)
       handleRedirect()
     }
-  }, [
-    isAuthenticated,
-    authLoading,
-    isProfileComplete,
-    navigate,
-  ])
+  }, [isAuthenticated, authLoading, isProfileComplete, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -66,7 +61,7 @@ const Login = () => {
   // Show loading state while checking auth or redirecting
   if (authLoading || redirecting) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+      <div className="min-h-screen flex items-center  justify-center p-4 bg-white">
         <div className="text-center">
           <Loader2 className="w-8 h-8 text-brand-500 animate-spin mx-auto mb-3" />
           <p className="text-sm text-neutral-600">Redirecting...</p>
@@ -76,18 +71,23 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-3 bg-background">
-      <Card className="w-full max-w-xs p-6 bg-surface shadow-xl rounded-xl border-0">
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-display font-bold mb-1 text-neutral-900">
-            Welcome Back
+    <div className="min-h-screen flex items-center  justify-center p-4 bg-white">
+      <Card className="w-full max-w-md py-12 px-8 border border-neutral-100 bg-surface shadow-xl rounded-xl ">
+        <div className="text-center mb-10">
+          <div className="flex justify-center mb-4">
+            <img
+              src="/images/verita_ai_logo.jpeg"
+              alt="Verita AI"
+              className="w-16 h-16 rounded-lg object-cover"
+            />
+          </div>
+          <h1 className="text-2xl font-display font-bold mb-3 text-neutral-900">
+            Verita AI
           </h1>
-          <p className="text-sm text-neutral-600">
-            Sign in to explore creative opportunities
-          </p>
+          <p className="text-sm text-neutral-600">Welcome Back</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label
               htmlFor="email"
@@ -151,7 +151,7 @@ const Login = () => {
           </Button>
         </form>
 
-        <div className="mt-4 text-center space-y-2">
+        <div className="mt-6 text-center">
           <p className="text-xs text-neutral-600">
             Don't have an account?{' '}
             <Link
@@ -160,15 +160,6 @@ const Login = () => {
             >
               Sign up
             </Link>
-          </p>
-          <p className="text-[10px] text-neutral-500">
-            Need help?{' '}
-            <a
-              href="mailto:info@verita-ai.com"
-              className="text-brand-500 hover:text-brand-600 underline"
-            >
-              info@verita-ai.com
-            </a>
           </p>
         </div>
       </Card>

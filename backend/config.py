@@ -12,6 +12,7 @@ DB_NAME = os.environ["DB_NAME"]
 # Security Configuration
 JWT_SECRET = os.environ.get("JWT_SECRET", "default_secret_key")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
+APIFY_API_KEY = os.environ.get("APIFY_API_KEY")
 
 # CORS Configuration
 CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*").split(",")
@@ -87,6 +88,7 @@ class Settings:
     # Security
     JWT_SECRET = JWT_SECRET
     OPENAI_API_KEY = OPENAI_API_KEY
+    APIFY_API_KEY = APIFY_API_KEY
 
     # CORS
     CORS_ORIGINS = CORS_ORIGINS
