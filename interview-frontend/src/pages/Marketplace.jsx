@@ -32,7 +32,7 @@ const Marketplace = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
   const [userInterviews, setUserInterviews] = useState([])
-  const [filterMode, setFilterMode] = useState('newest')
+  const [filterMode, setFilterMode] = useState('all')
   const [selectedJob, setSelectedJob] = useState(null)
   const [sortBy, setSortBy] = useState('newest')
   const [profileData, setProfileData] = useState(null)
@@ -226,9 +226,12 @@ const Marketplace = () => {
                 <div className="flex gap-2 flex-wrap">
                   <Button
                     variant="outline"
-                    onClick={() => setSortBy('trending')}
+                    onClick={() => {
+                      setSortBy('trending')
+                      setFilterMode('all')
+                    }}
                     className={`rounded-lg h-8 px-3 text-xs font-medium transition-colors ${
-                      sortBy === 'trending'
+                      sortBy === 'trending' && filterMode === 'all'
                         ? 'border-brand-500 text-brand-600 font-bold bg-white hover:bg-brand-50'
                         : 'border-neutral-300 text-neutral-700 bg-white hover:bg-neutral-50'
                     }`}
@@ -238,9 +241,12 @@ const Marketplace = () => {
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => setSortBy('newest')}
+                    onClick={() => {
+                      setSortBy('newest')
+                      setFilterMode('all')
+                    }}
                     className={`rounded-lg h-8 px-3 text-xs font-medium transition-colors ${
-                      sortBy === 'newest'
+                      sortBy === 'newest' && filterMode === 'all'
                         ? 'border-brand-500 text-brand-600 font-bold bg-white hover:bg-brand-50'
                         : 'border-neutral-300 text-neutral-700 bg-white hover:bg-neutral-50'
                     }`}
@@ -250,9 +256,12 @@ const Marketplace = () => {
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => setSortBy('most_pay')}
+                    onClick={() => {
+                      setSortBy('most_pay')
+                      setFilterMode('all')
+                    }}
                     className={`rounded-lg h-8 px-3 text-xs font-medium transition-colors ${
-                      sortBy === 'most_pay'
+                      sortBy === 'most_pay' && filterMode === 'all'
                         ? 'border-brand-500 text-brand-600 font-bold bg-white hover:bg-brand-50'
                         : 'border-neutral-300 text-neutral-700 bg-white hover:bg-neutral-50'
                     }`}
@@ -262,9 +271,12 @@ const Marketplace = () => {
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => setSortBy('job_fit')}
+                    onClick={() => {
+                      setSortBy('job_fit')
+                      setFilterMode('all')
+                    }}
                     className={`rounded-lg h-8 px-3 text-xs font-medium transition-colors ${
-                      sortBy === 'job_fit'
+                      sortBy === 'job_fit' && filterMode === 'all'
                         ? 'border-brand-500 text-brand-600 font-bold bg-white hover:bg-brand-50'
                         : 'border-neutral-300 text-neutral-700 bg-white hover:bg-neutral-50'
                     }`}
