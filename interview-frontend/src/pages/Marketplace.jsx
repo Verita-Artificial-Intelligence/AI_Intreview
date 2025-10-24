@@ -417,7 +417,7 @@ const Marketplace = () => {
                 <div className="flex items-center gap-4 text-sm text-gray-600 -mt-2">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-gray-600" />
-                    <span>{selectedJob.position_type}</span>
+                    <span>Hourly contract</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-gray-600" />
@@ -595,17 +595,6 @@ const Marketplace = () => {
                   <div>
                     <p className="text-sm">
                       <span className="font-semibold text-neutral-900">
-                        Location:
-                      </span>{' '}
-                      <span className="text-gray-600">
-                        Remote-friendly (US time zones); Geography restricted to
-                        US, UK, Canada
-                      </span>
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm">
-                      <span className="font-semibold text-neutral-900">
                         Type:
                       </span>{' '}
                       <span className="text-gray-600">
@@ -613,6 +602,18 @@ const Marketplace = () => {
                       </span>
                     </p>
                   </div>
+                  {selectedJob.availability && (
+                    <div>
+                      <p className="text-sm">
+                        <span className="font-semibold text-neutral-900">
+                          Availability:
+                        </span>{' '}
+                        <span className="text-gray-600">
+                          {selectedJob.availability}
+                        </span>
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Description */}

@@ -304,10 +304,8 @@ export default function Profile() {
           {/* Header */}
           <div className="mb-6">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-400 to-blue-500 flex items-center justify-center text-white flex-shrink-0">
-                <span className="text-2xl font-bold">
-                  {profileData.name?.charAt(0).toUpperCase() || 'U'}
-                </span>
+              <div className="w-16 h-16 rounded-md flex items-center justify-center text-lg font-semibold text-neutral-900 bg-brand-200 flex-shrink-0">
+                {profileData.name?.charAt(0).toUpperCase() || 'U'}
               </div>
               <div>
                 <h1 className="text-2xl font-semibold text-neutral-900 mb-1">

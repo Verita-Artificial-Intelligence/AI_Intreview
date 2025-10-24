@@ -757,7 +757,7 @@ export default function Onboarding() {
   // Show verification screen when verifying
   if (isVerifying) {
     return (
-      <div className="flex min-h-screen bg-neutral-50 items-center justify-center">
+      <div className="flex min-h-screen bg-white items-center justify-center">
         <Card className="w-full max-w-2xl mx-4 p-12 border border-neutral-200">
           <div className="text-center">
             {/* Logo */}

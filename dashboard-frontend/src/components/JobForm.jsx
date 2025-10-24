@@ -69,6 +69,7 @@ const JobForm = ({ open, onClose, onSubmit }) => {
     description: '',
     position_type: '',
     pay_per_hour: '',
+    availability: '',
     interview_type: 'standard',
     skills: [],
     custom_questions: [],
@@ -176,6 +177,7 @@ const JobForm = ({ open, onClose, onSubmit }) => {
         description: '',
         position_type: '',
         pay_per_hour: '',
+        availability: '',
         interview_type: 'standard',
         skills: [],
         custom_questions: [],
@@ -256,6 +258,19 @@ const JobForm = ({ open, onClose, onSubmit }) => {
             value={formData.pay_per_hour}
             onChange={handleChange}
             placeholder="e.g. 75.00"
+            className="w-full"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="availability" className="text-sm font-medium">
+            Availability Requirements (optional)
+          </Label>
+          <Input
+            id="availability"
+            name="availability"
+            value={formData.availability}
+            onChange={handleChange}
+            placeholder="e.g. Remote-friendly (US time zones), 40 hours/week, flexible schedule"
             className="w-full"
           />
         </div>
@@ -520,7 +535,7 @@ const JobForm = ({ open, onClose, onSubmit }) => {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] bg-white">
         <DialogHeader>
           <DialogTitle className="text-xl font-display font-bold">
             {step === 1
