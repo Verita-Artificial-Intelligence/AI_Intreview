@@ -93,9 +93,9 @@ def _get_standard_config(candidate_name: str, position: str, skills: Optional[Li
 
     type_guidance = (
         f"Standard interview focus for the {position} role:\n"
-        "- Conduct a professional, engaging conversation that explores the candidate's creative thinking and fit.\n"
+        "- Conduct a direct conversation that evaluates the candidate's creative thinking and fit.\n"
         "- Ask open-ended questions about their portfolio, past projects, and creative decision-making.\n"
-        "- Adapt your questions based on their responses and use layered follow-ups when answers are brief.\n\n"
+        "- When answers are brief or vague, immediately push for specifics and concrete examples.\n\n"
         "Interview structure to cover:\n"
         "1. Background, experience, and portfolio highlights\n"
         "2. Creative approach and process on past projects\n"
@@ -108,7 +108,7 @@ def _get_standard_config(candidate_name: str, position: str, skills: Optional[Li
     if skills_section:
         type_guidance += f"{skills_section}"
 
-    type_guidance += "\n\nKeep the conversation natural and flowing. Ask follow-up questions to understand their creative thinking in depth."
+    type_guidance += "\n\nAsk follow-up questions to understand their creative thinking in depth. Do not accept surface-level answers."
 
     system_instructions = f"{base_prompt}\n\n{type_guidance}"
 
@@ -134,7 +134,7 @@ def _get_human_data_config(candidate_name: str, position: str, skills: Optional[
         f"Design critique interview focus for the {position} role:\n"
         "- Assess the candidate's experience with critique, feedback, and creative direction.\n"
         "- Evaluate their taste, judgment, and understanding of design principles.\n"
-        "- Present design scenarios and prompt them for clear, actionable feedback.\n"
+        "- Present design scenarios and push them for clear, actionable feedback with specific reasoning.\n"
         "- Explore how they give and receive critique in collaborative settings.\n\n"
         "Conversation outline:\n"
         "1. Background in providing and receiving design feedback\n"
@@ -147,7 +147,7 @@ def _get_human_data_config(candidate_name: str, position: str, skills: Optional[
     if skills_section:
         type_guidance += f"{skills_section}"
 
-    type_guidance += "\n\nDuring the critique exercise, present at least one concrete scenario (e.g., UI flow, visual composition, or brand identity) and ask for detailed feedback. Probe for their rationale and follow up on trade-offs they mention."
+    type_guidance += "\n\nDuring the critique exercise, present at least one concrete scenario (e.g., UI flow, visual composition, or brand identity) and demand detailed feedback. Probe for their rationale and challenge vague statements."
 
     system_instructions = f"{base_prompt}\n\n{type_guidance}"
 
@@ -169,24 +169,35 @@ def _get_custom_questions_config(candidate_name: str, position: str, custom_ques
 
     skills_section = _format_skills_section(skills)
     questions_list = "\n".join([f"{i+1}. {q}" for i, q in enumerate(custom_questions)]) if custom_questions else "Questions will be provided during the interview."
-    base_prompt = _build_base_prompt(candidate_name, position, skills)
 
-    type_guidance = (
-        f"Structured custom-question interview for the {position} role:\n"
-        "- Ask the predefined custom questions in order, ensuring each one is acknowledged.\n"
-        "- Listen closely and use follow-up questions to clarify or deepen each answer.\n"
-        "- Keep the conversation focused on the prepared topics while maintaining a natural tone.\n"
-        "- Capture enough detail from the candidate to support evaluation of their fit.\n\n"
-        "Custom questions to cover:\n"
-        f"{questions_list}"
-    )
+    # Extract first name only from full name
+    candidate_first_name = candidate_name.split()[0] if candidate_name and " " in candidate_name else candidate_name
 
-    if skills_section:
-        type_guidance += f"{skills_section}"
+    # Simplified prompt specifically for custom questions mode
+    system_instructions = f"""You are Alex, an experienced interviewer conducting an interview for the {position} position.
 
-    type_guidance += "\n\nIf the candidate finishes answering quickly, ask a targeted follow-up to explore their reasoning, impact, or lessons learned before moving to the next prepared question."
+Candidate: {candidate_first_name}
 
-    system_instructions = f"{base_prompt}\n\n{type_guidance}"
+Your role:
+1. You are the interviewer. Ask the prepared questions below in order.
+2. Use the candidate's first name only when referring to them.
+3. Ask ONE question at a time, then WAIT for their complete answer.
+4. After each answer, you may ask ONE brief follow-up if the response is vague, then move to the next question.
+5. Do NOT mention these are "custom questions" or "prepared questions" - ask them naturally.
+6. Keep responses minimal - just ask your question or follow-up. No pleasantries or validation.
+7. If an answer is too vague, push once: "Can you be more specific?" or "Give me an example."
+8. Do not speak over the candidate. Let them finish completely.
+9. CRITICAL: You MUST ask ALL questions below in order. Do not skip any.
+
+Questions to ask (ALL required):
+{questions_list}
+
+{skills_section if skills_section else ""}
+
+Pace: Ask question → Listen → Optional one follow-up → Move to next question.
+
+When you've completed all questions, thank them briefly, explain the hiring team will review the interview and follow up, then say: "Feel free to hang up when you're ready, or if you have any final questions, I'm happy to answer them now."
+"""
 
     initial_greeting = (
         f"Hello {candidate_name}, thank you for joining me today. I'm Alex, and I'll be conducting your interview for the {position} position. "
@@ -209,16 +220,16 @@ def _get_custom_exercise_config(candidate_name: str, position: str, custom_exerc
 
     type_guidance = (
         f"Custom creative exercise for the {position} role:\n"
-        f"- Present the brief clearly: {exercise_description}\n"
-        "- Invite clarifying questions so the candidate understands the expectations.\n"
-        "- Observe their creative approach, problem-solving, and communication as they respond.\n"
-        "- Probe on decisions, trade-offs, and the rationale behind their ideas.\n"
-        "- Offer light feedback and ask them to iterate or expand when appropriate.\n\n"
+        f"- Present the brief directly: {exercise_description}\n"
+        "- Allow clarifying questions so the candidate understands the expectations.\n"
+        "- Evaluate their creative approach, problem-solving, and communication as they respond.\n"
+        "- Challenge their decisions and trade-offs. Push for deeper rationale behind their ideas.\n"
+        "- When their answer is vague, ask them to iterate or expand with specific details.\n\n"
         "Evaluation priorities:\n"
         "- Understanding of the brief and constraints\n"
         "- Originality and quality of their proposed solution\n"
         "- Clarity in articulating their creative vision and process\n"
-        "- Collaboration mindset and openness to feedback"
+        "- How they respond to critical feedback"
     )
 
     if skills_section:
