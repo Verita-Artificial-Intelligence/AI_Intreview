@@ -45,6 +45,7 @@ export default function RealtimeInterview() {
   const videoRecorderRef = useRef(null);
   const sessionStartRef = useRef(null);
   const hasFinalizedRef = useRef(false);
+  const hasAttemptedStartRef = useRef(false);
 
   // State
   const [isInitialized, setIsInitialized] = useState(false);
@@ -65,6 +66,11 @@ export default function RealtimeInterview() {
 
   // Auto-start interview once services are initialized AND user is loaded
   useEffect(() => {
+    // Prevent multiple start attempts
+    if (hasAttemptedStartRef.current) {
+      return;
+    }
+
     // Don't start if still loading auth
     if (authLoading) {
       console.log('Waiting for auth to finish loading...');
@@ -82,6 +88,7 @@ export default function RealtimeInterview() {
     // Start interview when services ready and user loaded
     if (isInitialized) {
       console.log('Starting interview with user:', user.name, user.id);
+      hasAttemptedStartRef.current = true;
       handleStartInterview();
     }
   }, [isInitialized, user, authLoading]);
@@ -146,8 +153,8 @@ export default function RealtimeInterview() {
     }
 
     try {
-      setStatus('connecting');
       reset();
+      setStatus('connecting');
 
       const sessionId = uuidv4();
       setSessionId(sessionId);
@@ -475,6 +482,10 @@ export default function RealtimeInterview() {
     if (mediaStream) {
       mediaStream.getTracks().forEach((track) => track.stop());
     }
+
+    // Reset start attempt flag for potential re-initialization
+    hasAttemptedStartRef.current = false;
+    hasFinalizedRef.current = false;
   };
 
   // Show loading screen while auth is loading
