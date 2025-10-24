@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { Button } from '@/components/ui/button'
@@ -42,6 +42,8 @@ const AdminInterviewReview = () => {
   const [showRejectDialog, setShowRejectDialog] = useState(false)
   const [videoSources, setVideoSources] = useState([])
   const [transcriptUnavailable, setTranscriptUnavailable] = useState(false)
+  const [highlightedEntry, setHighlightedEntry] = useState(null)
+  const transcriptRef = useRef(null)
 
   const getInitials = (name) => {
     if (!name) return 'U'
@@ -50,6 +52,66 @@ const AdminInterviewReview = () => {
     return (
       parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
     ).toUpperCase()
+  }
+
+  const scrollToTranscriptEntry = (entryIndex) => {
+    if (!transcriptRef.current) return
+
+    const transcriptEntries = transcriptRef.current.querySelectorAll('[data-transcript-entry]')
+    const targetEntry = transcriptEntries[entryIndex - 1] // Convert to 0-based index
+
+    if (targetEntry) {
+      targetEntry.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      setHighlightedEntry(entryIndex)
+
+      // Remove highlight after 3 seconds
+      setTimeout(() => setHighlightedEntry(null), 3000)
+    }
+  }
+
+  const parseTextWithCitations = (text) => {
+    if (!text) return text
+
+    // Match patterns like [3], [5], [3, 5], etc.
+    const citationRegex = /\[(\d+(?:\s*,\s*\d+)*)\]/g
+
+    const parts = []
+    let lastIndex = 0
+    let match
+
+    while ((match = citationRegex.exec(text)) !== null) {
+      // Add text before the citation
+      if (match.index > lastIndex) {
+        parts.push(text.slice(lastIndex, match.index))
+      }
+
+      // Parse citation numbers
+      const citationNumbers = match[1].split(',').map(num => parseInt(num.trim())).filter(num => !isNaN(num))
+
+      // Create clickable citation spans
+      citationNumbers.forEach((num, index) => {
+        if (index > 0) parts.push(', ')
+        parts.push(
+          <button
+            key={`${match.index}-${num}`}
+            onClick={() => scrollToTranscriptEntry(num)}
+            className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-medium bg-brand-200 text-brand-800 rounded-full hover:bg-brand-300 transition-colors cursor-pointer mx-0.5"
+            title={`Jump to transcript entry ${num}`}
+          >
+            {num}
+          </button>
+        )
+      })
+
+      lastIndex = match.index + match[0].length
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex))
+    }
+
+    return parts.length > 0 ? parts : text
   }
 
   const fetchInterviewData = useCallback(async () => {
@@ -292,39 +354,7 @@ const AdminInterviewReview = () => {
     )
   }
 
-  // Show analyzing state while generating analysis
-  if (analyzing || analysis?.processing) {
-    return (
-      <div className="min-h-screen bg-white">
-        <Sidebar />
-        <main className="ml-64 overflow-y-auto">
-          <div className="max-w-7xl mx-auto px-6 py-8">
-            <Button
-              onClick={() => navigate('/')}
-              variant="outline"
-              size="sm"
-              className="rounded-lg mb-6"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
-            </Button>
-            <div className="flex items-center justify-center py-20">
-              <div className="text-center max-w-md">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500 mx-auto mb-4"></div>
-                <h2 className="text-xl font-bold mb-2 text-neutral-900">
-                  Analyzing Interview
-                </h2>
-                <p className="text-neutral-600">
-                  Our AI is analyzing the interview responses. This usually
-                  takes 10-30 seconds...
-                </p>
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-    )
-  }
+  // Inline loading will be handled in specific sections below
 
   // Show error state
   if (analysisError || analysis?.failed) {
@@ -369,50 +399,19 @@ const AdminInterviewReview = () => {
     )
   }
 
-  // If no analysis data yet, show empty state
-  if (!analysis) {
-    return (
-      <div className="min-h-screen bg-white">
-        <Sidebar />
-        <main className="ml-64 overflow-y-auto">
-          <div className="max-w-7xl mx-auto px-6 py-8">
-            <Button
-              onClick={() => navigate('/')}
-              variant="outline"
-              size="sm"
-              className="rounded-lg mb-6"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
-            </Button>
-            <div className="flex items-center justify-center py-20">
-              <div className="text-center max-w-md">
-                <h2 className="text-xl font-bold mb-2 text-neutral-900">
-                  No Analysis Available
-                </h2>
-                <p className="text-neutral-600 mb-6">
-                  This interview hasn't been analyzed yet. Generate an analysis
-                  to view results.
-                </p>
-                <Button
-                  onClick={() => generateAnalysis(messages, candidate)}
-                  className="bg-brand-500 hover:bg-brand-600"
-                >
-                  Generate Analysis
-                </Button>
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-    )
-  }
+  // Inline handling of unavailable analysis will be shown in section cards
 
   const getScoreBadge = (score) => {
     if (score >= 8) return 'bg-green-50 text-green-700 border-green-200'
     if (score >= 6) return 'bg-yellow-50 text-yellow-700 border-yellow-200'
     return 'bg-red-50 text-red-700 border-red-200'
   }
+
+  // Derive inline loading flags for analysis sections
+  const hasTranscript = Array.isArray(interview?.transcript) && interview.transcript.length > 0
+  const hasMessages = Array.isArray(messages) && messages.length > 0
+  const isAnalysisLoadingInline = analyzing || analysis?.processing || (!analysis && (hasTranscript || hasMessages))
+  const isAnalysisUnavailable = !analysis && !isAnalysisLoadingInline
 
   return (
     <div className="min-h-screen bg-white">
@@ -639,24 +638,31 @@ const AdminInterviewReview = () => {
 
             {/* Right Column - Analysis & Transcript */}
             <div className="lg:col-span-2 space-y-4">
-              {/* Show pending state if analysis is pending */}
-              {analysis?.pending ? (
+              {/* Analysis Section */}
+              {isAnalysisUnavailable ? (
                 <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-                  <div className="flex flex-col items-center justify-center py-12">
-                    <Clock className="w-16 h-16 text-brand-500 mb-4" />
-                    <h3 className="text-xl font-bold mb-2 text-neutral-900">
-                      Analysis Pending
-                    </h3>
-                    <p className="text-neutral-600 text-center max-w-md">
-                      The AI analysis for this interview is being prepared.
-                      Please check back later.
+                  <div className="flex flex-col items-center justify-center py-8">
+                    <Clock className="w-10 h-10 text-neutral-300 mb-3" />
+                    <p className="text-sm text-neutral-600 text-center max-w-md">
+                      Analysis will appear here once the interview has content.
                     </p>
                   </div>
                 </Card>
               ) : (
                 <>
-                  {/* Combined Assessment Card */}
-                  <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+                   {/* Combined Assessment Card */}
+                   {isAnalysisLoadingInline ? (
+                     <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+                       <div className="flex flex-col items-center justify-center py-12">
+                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500 mb-4"></div>
+                         <h3 className="text-base font-bold mb-2 text-neutral-900">Waiting for AI Analysis</h3>
+                         <p className="text-sm text-neutral-600 text-center max-w-md">
+                           Our AI is analyzing the interview responses. This usually takes 10-30 seconds...
+                         </p>
+                       </div>
+                     </Card>
+                   ) : (
+                    <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
                     {/* Overall Score */}
                     <div className="mb-6">
                       <div className="flex items-center justify-between">
@@ -734,7 +740,7 @@ const AdminInterviewReview = () => {
                                 <span className="text-neutral-400 flex-shrink-0">
                                   •
                                 </span>
-                                <span>{insight}</span>
+                                <span>{parseTextWithCitations(insight)}</span>
                               </li>
                             ))}
                           </ul>
@@ -757,7 +763,7 @@ const AdminInterviewReview = () => {
                                 <span className="text-neutral-400 flex-shrink-0">
                                   •
                                 </span>
-                                <span>{strength}</span>
+                                <span>{parseTextWithCitations(strength)}</span>
                               </li>
                             ))}
                           </ul>
@@ -777,7 +783,7 @@ const AdminInterviewReview = () => {
                                   <span className="text-neutral-400 flex-shrink-0">
                                     •
                                   </span>
-                                  <span>{area}</span>
+                                  <span>{parseTextWithCitations(area)}</span>
                                 </li>
                               )
                             )}
@@ -886,12 +892,21 @@ const AdminInterviewReview = () => {
                       </div>
                     )}
                   </Card>
+                 )}
 
-                  {/* Hiring Recommendation */}
-                  <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-                    <h3 className="text-base font-bold mb-3 text-neutral-900">
-                      Hiring Recommendation
-                    </h3>
+                 {/* Hiring Recommendation */}
+                 {isAnalysisLoadingInline ? (
+                   <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+                     <div className="flex flex-col items-center justify-center py-8">
+                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-500 mb-3"></div>
+                       <p className="text-sm text-neutral-600">Generating recommendation...</p>
+                     </div>
+                   </Card>
+                 ) : (
+                   <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+                     <h3 className="text-base font-bold mb-3 text-neutral-900">
+                       Hiring Recommendation
+                     </h3>
                     <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg border border-neutral-200 mb-3">
                       <div>
                         <p className="text-lg font-bold text-neutral-900">
@@ -927,7 +942,8 @@ const AdminInterviewReview = () => {
                           </ul>
                         </div>
                       )}
-                  </Card>
+                   </Card>
+                 )}
 
                   {/* Interview Transcript */}
                   {interview.transcript && interview.transcript.length > 0 ? (
@@ -935,11 +951,19 @@ const AdminInterviewReview = () => {
                       <h3 className="text-base font-bold mb-3 text-neutral-900">
                         Interview Transcript
                       </h3>
-                      <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                      <div
+                        ref={transcriptRef}
+                        className="space-y-3 max-h-[600px] overflow-y-auto pr-2"
+                      >
                         {interview.transcript.map((entry, index) => (
                           <div
                             key={index}
-                            className="border-l-2 border-neutral-200 pl-3"
+                            data-transcript-entry={index + 1}
+                            className={`border-l-2 border-neutral-200 pl-3 transition-colors duration-300 ${
+                              highlightedEntry === index + 1
+                                ? 'bg-brand-50 border-brand-300'
+                                : ''
+                            }`}
                           >
                             <div className="flex items-baseline gap-2 mb-1">
                               <span className="text-xs font-semibold text-neutral-900">
