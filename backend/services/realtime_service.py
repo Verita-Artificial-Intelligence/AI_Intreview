@@ -54,6 +54,7 @@ class RealtimeService:
         )
         self._silence_duration_step_ms = max(50, silence_duration_step_ms)
         self._current_silence_duration_ms = self._initial_silence_duration_ms
+        self._last_vad_update_time = 0  # Throttle VAD updates
 
     async def connect(self) -> None:
         """Establish WebSocket connection to OpenAI Realtime API."""
@@ -130,9 +131,18 @@ class RealtimeService:
         Args:
             silence_duration_ms: New silence duration in milliseconds.
         """
+        import time
+        
         target = max(200, min(silence_duration_ms, self._max_silence_duration_ms))
         if target == self._current_silence_duration_ms:
             return
+            
+        # Throttle VAD updates to avoid overwhelming OpenAI API
+        current_time = time.time()
+        if current_time - self._last_vad_update_time < 0.5:  # Max 2 updates per second
+            return
+        
+        self._last_vad_update_time = current_time
 
         event = {
             "type": "session.update",
