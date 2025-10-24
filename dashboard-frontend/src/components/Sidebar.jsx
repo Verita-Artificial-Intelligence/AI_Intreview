@@ -7,6 +7,7 @@ import {
   FileText,
   LogOut,
   ChevronRight,
+  Table,
 } from 'lucide-react'
 
 export default function Sidebar() {
@@ -28,6 +29,7 @@ export default function Sidebar() {
   ]
 
   const annotationItems = [
+    { path: '/admin/data-explorer', icon: Table, label: 'Data Explorer' },
     { path: '/annotation-data', icon: FileText, label: 'Annotation Data' },
     { path: '/annotators', icon: Users, label: 'Annotators' },
   ]

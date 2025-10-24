@@ -19,6 +19,7 @@ import AnnotationData from './pages/AnnotationData'
 import UploadAnnotationData from './pages/UploadAnnotationData'
 import Annotators from './pages/Annotators'
 import ReviewAnnotation from './pages/ReviewAnnotation'
+import AdminDataExplorer from './pages/AdminDataExplorer'
 
 // Candidate pages
 import CandidateLogin from './pages/Candidate/Login'
@@ -90,6 +91,7 @@ function App() {
           <Route path="/candidates" element={<Candidates />} />
           <Route path="/interviews" element={<Interviews />} />
           <Route path="/jobs" element={<Jobs />} />
+          <Route path="/admin/data-explorer" element={<AdminDataExplorer />} />
           <Route path="/annotation-data" element={<AnnotationData />} />
           <Route path="/annotation-data/upload" element={<UploadAnnotationData />} />
           <Route path="/annotators" element={<Annotators />} />
