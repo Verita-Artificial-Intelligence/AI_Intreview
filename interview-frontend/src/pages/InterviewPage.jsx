@@ -214,7 +214,7 @@ const InterviewPage = () => {
                 onChange={(e) => setInputMessage(e.target.value)}
                 placeholder="Type your response..."
                 disabled={sending}
-                className="flex-1 h-12 rounded-lg border-neutral-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-base"
+                className="flex-1 h-12 rounded-lg border-neutral-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 text-base"
               />
               <Button
                 type="submit"
@@ -233,7 +233,7 @@ const InterviewPage = () => {
       {interview.status === 'completed' && (
         <div className="bg-surface border-t border-neutral-200 shadow-lg">
           <div className={`${containers.md} mx-auto px-6 py-6 text-center`}>
-            <CheckCircle className="w-12 h-12 mx-auto mb-3 text-blue-400" />
+            <CheckCircle className="w-12 h-12 mx-auto mb-3 text-brand-400" />
             <p className="text-lg font-semibold mb-2 text-neutral-900">
               Interview Completed
             </p>

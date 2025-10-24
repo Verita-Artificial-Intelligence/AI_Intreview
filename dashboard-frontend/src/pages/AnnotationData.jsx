@@ -125,7 +125,7 @@ const AnnotationData = () => {
 
   const getDataTypeColor = (type) => {
     const colors = {
-      text: 'bg-blue-100 text-blue-800',
+      text: 'bg-brand-100 text-brand-700',
       image: 'bg-green-100 text-green-800',
       video: 'bg-purple-100 text-purple-800',
       audio: 'bg-orange-100 text-orange-800',

@@ -69,7 +69,7 @@ const Auth = ({ onLogin }) => {
                   setFormData({ ...formData, username: e.target.value })
                 }
                 required={!isLogin}
-                className="mt-1.5 h-11 rounded-lg border-neutral-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                className="mt-1.5 h-11 rounded-lg border-neutral-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
                 placeholder="Enter your username"
               />
             </div>
@@ -91,7 +91,7 @@ const Auth = ({ onLogin }) => {
                 setFormData({ ...formData, email: e.target.value })
               }
               required
-              className="mt-1.5 h-11 rounded-lg border-neutral-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              className="mt-1.5 h-11 rounded-lg border-neutral-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
               placeholder="you@example.com"
             />
           </div>
@@ -112,7 +112,7 @@ const Auth = ({ onLogin }) => {
                 setFormData({ ...formData, password: e.target.value })
               }
               required
-              className="mt-1.5 h-11 rounded-lg border-neutral-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              className="mt-1.5 h-11 rounded-lg border-neutral-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
               placeholder="••••••••"
             />
           </div>
@@ -144,7 +144,7 @@ const Auth = ({ onLogin }) => {
               setIsLogin(!isLogin)
               setError('')
             }}
-            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            className="text-sm text-brand-600 hover:text-brand-700 font-medium"
           >
             {isLogin
               ? "Don't have an account? Sign up"

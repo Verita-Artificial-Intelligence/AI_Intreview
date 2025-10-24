@@ -18,20 +18,20 @@ tokens referenced below live in:
 
 ### Brand
 
-Light-blue primary palette used for primary actions and navigation highlights.
+Vibrant purple palette used for primary actions and navigation highlights.
 
 ```ts
 brand: {
-  50:  '#f0f9ff',
-  100: '#e0f2fe',
-  200: '#bae6fd',
-  300: '#7dd3fc',
-  400: '#38bdf8',
-  500: '#0ea5e9', // primary CTA
-  600: '#0284c7',
-  700: '#0369a1',
-  800: '#075985',
-  900: '#0c3d66',
+  50:  '#f5f3ff',
+  100: '#ede9fe',
+  200: '#ddd6fe',
+  300: '#c4b5fd',
+  400: '#a78bfa',
+  500: '#8b5cf6', // primary CTA
+  600: '#7c3aed',
+  700: '#6d28d9',
+  800: '#5b21b6',
+  900: '#4c1d95',
 }
 ```
 
@@ -47,16 +47,16 @@ neutral CTAs).
 
 ```ts
 accent: {
-  50: '#f0f9ff',
-  100: '#e0f2fe',
-  200: '#bae6fd',
-  300: '#7dd3fc',
-  400: '#38bdf8',
-  500: '#0ea5e9',
-  600: '#0284c7',
-  700: '#0369a1',
-  800: '#075985',
-  900: '#0c3d66',
+  50: '#f5f3ff',
+  100: '#ede9fe',
+  200: '#ddd6fe',
+  300: '#c4b5fd',
+  400: '#a78bfa',
+  500: '#8b5cf6',
+  600: '#7c3aed',
+  700: '#6d28d9',
+  800: '#5b21b6',
+  900: '#4c1d95',
 }
 ```
 
@@ -221,4 +221,3 @@ When creating a new UI surface:
   reference; clarified shared token locations and usage conventions.
 - **2024-09-18** – Introduced the light-blue brand palette and Tailwind theme overrides
   (archived in git history).
-

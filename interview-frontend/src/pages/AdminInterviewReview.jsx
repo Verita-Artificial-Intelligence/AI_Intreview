@@ -74,7 +74,7 @@ const AdminInterviewReview = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mx-auto mb-4"></div>
           <p className="text-neutral-600">Analyzing interview...</p>
         </div>
       </div>
@@ -97,7 +97,7 @@ const AdminInterviewReview = () => {
 
   const getRecommendationColor = (rec) => {
     if (rec === 'Strong Hire') return '#10b981'
-    if (rec === 'Hire') return '#3b82f6'
+    if (rec === 'Hire') return '#8b5cf6'
     if (rec === 'Maybe') return '#f59e0b'
     return '#ef4444'
   }
@@ -195,7 +195,7 @@ const AdminInterviewReview = () => {
                 <div className="flex justify-between">
                   <span className="text-neutral-600">Status</span>
                   <span
-                    className={`font-medium ${interview.status === 'completed' ? 'text-green-600' : 'text-blue-600'}`}
+                    className={`font-medium ${interview.status === 'completed' ? 'text-green-600' : 'text-brand-600'}`}
                   >
                     {interview.status.charAt(0).toUpperCase() +
                       interview.status.slice(1)}
@@ -312,7 +312,7 @@ const AdminInterviewReview = () => {
                       key={index}
                       className="flex gap-2 text-sm text-neutral-700"
                     >
-                      <span className="text-blue-600 mt-1">💡</span>
+                      <span className="text-brand-600 mt-1">💡</span>
                       <span>{insight}</span>
                     </li>
                   ))}
@@ -546,7 +546,7 @@ const AdminInterviewReview = () => {
                           key={index}
                           className="text-sm text-neutral-700 flex gap-2"
                         >
-                          <span className="text-blue-600">→</span>
+                          <span className="text-brand-600">→</span>
                           <span>{rec}</span>
                         </li>
                       ))}
@@ -583,13 +583,13 @@ const AdminInterviewReview = () => {
                 {messages.map((message, index) => (
                   <div
                     key={index}
-                    className={`p-4 rounded-lg ${message.role === 'assistant' ? 'bg-neutral-50' : 'bg-blue-50'}`}
+                    className={`p-4 rounded-lg ${message.role === 'assistant' ? 'bg-neutral-50' : 'bg-brand-50'}`}
                   >
                     <p
                       className="text-xs font-semibold mb-1"
                       style={{
                         color:
-                          message.role === 'assistant' ? '#8b5cf6' : '#3b82f6',
+                          message.role === 'assistant' ? '#8b5cf6' : '#7c3aed',
                       }}
                     >
                       {message.role === 'assistant'

@@ -287,7 +287,7 @@ const InterviewPrep = () => {
                   <div
                     key={index}
                     className={`flex items-center gap-3 p-3 rounded-lg ${
-                      step.current ? 'bg-blue-50 border border-blue-200' : ''
+                      step.current ? 'bg-brand-50 border border-brand-200' : ''
                     }`}
                   >
                     <div
@@ -295,7 +295,7 @@ const InterviewPrep = () => {
                         step.completed
                           ? 'bg-green-500'
                           : step.current
-                            ? 'bg-blue-500'
+                            ? 'bg-brand-500'
                             : 'bg-gray-300'
                       }`}
                     >
@@ -397,7 +397,7 @@ const InterviewPrep = () => {
                   <select
                     value={selectedMicrophone}
                     onChange={(e) => setSelectedMicrophone(e.target.value)}
-                    className="w-full mb-3 p-2 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full mb-3 p-2 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                     data-testid="microphone-select"
                   >
                     {audioDevices.microphones.map((mic) => (
@@ -433,7 +433,7 @@ const InterviewPrep = () => {
                   <select
                     value={selectedSpeaker}
                     onChange={(e) => setSelectedSpeaker(e.target.value)}
-                    className="w-full mb-3 p-2 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full mb-3 p-2 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                     data-testid="speaker-select"
                   >
                     {audioDevices.speakers.map((speaker) => (
@@ -471,7 +471,7 @@ const InterviewPrep = () => {
               </h3>
               <div className="space-y-4">
                 <div className="flex gap-3">
-                  <AlertCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="w-5 h-5 text-brand-500 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="font-medium text-neutral-900">
                       Expect to spend ~25 minutes
@@ -482,7 +482,7 @@ const InterviewPrep = () => {
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <AlertCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="w-5 h-5 text-brand-500 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="font-medium text-neutral-900">
                       Need assistance? Just ask
@@ -493,7 +493,7 @@ const InterviewPrep = () => {
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <AlertCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="w-5 h-5 text-brand-500 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="font-medium text-neutral-900">
                       Your data is in your control

@@ -432,7 +432,7 @@ const AudioInterviewPage = () => {
       {interview.status === 'completed' && (
         <div className="bg-surface border-t border-neutral-200 shadow-lg">
           <div className={`${containers.md} mx-auto px-6 py-6 text-center`}>
-            <CheckCircle className="w-12 h-12 mx-auto mb-3 text-blue-400" />
+            <CheckCircle className="w-12 h-12 mx-auto mb-3 text-brand-400" />
             <p className="text-lg font-semibold mb-2 text-neutral-900">
               Interview Completed
             </p>

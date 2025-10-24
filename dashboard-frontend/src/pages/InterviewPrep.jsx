@@ -543,12 +543,12 @@ const InterviewPrep = () => {
                   </div>
                 ) : (
                   <div>
-                    <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="mb-6 p-4 bg-brand-50 border border-brand-200 rounded-lg">
                       <div className="flex items-start gap-3">
-                        <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <AlertCircle className="w-5 h-5 text-brand-600 flex-shrink-0 mt-0.5" />
                         <div>
-                          <p className="font-medium text-blue-900">Resume Required</p>
-                          <p className="text-sm text-blue-700 mt-1">
+                          <p className="font-medium text-brand-900">Resume Required</p>
+                          <p className="text-sm text-brand-700 mt-1">
                             This interview is based on your portfolio and experience. Please upload your resume.
                           </p>
                         </div>
@@ -786,9 +786,9 @@ const InterviewPrep = () => {
                 </div>
               </div>
 
-              <Card className="p-6 bg-blue-50 border border-blue-200 mb-6">
-                <h3 className="font-semibold text-blue-900 mb-3">Things to remember</h3>
-                <ul className="space-y-2 text-sm text-blue-800">
+              <Card className="p-6 bg-brand-50 border border-brand-200 mb-6">
+                <h3 className="font-semibold text-brand-900 mb-3">Things to remember</h3>
+                <ul className="space-y-2 text-sm text-brand-800">
                   <li className="flex gap-2">
                     <Check className="w-4 h-4 mt-0.5 flex-shrink-0" />
                     Take your time and provide thoughtful responses

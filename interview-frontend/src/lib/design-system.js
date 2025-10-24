@@ -8,29 +8,29 @@
 export const colors = {
   // Brand colors
   brand: {
-    50: '#f0f9ff',
-    100: '#e0f2fe',
-    200: '#bae6fd',
-    300: '#7dd3fc',
-    400: '#38bdf8',
-    500: '#0ea5e9', // Primary brand color - light blue
-    600: '#0284c7',
-    700: '#0369a1',
-    800: '#075985',
-    900: '#0c3d66',
+    50: '#f5f3ff',
+    100: '#ede9fe',
+    200: '#ddd6fe',
+    300: '#c4b5fd',
+    400: '#a78bfa',
+    500: '#8b5cf6', // Primary brand color - vivid purple
+    600: '#7c3aed',
+    700: '#6d28d9',
+    800: '#5b21b6',
+    900: '#4c1d95',
   },
   // Accent colors
   accent: {
-    50: '#f0f9ff',
-    100: '#e0f2fe',
-    200: '#bae6fd',
-    300: '#7dd3fc',
-    400: '#38bdf8',
-    500: '#0ea5e9',
-    600: '#0284c7',
-    700: '#0369a1',
-    800: '#075985',
-    900: '#0c3d66',
+    50: '#f5f3ff',
+    100: '#ede9fe',
+    200: '#ddd6fe',
+    300: '#c4b5fd',
+    400: '#a78bfa',
+    500: '#8b5cf6',
+    600: '#7c3aed',
+    700: '#6d28d9',
+    800: '#5b21b6',
+    900: '#4c1d95',
   },
   // Neutral/grayscale
   neutral: {
@@ -70,8 +70,8 @@ export const gradients = {
  * Use Tailwind gradient classes above when possible
  */
 export const cssGradients = {
-  primary: 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)',
-  accent: 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)',
+  primary: 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)',
+  accent: 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)',
   info: 'linear-gradient(135deg, #48dbfb 0%, #0abde3 100%)',
   success: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
   purple: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
@@ -117,7 +117,7 @@ export const iconBackgrounds = {
   brand: 'bg-brand-50 text-brand-500',
   accent: 'bg-accent-50 text-accent-500',
   purple: 'bg-purple-50 text-purple-500',
-  blue: 'bg-blue-50 text-blue-500',
+  blue: 'bg-brand-50 text-brand-500',
   green: 'bg-green-50 text-green-500',
   yellow: 'bg-yellow-50 text-yellow-500',
 }

@@ -115,7 +115,7 @@ const Jobs = () => {
 
   const getStatusBadge = (status) => {
     const badges = {
-      pending: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Pending' },
+      pending: { bg: 'bg-brand-100', text: 'text-brand-700', label: 'Pending' },
       in_progress: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'In Progress' },
       completed: { bg: 'bg-green-100', text: 'text-green-800', label: 'Completed' },
       archived: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Archived' },

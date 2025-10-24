@@ -208,7 +208,7 @@ export default function Annotate() {
               {/* Data Header */}
               <Card className="p-8 border border-neutral-200">
                 <div className="flex items-start gap-6">
-                  <div className="p-3 bg-blue-100 rounded-lg text-blue-600 flex-shrink-0">
+                  <div className="p-3 bg-brand-100 rounded-lg text-brand-600 flex-shrink-0">
                     {getDataIcon()}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -301,7 +301,7 @@ export default function Annotate() {
                       href={data.data_url.startsWith('http') ? data.data_url : `${BACKEND_URL}${data.data_url}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-500 hover:text-blue-600 font-medium break-all"
+                      className="text-brand-600 hover:text-brand-700 font-medium break-all"
                     >
                       Open Document
                     </a>
@@ -323,7 +323,7 @@ export default function Annotate() {
 
             {/* Annotation Form - 1/3 width */}
             <div className="lg:col-span-1">
-              <Card className="p-8 sticky top-8 space-y-8 bg-gradient-to-br from-white to-blue-50 border border-neutral-200">
+              <Card className="p-8 sticky top-8 space-y-8 bg-gradient-to-br from-white to-brand-50 border border-neutral-200">
                 {/* Instructions */}
                 <div className="pb-6 border-b border-neutral-200">
                   <h3 className="text-base font-bold text-neutral-900 mb-2 tracking-wide uppercase">
@@ -346,7 +346,7 @@ export default function Annotate() {
                   <div className="space-y-6">
                     <div className="relative px-2 py-3">
                       {/* Slider Track Background */}
-                      <div className="absolute top-1/2 -translate-y-1/2 left-2 right-2 h-2 bg-gradient-to-r from-red-200 via-yellow-200 via-blue-200 to-green-200 rounded-full pointer-events-none" />
+                      <div className="absolute top-1/2 -translate-y-1/2 left-2 right-2 h-2 bg-gradient-to-r from-red-200 via-yellow-200 via-purple-200 to-green-200 rounded-full pointer-events-none" />
 
                       {/* Slider Input */}
                       <input
@@ -371,7 +371,7 @@ export default function Annotate() {
                           height: 24px;
                           border-radius: 50%;
                           background: white;
-                          border: 3px solid ${rating === 0 ? '#d1d5db' : rating <= 2 ? '#ef4444' : rating === 3 ? '#f59e0b' : rating === 4 ? '#3b82f6' : '#10b981'};
+                          border: 3px solid ${rating === 0 ? '#d1d5db' : rating <= 2 ? '#ef4444' : rating === 3 ? '#f59e0b' : rating === 4 ? '#8b5cf6' : '#10b981'};
                           cursor: pointer;
                           box-shadow: 0 2px 8px rgba(0,0,0,0.15);
                           transition: all 0.2s;
@@ -385,7 +385,7 @@ export default function Annotate() {
                           height: 24px;
                           border-radius: 50%;
                           background: white;
-                          border: 3px solid ${rating === 0 ? '#d1d5db' : rating <= 2 ? '#ef4444' : rating === 3 ? '#f59e0b' : rating === 4 ? '#3b82f6' : '#10b981'};
+                          border: 3px solid ${rating === 0 ? '#d1d5db' : rating <= 2 ? '#ef4444' : rating === 3 ? '#f59e0b' : rating === 4 ? '#8b5cf6' : '#10b981'};
                           cursor: pointer;
                           box-shadow: 0 2px 8px rgba(0,0,0,0.15);
                           transition: all 0.2s;
@@ -419,14 +419,14 @@ export default function Annotate() {
                       <div className={`p-4 rounded-lg border-2 transition-all ${
                         rating <= 2 ? 'bg-red-50 border-red-200' :
                         rating === 3 ? 'bg-yellow-50 border-yellow-200' :
-                        rating === 4 ? 'bg-blue-50 border-blue-200' :
+                        rating === 4 ? 'bg-brand-50 border-brand-200' :
                         'bg-green-50 border-green-200'
                       }`}>
                         <div className="flex items-baseline gap-2 mb-2">
                           <p className={`text-3xl font-bold ${
                             rating <= 2 ? 'text-red-600' :
                             rating === 3 ? 'text-yellow-600' :
-                            rating === 4 ? 'text-blue-600' :
+                            rating === 4 ? 'text-brand-600' :
                             'text-green-600'
                           }`}>
                             {rating}
@@ -436,7 +436,7 @@ export default function Annotate() {
                         <p className={`text-sm font-medium ${
                           rating <= 2 ? 'text-red-700' :
                           rating === 3 ? 'text-yellow-700' :
-                          rating === 4 ? 'text-blue-700' :
+                          rating === 4 ? 'text-brand-700' :
                           'text-green-700'
                         }`}>
                           {rating === 1 && 'Poor Quality'}
@@ -473,7 +473,7 @@ export default function Annotate() {
                   <Button
                     onClick={() => setShowConfirm(true)}
                     disabled={submitting || rating === 0 || !notes || notes.trim().length === 0}
-                    className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 h-auto text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-3 h-auto text-base disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Check className="w-5 h-5 mr-2" />
                     {submitting ? 'Submitting...' : 'Submit Feedback'}
@@ -508,13 +508,13 @@ export default function Annotate() {
               <div className={`inline-flex items-baseline gap-2 px-4 py-2 rounded-lg ${
                 rating <= 2 ? 'bg-red-100' :
                 rating === 3 ? 'bg-yellow-100' :
-                rating === 4 ? 'bg-blue-100' :
+                rating === 4 ? 'bg-brand-100' :
                 'bg-green-100'
               }`}>
                 <p className={`text-2xl font-bold ${
                   rating <= 2 ? 'text-red-600' :
                   rating === 3 ? 'text-yellow-600' :
-                  rating === 4 ? 'text-blue-600' :
+                  rating === 4 ? 'text-brand-600' :
                   'text-green-600'
                 }`}>
                   {rating}
@@ -523,7 +523,7 @@ export default function Annotate() {
                 <span className={`text-sm font-medium ml-2 ${
                   rating <= 2 ? 'text-red-700' :
                   rating === 3 ? 'text-yellow-700' :
-                  rating === 4 ? 'text-blue-700' :
+                  rating === 4 ? 'text-brand-700' :
                   'text-green-700'
                 }`}>
                   {rating === 1 && 'Poor Quality'}
@@ -546,7 +546,7 @@ export default function Annotate() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleSubmit}
-              className="bg-blue-500 hover:bg-blue-600"
+              className="bg-brand-500 hover:bg-brand-600"
             >
               Submit Feedback
             </AlertDialogAction>

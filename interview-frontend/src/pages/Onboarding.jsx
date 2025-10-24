@@ -368,7 +368,7 @@ export default function Onboarding() {
       <div className="w-80 bg-white border-r border-neutral-200 p-8 flex flex-col">
         {/* Header */}
         <div className="mb-8">
-          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-4">
+          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center mb-4">
             <span className="text-lg font-bold text-white tracking-wider">V</span>
           </div>
           <h2 className="text-lg font-bold text-neutral-900 mb-1">
@@ -381,7 +381,7 @@ export default function Onboarding() {
         <div className="mb-8">
           <div className="h-1 bg-neutral-200 rounded-full overflow-hidden">
             <div
-              className="h-full bg-blue-500 transition-all duration-300"
+              className="h-full bg-brand-500 transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
             ></div>
           </div>
@@ -405,7 +405,7 @@ export default function Onboarding() {
                 disabled={!canClick}
                 className={`w-full text-left p-4 rounded-lg transition-all ${
                   isCurrent
-                    ? 'bg-blue-50 border border-blue-200 cursor-default'
+                    ? 'bg-brand-50 border border-brand-200 cursor-default'
                     : canClick
                       ? 'bg-neutral-50 hover:bg-neutral-100 cursor-pointer'
                       : 'bg-neutral-50 cursor-default opacity-60'
@@ -414,11 +414,11 @@ export default function Onboarding() {
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 mt-1">
                     {isCompleted ? (
-                      <CheckCircle2 className="w-5 h-5 text-blue-500" />
+                      <CheckCircle2 className="w-5 h-5 text-brand-500" />
                     ) : (
                       <Circle
                         className={`w-5 h-5 ${
-                          isCurrent ? 'text-blue-500' : 'text-neutral-400'
+                          isCurrent ? 'text-brand-500' : 'text-neutral-400'
                         }`}
                       />
                     )}
@@ -509,7 +509,7 @@ export default function Onboarding() {
             <Button
               onClick={handleNext}
               disabled={loading}
-              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold"
+              className="flex-1 bg-brand-500 hover:bg-brand-600 text-white font-semibold"
             >
               {loading ? 'Saving...' : currentStep === STEPS.length ? 'Complete' : 'Next'}
             </Button>
@@ -531,7 +531,7 @@ function StepResume({ formData, handleFileUpload }) {
       </div>
 
       <Card className="p-8 border border-neutral-200">
-        <div className="border-2 border-dashed border-neutral-300 rounded-lg p-12 text-center hover:border-blue-400 transition-colors">
+        <div className="border-2 border-dashed border-neutral-300 rounded-lg p-12 text-center hover:border-brand-400 transition-colors">
           <input
             type="file"
             id="resume-upload"
@@ -763,7 +763,7 @@ function StepExperience({
                 setExpertiseInput('')
               }}
               size="sm"
-              className="bg-blue-500 hover:bg-blue-600 text-white"
+              className="bg-brand-500 hover:bg-brand-600 text-white"
             >
               <Plus className="w-4 h-4" />
             </Button>
@@ -774,12 +774,12 @@ function StepExperience({
               {formData.expertise.map((exp) => (
                 <div
                   key={exp}
-                  className="flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-sm font-medium"
+                  className="flex items-center gap-2 px-3 py-1 bg-brand-100 text-brand-600 rounded-lg text-sm font-medium"
                 >
                   {exp}
                   <button
                     onClick={() => removeExpertise(exp)}
-                    className="hover:text-blue-600"
+                    className="hover:text-brand-600"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -831,7 +831,7 @@ function StepExperience({
               </div>
             </Card>
           ))}
-          <Button onClick={addEducation} variant="outline" className="border-neutral-300 text-blue-500 hover:text-blue-600 mb-8">
+          <Button onClick={addEducation} variant="outline" className="border-neutral-300 text-brand-600 hover:text-brand-700 mb-8">
             <Plus className="w-4 h-4 mr-2" />
             Add Education
           </Button>
@@ -887,7 +887,7 @@ function StepExperience({
               </div>
             </Card>
           ))}
-          <Button onClick={addWorkExperience} variant="outline" className="border-neutral-300 text-blue-500 hover:text-blue-600 mb-8">
+          <Button onClick={addWorkExperience} variant="outline" className="border-neutral-300 text-brand-600 hover:text-brand-700 mb-8">
             <Plus className="w-4 h-4 mr-2" />
             Add Work Experience
           </Button>
@@ -929,7 +929,7 @@ function StepExperience({
               </div>
             </Card>
           ))}
-          <Button onClick={addProject} variant="outline" className="border-neutral-300 text-blue-500 hover:text-blue-600 mb-8">
+          <Button onClick={addProject} variant="outline" className="border-neutral-300 text-brand-600 hover:text-brand-700 mb-8">
             <Plus className="w-4 h-4 mr-2" />
             Add Project
           </Button>
@@ -977,7 +977,7 @@ function StepExperience({
               </div>
             </Card>
           ))}
-          <Button onClick={addPublication} variant="outline" className="border-neutral-300 text-blue-500 hover:text-blue-600 mb-8">
+          <Button onClick={addPublication} variant="outline" className="border-neutral-300 text-brand-600 hover:text-brand-700 mb-8">
             <Plus className="w-4 h-4 mr-2" />
             Add Publication
           </Button>
@@ -1019,7 +1019,7 @@ function StepExperience({
               </div>
             </Card>
           ))}
-          <Button onClick={addCertification} variant="outline" className="border-neutral-300 text-blue-500 hover:text-blue-600">
+          <Button onClick={addCertification} variant="outline" className="border-neutral-300 text-brand-600 hover:text-brand-700">
             <Plus className="w-4 h-4 mr-2" />
             Add Certification
           </Button>
@@ -1057,7 +1057,7 @@ function StepAuthorization({ formData, handleInputChange }) {
                   value={option.value}
                   checked={formData.workAuthorized === option.value}
                   onChange={handleInputChange}
-                  className="w-4 h-4 text-blue-600"
+                  className="w-4 h-4 text-brand-600"
                 />
                 <span className="text-sm font-medium text-neutral-900">
                   {option.label}
@@ -1080,8 +1080,8 @@ function StepAuthorization({ formData, handleInputChange }) {
           />
         </div>
 
-        <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg">
-          <p className="text-sm text-blue-600">
+        <div className="p-4 bg-brand-50 border border-brand-100 rounded-lg">
+          <p className="text-sm text-brand-600">
             Your work authorization status helps us match you with opportunities you're eligible for.
           </p>
         </div>

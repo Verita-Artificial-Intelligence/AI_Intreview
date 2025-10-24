@@ -15,20 +15,20 @@ This document outlines the design system for the Verita AI Interview platform. A
 
 ### Brand Colors
 
-Our primary brand color palette uses light blue tones:
+Our primary brand color palette uses rich purple tones:
 
 ```js
 brand: {
-  50:  '#f0f9ff',  // Lightest tint
-  100: '#e0f2fe',
-  200: '#bae6fd',
-  300: '#7dd3fc',
-  400: '#38bdf8',
-  500: '#0ea5e9',  // Primary brand color
-  600: '#0284c7',
-  700: '#0369a1',
-  800: '#075985',
-  900: '#0c3d66',  // Darkest shade
+  50:  '#f5f3ff',  // Lightest tint
+  100: '#ede9fe',
+  200: '#ddd6fe',
+  300: '#c4b5fd',
+  400: '#a78bfa',
+  500: '#8b5cf6',  // Primary brand color
+  600: '#7c3aed',
+  700: '#6d28d9',
+  800: '#5b21b6',
+  900: '#4c1d95',  // Darkest shade
 }
 ```
 
@@ -45,16 +45,16 @@ Complementary accent colors for secondary actions and highlights:
 
 ```js
 accent: {
-  50: '#f0f9ff',
-  100: '#e0f2fe',
-  200: '#bae6fd',
-  300: '#7dd3fc',
-  400: '#38bdf8',
-  500: '#0ea5e9',  // Primary accent
-  600: '#0284c7',
-  700: '#0369a1',
-  800: '#075985',
-  900: '#0c3d66',
+  50: '#f5f3ff',
+  100: '#ede9fe',
+  200: '#ddd6fe',
+  300: '#c4b5fd',
+  400: '#a78bfa',
+  500: '#8b5cf6',  // Primary accent
+  600: '#7c3aed',
+  700: '#6d28d9',
+  800: '#5b21b6',
+  900: '#4c1d95',
 }
 ```
 

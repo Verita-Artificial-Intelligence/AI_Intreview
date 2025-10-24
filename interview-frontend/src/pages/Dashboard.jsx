@@ -189,7 +189,7 @@ const Dashboard = () => {
                           navigate(`/admin/review/${interview.id}`)
                         }
                         data-testid={`view-results-${interview.id}`}
-                        className="w-full rounded-lg font-medium bg-blue-500 hover:bg-blue-600 text-white"
+                        className="w-full rounded-lg font-medium bg-brand-500 hover:bg-brand-600 text-white"
                       >
                         View Detailed Results
                       </Button>

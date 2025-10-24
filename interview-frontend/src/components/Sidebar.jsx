@@ -29,7 +29,7 @@ export default function Sidebar() {
     <aside className="w-56 bg-white border-r border-neutral-200 flex flex-col min-h-screen py-6">
       {/* Logo */}
       <div className="mb-10 px-6">
-        <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+        <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center">
           <span className="text-lg font-bold text-white tracking-wider">V</span>
         </div>
       </div>
@@ -46,7 +46,7 @@ export default function Sidebar() {
               onClick={() => navigate(item.path)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                 active
-                  ? 'bg-blue-500 text-white shadow-sm'
+                  ? 'bg-brand-500 text-white shadow-sm'
                   : 'text-neutral-700 hover:bg-neutral-100'
               }`}
               title={item.label}
@@ -64,7 +64,7 @@ export default function Sidebar() {
       <div className="flex flex-col items-center gap-3 pt-6 border-t border-neutral-200 px-6">
         <button
           onClick={() => navigate('/profile')}
-          className="w-full h-12 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm hover:shadow-md transition-shadow"
+          className="w-full h-12 rounded-lg bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white font-bold text-sm hover:shadow-md transition-shadow"
           title={user?.name || 'Profile'}
         >
           {user?.name?.charAt(0).toUpperCase() || 'U'}

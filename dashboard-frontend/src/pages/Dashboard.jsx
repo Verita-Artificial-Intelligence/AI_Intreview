@@ -167,7 +167,7 @@ const Dashboard = () => {
             <Button
               onClick={() => navigate('/jobs')}
               data-testid="view-jobs-button"
-              className="rounded-lg font-medium bg-blue-500 hover:bg-blue-600 text-white h-10 px-5 shadow-sm hover:shadow transition-shadow"
+              className="rounded-lg font-medium bg-brand-500 hover:bg-brand-600 text-white h-10 px-5 shadow-sm hover:shadow transition-shadow"
             >
               <Briefcase className="w-4 h-4 mr-2" />
               View Jobs
@@ -227,7 +227,7 @@ const Dashboard = () => {
                   placeholder="Search by candidate, job title, or position..."
                   value={interviewSearch}
                   onChange={(e) => setInterviewSearch(e.target.value)}
-                  className="pl-9 h-10 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 text-sm"
+                  className="pl-9 h-10 rounded-lg border-gray-300 focus:border-brand-500 focus:ring-1 focus:ring-brand-200 text-sm"
                 />
               </div>
             </div>
@@ -262,7 +262,7 @@ const Dashboard = () => {
                       <tr key={interview.id} className="hover:bg-gray-50 transition-colors">
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white bg-gradient-to-br from-blue-400 to-blue-600 flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white bg-gradient-to-br from-brand-400 to-brand-600 flex-shrink-0">
                               {interview.candidate_name?.charAt(0).toUpperCase() || 'U'}
                             </div>
                             <span className="font-medium text-sm text-gray-900">
@@ -288,7 +288,7 @@ const Dashboard = () => {
                                 onClick={() => navigate(`/admin/review/${interview.id}`)}
                                 variant="ghost"
                                 size="sm"
-                                className="h-9 px-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md text-sm"
+                                className="h-9 px-3 text-brand-600 hover:text-brand-700 hover:bg-brand-50 rounded-md text-sm"
                               >
                                 <Eye className="w-4 h-4 mr-1.5" />
                                 View
@@ -342,7 +342,7 @@ const Dashboard = () => {
                   placeholder="Search by annotator name..."
                   value={annotatorSearch}
                   onChange={(e) => setAnnotatorSearch(e.target.value)}
-                  className="pl-9 h-10 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 text-sm"
+                  className="pl-9 h-10 rounded-lg border-gray-300 focus:border-brand-500 focus:ring-1 focus:ring-brand-200 text-sm"
                 />
               </div>
             </div>
@@ -389,7 +389,7 @@ const Dashboard = () => {
               {annotatorStats.map((annotator) => (
                 <Card key={annotator.annotator_id} className="p-5 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold text-white bg-gradient-to-br from-blue-400 to-blue-600 flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold text-white bg-gradient-to-br from-brand-400 to-brand-600 flex-shrink-0">
                       {annotator.name?.charAt(0).toUpperCase() || 'U'}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -419,7 +419,7 @@ const Dashboard = () => {
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
                       <div
-                        className="bg-blue-500 h-1.5 rounded-full transition-all"
+                        className="bg-brand-500 h-1.5 rounded-full transition-all"
                         style={{ width: `${annotator.completion_rate}%` }}
                       />
                     </div>

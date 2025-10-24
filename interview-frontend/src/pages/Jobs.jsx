@@ -68,7 +68,7 @@ export default function Jobs() {
 
   const getStatusBadge = (status) => {
     const badges = {
-      scheduled: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Scheduled' },
+      scheduled: { bg: 'bg-brand-100', text: 'text-brand-700', label: 'Scheduled' },
       in_progress: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'In Progress' },
       completed: { bg: 'bg-green-100', text: 'text-green-800', label: 'Completed' },
       pending: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Pending' },
@@ -79,7 +79,7 @@ export default function Jobs() {
   const getAnnotationStatusBadge = (status) => {
     const badges = {
       pending: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Pending' },
-      assigned: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Assigned' },
+      assigned: { bg: 'bg-brand-100', text: 'text-brand-700', label: 'Assigned' },
       in_progress: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'In Progress' },
       completed: { bg: 'bg-green-100', text: 'text-green-800', label: 'Completed' },
       reviewed: { bg: 'bg-purple-100', text: 'text-purple-800', label: 'Reviewed' },
@@ -164,7 +164,7 @@ export default function Jobs() {
                   <p className="text-neutral-600 mb-4">No active jobs yet</p>
                   <Button
                     onClick={() => navigate('/')}
-                    className="bg-blue-500 hover:bg-blue-600 text-white"
+                    className="bg-brand-500 hover:bg-brand-600 text-white"
                   >
                     Browse Opportunities
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -200,10 +200,10 @@ export default function Jobs() {
                           if (tasks.length === 0) {
                             return (
                               <div className="mt-8 pt-8 border-t border-neutral-200">
-                                <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg text-center">
-                                  <Clock className="w-8 h-8 text-blue-600 mx-auto mb-3" />
-                                  <p className="text-sm font-medium text-blue-900 mb-1">Tasks Being Prepared</p>
-                                  <p className="text-xs text-blue-700">
+                                <div className="p-6 bg-brand-50 border border-brand-200 rounded-lg text-center">
+                                  <Clock className="w-8 h-8 text-brand-600 mx-auto mb-3" />
+                                  <p className="text-sm font-medium text-brand-900 mb-1">Tasks Being Prepared</p>
+                                  <p className="text-xs text-brand-700">
                                     Your annotation tasks are being set up. Check back soon to start working!
                                   </p>
                                 </div>
@@ -226,7 +226,7 @@ export default function Jobs() {
                                       className="flex items-center justify-between p-4 bg-white border border-neutral-200 rounded-lg hover:border-neutral-300 hover:shadow-sm transition-all"
                                     >
                                       <div className="flex items-center gap-4 flex-1 min-w-0">
-                                        <div className="p-2 bg-blue-100 rounded-lg text-blue-600 flex-shrink-0">
+                                        <div className="p-2 bg-brand-100 rounded-lg text-brand-600 flex-shrink-0">
                                           <FileText className="w-5 h-5" />
                                         </div>
                                         <div className="min-w-0">
@@ -245,7 +245,7 @@ export default function Jobs() {
                                         <Button
                                           onClick={() => handleStartAnnotation(task.id)}
                                           size="sm"
-                                          className="bg-blue-500 hover:bg-blue-600 text-white font-medium whitespace-nowrap"
+                                          className="bg-brand-500 hover:bg-brand-600 text-white font-medium whitespace-nowrap"
                                         >
                                           {task.status === 'in_progress' ? 'Continue' : 'Start'}
                                         </Button>

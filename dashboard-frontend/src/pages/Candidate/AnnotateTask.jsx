@@ -105,7 +105,7 @@ export default function AnnotateTask() {
               </div>
               <div>
                 <p className="text-xs text-neutral-600 uppercase font-semibold mb-1">Status</p>
-                <Badge className="bg-blue-100 text-blue-800">In Progress</Badge>
+                <Badge className="bg-brand-100 text-brand-700">In Progress</Badge>
               </div>
               <div>
                 <p className="text-xs text-neutral-600 uppercase font-semibold mb-1">Started</p>
