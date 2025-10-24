@@ -29,6 +29,15 @@ const Candidates = () => {
   const [interviewModalOpen, setInterviewModalOpen] = useState(false)
   const [selectedCandidate, setSelectedCandidate] = useState(null)
 
+  const getInitials = (name) => {
+    if (!name) return 'U'
+    const parts = name.trim().split(' ')
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase()
+    return (
+      parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
+    ).toUpperCase()
+  }
+
   useEffect(() => {
     fetchData()
   }, [])
@@ -164,8 +173,8 @@ const Candidates = () => {
                     className="group relative overflow-hidden p-6 flex flex-col bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow"
                   >
                     <div className="flex items-start gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-full flex items-center justify-center text-base font-bold text-white bg-gradient-to-br from-brand-400 to-brand-600 flex-shrink-0">
-                        {candidate.name?.charAt(0).toUpperCase() || 'U'}
+                      <div className="w-8 h-8 rounded-md flex items-center justify-center text-xs font-semibold text-neutral-900 bg-brand-200 flex-shrink-0">
+                        {getInitials(candidate.name)}
                       </div>
                       <div className="flex-1 min-w-0 pr-6">
                         <h3 className="font-display font-semibold text-base text-neutral-900 truncate">

@@ -33,11 +33,11 @@ export default function Earnings() {
       // Fetch real earnings data from backend
       const [summaryRes, transactionsRes] = await Promise.all([
         axios.get(`${API}/earnings/user/${user?.id}/summary`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         }),
         axios.get(`${API}/earnings/user/${user?.id}/transactions`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+          headers: { Authorization: `Bearer ${token}` },
+        }),
       ])
 
       const summary = summaryRes.data
@@ -57,7 +57,9 @@ export default function Earnings() {
         totalEarnings: summary.total_earnings || 0,
         pendingPayout: summary.pending_payout || 0,
         availableBalance: summary.available_balance || 0,
-        nextPayoutDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        nextPayoutDate: new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000
+        ).toISOString(),
         transactions: formattedTransactions,
         bankAccount: {
           accountHolder: user?.name || 'User',
@@ -76,10 +78,10 @@ export default function Earnings() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-background">
+      <div className="min-h-screen bg-white">
         <Sidebar />
-        <main className="flex-1 flex items-center justify-center">
-          <p className="text-neutral-600">Loading earnings...</p>
+        <main className="ml-64 flex items-center justify-center">
+          <p className="text-sm text-gray-600">Loading earnings...</p>
         </main>
       </div>
     )
@@ -87,76 +89,80 @@ export default function Earnings() {
 
   if (!earnings) {
     return (
-      <div className="flex min-h-screen bg-background">
+      <div className="min-h-screen bg-white">
         <Sidebar />
-        <main className="flex-1 flex items-center justify-center">
-          <p className="text-neutral-600">Failed to load earnings</p>
+        <main className="ml-64 flex items-center justify-center">
+          <p className="text-sm text-gray-600">Failed to load earnings</p>
         </main>
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="min-h-screen bg-white">
       <Sidebar />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto bg-white">
-        <div className="max-w-6xl mx-auto px-8 py-12">
+      <main className="ml-64 overflow-y-auto">
+        <div className="max-w-7xl mx-auto px-6 py-8">
           {/* Header */}
-          <div className="mb-12">
-            <h1 className="text-5xl font-bold text-neutral-900 mb-2 tracking-tight leading-tight">
-              Your Earnings
+          <div className="mb-6">
+            <h1 className="text-2xl font-semibold text-neutral-900 mb-1">
+              Earnings
             </h1>
-            <p className="text-lg text-neutral-600 font-light">
+            <p className="text-sm text-gray-500">
               Track income from completed work and manage payments
             </p>
           </div>
 
           {/* Earnings Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             {/* Total Earnings */}
-            <Card className="p-8 bg-white border border-neutral-200 hover:border-neutral-300 transition-colors">
-              <p className="text-sm font-medium text-neutral-600 tracking-wide uppercase mb-3">
+            <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+              <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">
                 Total Earnings
               </p>
-              <div className="flex items-baseline gap-2 mb-6">
-                <p className="text-5xl font-bold text-neutral-900 tracking-tight">
+              <div className="flex items-baseline gap-2 mb-2">
+                <p className="text-2xl font-semibold text-neutral-900">
                   ${earnings.totalEarnings.toFixed(2)}
                 </p>
               </div>
-              <p className="text-sm text-neutral-600">
+              <p className="text-sm text-gray-600">
                 All-time earnings from completed annotations
               </p>
             </Card>
 
             {/* Available Balance */}
-            <Card className="p-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
-              <p className="text-sm font-medium text-blue-100 tracking-wide uppercase mb-3">
+            <Card className="p-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 rounded-lg shadow-sm">
+              <p className="text-xs font-medium text-blue-100 uppercase tracking-wide mb-2">
                 Available Balance
               </p>
-              <div className="flex items-baseline gap-2 mb-6">
-                <p className="text-5xl font-bold tracking-tight">
+              <div className="flex items-baseline gap-2 mb-2">
+                <p className="text-2xl font-semibold">
                   ${earnings.availableBalance.toFixed(2)}
                 </p>
               </div>
-              <Button size="sm" className="mt-4 w-full bg-white text-blue-500 hover:bg-blue-50 font-medium">
+              <Button
+                size="sm"
+                className="mt-2 w-full bg-white text-blue-500 hover:bg-blue-50 font-medium h-8 text-xs"
+              >
                 Request Payout
               </Button>
             </Card>
 
             {/* Pending */}
-            <Card className="p-8 bg-white border border-neutral-200 hover:border-neutral-300 transition-colors">
-              <p className="text-sm font-medium text-neutral-600 tracking-wide uppercase mb-3">
+            <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+              <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">
                 Pending Payment
               </p>
-              <div className="flex items-baseline gap-2 mb-6">
-                <p className="text-5xl font-bold text-neutral-900 tracking-tight">
+              <div className="flex items-baseline gap-2 mb-2">
+                <p className="text-2xl font-semibold text-neutral-900">
                   ${earnings.pendingPayout.toFixed(2)}
                 </p>
               </div>
-              <p className="text-sm text-neutral-600">
-                Available on {new Date(earnings.nextPayoutDate).toLocaleDateString()}
+              <p className="text-sm text-gray-600">
+                Available on{' '}
+                {new Date(earnings.nextPayoutDate).toLocaleDateString()}
               </p>
             </Card>
           </div>
@@ -170,8 +176,8 @@ export default function Earnings() {
 
             {/* Transactions Tab */}
             <TabsContent value="transactions">
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-neutral-900 mb-4">
+              <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+                <h3 className="text-base font-semibold text-neutral-900 mb-4">
                   Transaction History
                 </h3>
 
@@ -179,20 +185,24 @@ export default function Earnings() {
                   {earnings.transactions.map((transaction) => (
                     <div
                       key={transaction.id}
-                      className="flex items-center justify-between p-4 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors"
+                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                       <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <div className={`p-2 rounded-lg ${
-                          transaction.type === 'earning'
-                            ? 'bg-green-100'
-                            : 'bg-red-100'
-                        }`}>
+                        <div
+                          className={`p-2 rounded-lg ${
+                            transaction.type === 'earning'
+                              ? 'bg-green-100'
+                              : 'bg-red-100'
+                          }`}
+                        >
                           {transaction.type === 'earning' ? (
-                            <TrendingUp className={`w-5 h-5 ${
-                              transaction.type === 'earning'
-                                ? 'text-green-600'
-                                : 'text-red-600'
-                            }`} />
+                            <TrendingUp
+                              className={`w-5 h-5 ${
+                                transaction.type === 'earning'
+                                  ? 'text-green-600'
+                                  : 'text-red-600'
+                              }`}
+                            />
                           ) : (
                             <DollarSign className="w-5 h-5 text-red-600" />
                           )}
@@ -209,19 +219,26 @@ export default function Earnings() {
 
                       <div className="flex items-center gap-4">
                         <div className="text-right">
-                          <p className={`font-semibold ${
-                            transaction.type === 'earning'
-                              ? 'text-green-600'
-                              : 'text-red-600'
-                          }`}>
-                            {transaction.type === 'earning' ? '+' : ''} ${Math.abs(transaction.amount).toFixed(2)}
+                          <p
+                            className={`font-semibold ${
+                              transaction.type === 'earning'
+                                ? 'text-green-600'
+                                : 'text-red-600'
+                            }`}
+                          >
+                            {transaction.type === 'earning' ? '+' : ''} $
+                            {Math.abs(transaction.amount).toFixed(2)}
                           </p>
-                          <Badge className={`mt-1 ${
-                            transaction.status === 'completed'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {transaction.status === 'completed' ? 'Completed' : 'Pending'}
+                          <Badge
+                            className={`mt-1 ${
+                              transaction.status === 'completed'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}
+                          >
+                            {transaction.status === 'completed'
+                              ? 'Completed'
+                              : 'Pending'}
                           </Badge>
                         </div>
                       </div>
@@ -230,10 +247,7 @@ export default function Earnings() {
                 </div>
 
                 <div className="flex justify-center mt-6">
-                  <Button
-                    variant="outline"
-                    className="gap-2"
-                  >
+                  <Button variant="outline" className="gap-2">
                     <Download className="w-4 h-4" />
                     Download Statement
                   </Button>
@@ -245,8 +259,8 @@ export default function Earnings() {
             <TabsContent value="settings">
               <div className="space-y-6">
                 {/* Bank Account Information */}
-                <Card className="p-6">
-                  <h3 className="text-lg font-semibold text-neutral-900 mb-4">
+                <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+                  <h3 className="text-base font-semibold text-neutral-900 mb-4">
                     Bank Account Information
                   </h3>
 
@@ -296,8 +310,8 @@ export default function Earnings() {
                 </Card>
 
                 {/* Payout Schedule */}
-                <Card className="p-6">
-                  <h3 className="text-lg font-semibold text-neutral-900 mb-4">
+                <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+                  <h3 className="text-base font-semibold text-neutral-900 mb-4">
                     Payout Schedule
                   </h3>
 
@@ -305,7 +319,9 @@ export default function Earnings() {
                     <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
                       <Calendar className="w-5 h-5 text-blue-500 flex-shrink-0" />
                       <div>
-                        <p className="font-medium text-blue-700">Bi-weekly Payouts</p>
+                        <p className="font-medium text-blue-700">
+                          Bi-weekly Payouts
+                        </p>
                         <p className="text-sm text-blue-600">
                           You receive payouts every 2 weeks on Mondays
                         </p>
