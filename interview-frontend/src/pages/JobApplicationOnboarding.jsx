@@ -785,9 +785,8 @@ function StepAvailability({ formData, setFormData, job }) {
             Availability Requirement
           </h4>
           <p className="text-sm text-neutral-700 mb-4">
-            Remote-friendly (US time zones); Geography restricted to US, UK,
-            Canada. Expected commitment aligns with {job.position_type}{' '}
-            schedule.
+            {job.availability ||
+              `Remote-friendly (US time zones); Geography restricted to US, UK, Canada. Expected commitment aligns with ${job.position_type} schedule.`}
           </p>
         </div>
 

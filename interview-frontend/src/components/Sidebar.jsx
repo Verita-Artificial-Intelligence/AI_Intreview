@@ -22,7 +22,7 @@ export default function Sidebar() {
   const navItems = [
     { path: '/', icon: Home, label: 'Opportunities' },
     { path: '/jobs', icon: Briefcase, label: 'Jobs' },
-    { path: '/earnings', icon: DollarSign, label: 'Earnings' },
+    // { path: '/earnings', icon: DollarSign, label: 'Earnings' },
     { path: '/profile', icon: User, label: 'Profile' },
   ]
 

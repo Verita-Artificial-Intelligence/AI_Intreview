@@ -27,6 +27,7 @@ class Job(BaseModel):
     status: JobStatus = "pending"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     pay_per_hour: Optional[float] = None
+    availability: Optional[str] = None
 
     # Interview configuration
     interview_type: InterviewType = "standard"
@@ -63,6 +64,7 @@ class JobCreate(BaseModel):
     description: str
     position_type: str
     pay_per_hour: Optional[float] = None
+    availability: Optional[str] = None
 
     # Interview configuration
     interview_type: InterviewType = "standard"
