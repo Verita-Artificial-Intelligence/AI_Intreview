@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { Button } from '@/components/ui/button'
@@ -42,6 +42,8 @@ const AdminInterviewReview = () => {
   const [showRejectDialog, setShowRejectDialog] = useState(false)
   const [videoSources, setVideoSources] = useState([])
   const [transcriptUnavailable, setTranscriptUnavailable] = useState(false)
+  const [highlightedEntry, setHighlightedEntry] = useState(null)
+  const transcriptRef = useRef(null)
 
   const getInitials = (name) => {
     if (!name) return 'U'
@@ -50,6 +52,66 @@ const AdminInterviewReview = () => {
     return (
       parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
     ).toUpperCase()
+  }
+
+  const scrollToTranscriptEntry = (entryIndex) => {
+    if (!transcriptRef.current) return
+
+    const transcriptEntries = transcriptRef.current.querySelectorAll('[data-transcript-entry]')
+    const targetEntry = transcriptEntries[entryIndex - 1] // Convert to 0-based index
+
+    if (targetEntry) {
+      targetEntry.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      setHighlightedEntry(entryIndex)
+
+      // Remove highlight after 3 seconds
+      setTimeout(() => setHighlightedEntry(null), 3000)
+    }
+  }
+
+  const parseTextWithCitations = (text) => {
+    if (!text) return text
+
+    // Match patterns like [3], [5], [3, 5], etc.
+    const citationRegex = /\[(\d+(?:\s*,\s*\d+)*)\]/g
+
+    const parts = []
+    let lastIndex = 0
+    let match
+
+    while ((match = citationRegex.exec(text)) !== null) {
+      // Add text before the citation
+      if (match.index > lastIndex) {
+        parts.push(text.slice(lastIndex, match.index))
+      }
+
+      // Parse citation numbers
+      const citationNumbers = match[1].split(',').map(num => parseInt(num.trim())).filter(num => !isNaN(num))
+
+      // Create clickable citation spans
+      citationNumbers.forEach((num, index) => {
+        if (index > 0) parts.push(', ')
+        parts.push(
+          <button
+            key={`${match.index}-${num}`}
+            onClick={() => scrollToTranscriptEntry(num)}
+            className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-medium bg-brand-200 text-brand-800 rounded-full hover:bg-brand-300 transition-colors cursor-pointer mx-0.5"
+            title={`Jump to transcript entry ${num}`}
+          >
+            {num}
+          </button>
+        )
+      })
+
+      lastIndex = match.index + match[0].length
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex))
+    }
+
+    return parts.length > 0 ? parts : text
   }
 
   const fetchInterviewData = useCallback(async () => {
@@ -734,7 +796,7 @@ const AdminInterviewReview = () => {
                                 <span className="text-neutral-400 flex-shrink-0">
                                   •
                                 </span>
-                                <span>{insight}</span>
+                                <span>{parseTextWithCitations(insight)}</span>
                               </li>
                             ))}
                           </ul>
@@ -757,7 +819,7 @@ const AdminInterviewReview = () => {
                                 <span className="text-neutral-400 flex-shrink-0">
                                   •
                                 </span>
-                                <span>{strength}</span>
+                                <span>{parseTextWithCitations(strength)}</span>
                               </li>
                             ))}
                           </ul>
@@ -777,7 +839,7 @@ const AdminInterviewReview = () => {
                                   <span className="text-neutral-400 flex-shrink-0">
                                     •
                                   </span>
-                                  <span>{area}</span>
+                                  <span>{parseTextWithCitations(area)}</span>
                                 </li>
                               )
                             )}
@@ -935,11 +997,19 @@ const AdminInterviewReview = () => {
                       <h3 className="text-base font-bold mb-3 text-neutral-900">
                         Interview Transcript
                       </h3>
-                      <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                      <div
+                        ref={transcriptRef}
+                        className="space-y-3 max-h-[600px] overflow-y-auto pr-2"
+                      >
                         {interview.transcript.map((entry, index) => (
                           <div
                             key={index}
-                            className="border-l-2 border-neutral-200 pl-3"
+                            data-transcript-entry={index + 1}
+                            className={`border-l-2 border-neutral-200 pl-3 transition-colors duration-300 ${
+                              highlightedEntry === index + 1
+                                ? 'bg-brand-50 border-brand-300'
+                                : ''
+                            }`}
                           >
                             <div className="flex items-baseline gap-2 mb-1">
                               <span className="text-xs font-semibold text-neutral-900">
