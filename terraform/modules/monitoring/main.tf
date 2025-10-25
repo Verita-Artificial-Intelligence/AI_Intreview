@@ -94,8 +94,8 @@ resource "aws_cloudwatch_metric_alarm" "alb_unhealthy_hosts" {
   alarm_actions       = [aws_sns_topic.alerts.arn]
 
   dimensions = {
-    LoadBalancer     = var.alb_name
-    TargetGroup      = var.target_group_name
+    LoadBalancer = var.alb_name
+    TargetGroup  = var.target_group_name
   }
 }
 
@@ -129,7 +129,7 @@ resource "aws_cloudwatch_metric_alarm" "documentdb_replication_lag" {
   namespace           = "AWS/DocDB"
   period              = "60"
   statistic           = "Maximum"
-  threshold           = "5000"  # 5 seconds
+  threshold           = "5000" # 5 seconds
   alarm_description   = "Alert when database replication is lagging"
   treat_missing_data  = "notBreaching"
   alarm_actions       = [aws_sns_topic.alerts.arn]
@@ -199,9 +199,9 @@ resource "aws_cloudwatch_dashboard" "main" {
       {
         type = "log"
         properties = {
-          query   = "fields @timestamp, @message | stats count() by bin(5m)"
-          region  = var.aws_region
-          title   = "ECS Logs (last hour)"
+          query  = "fields @timestamp, @message | stats count() by bin(5m)"
+          region = var.aws_region
+          title  = "ECS Logs (last hour)"
         }
       }
     ]

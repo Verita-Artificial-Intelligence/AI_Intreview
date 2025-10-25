@@ -2,9 +2,9 @@
 module "vpc" {
   source = "./modules/vpc"
 
-  app_name   = var.app_name
+  app_name    = var.app_name
   environment = var.environment
-  cidr_block = var.vpc_cidr
+  cidr_block  = var.vpc_cidr
 }
 
 # Application Load Balancer
@@ -37,8 +37,8 @@ module "s3" {
 module "iam" {
   source = "./modules/iam"
 
-  app_name    = var.app_name
-  environment = var.environment
+  app_name      = var.app_name
+  environment   = var.environment
   s3_bucket_arn = module.s3.bucket_arn
 }
 
@@ -46,14 +46,14 @@ module "iam" {
 module "documentdb" {
   source = "./modules/documentdb"
 
-  app_name             = var.app_name
-  environment          = var.environment
-  db_subnet_ids        = module.vpc.private_subnet_ids
-  security_group_id    = module.vpc.documentdb_security_group_id
-  master_username      = var.documentdb_username
-  master_password      = var.documentdb_password
-  engine_version       = var.documentdb_engine_version
-  skip_final_snapshot  = var.environment == "dev"
+  app_name            = var.app_name
+  environment         = var.environment
+  db_subnet_ids       = module.vpc.private_subnet_ids
+  security_group_id   = module.vpc.documentdb_security_group_id
+  master_username     = var.documentdb_username
+  master_password     = var.documentdb_password
+  engine_version      = var.documentdb_engine_version
+  skip_final_snapshot = var.environment == "dev"
 
   count = var.enable_documentdb ? 1 : 0
 }
@@ -62,12 +62,12 @@ module "documentdb" {
 module "secrets" {
   source = "./modules/secrets"
 
-  app_name           = var.app_name
-  environment        = var.environment
-  aws_region         = var.aws_region
-  ecs_task_role_id   = module.iam.ecs_task_role_id
-  openai_api_key     = var.openai_api_key
-  jwt_secret         = var.jwt_secret
+  app_name            = var.app_name
+  environment         = var.environment
+  aws_region          = var.aws_region
+  ecs_task_role_id    = module.iam.ecs_task_role_id
+  openai_api_key      = var.openai_api_key
+  jwt_secret          = var.jwt_secret
   documentdb_password = var.documentdb_password
 }
 
@@ -100,23 +100,23 @@ module "ecs" {
 
   # Task configuration
   task_execution_role_arn = module.iam.ecs_task_execution_role_arn
-  task_role_arn          = module.iam.ecs_task_role_arn
+  task_role_arn           = module.iam.ecs_task_role_arn
 
   # Environment variables for the backend
   environment_variables = {
-    AWS_REGION        = var.aws_region
-    ENVIRONMENT       = var.environment
-    S3_BUCKET         = module.s3.bucket_name
-    OPENAI_API_KEY    = var.openai_api_key
-    JWT_SECRET        = var.jwt_secret
-    MONGODB_URI       = var.enable_documentdb ? "mongodb://${var.documentdb_username}:${var.documentdb_password}@${module.documentdb[0].cluster_endpoint}:27017/?tls=true&tlsCAFile=rds-combined-ca-bundle.pem" : var.mongodb_uri
-    LOG_LEVEL         = var.environment == "prod" ? "INFO" : "DEBUG"
+    AWS_REGION     = var.aws_region
+    ENVIRONMENT    = var.environment
+    S3_BUCKET      = module.s3.bucket_name
+    OPENAI_API_KEY = var.openai_api_key
+    JWT_SECRET     = var.jwt_secret
+    MONGODB_URI    = var.enable_documentdb ? "mongodb://${var.documentdb_username}:${var.documentdb_password}@${module.documentdb[0].cluster_endpoint}:27017/?tls=true&tlsCAFile=rds-combined-ca-bundle.pem" : var.mongodb_uri
+    LOG_LEVEL      = var.environment == "prod" ? "INFO" : "DEBUG"
   }
 
   # Scaling configuration
   desired_task_count = var.desired_task_count
-  min_task_count    = var.min_task_count
-  max_task_count    = var.max_task_count
+  min_task_count     = var.min_task_count
+  max_task_count     = var.max_task_count
 
   depends_on = [
     module.vpc,
@@ -130,16 +130,16 @@ module "ecs" {
 module "monitoring" {
   source = "./modules/monitoring"
 
-  app_name                = var.app_name
-  environment             = var.environment
-  aws_region              = var.aws_region
-  alert_email             = var.alert_email
-  ecs_cluster_name        = module.ecs.cluster_name
-  ecs_service_name        = module.ecs.service_name
-  max_task_count          = var.max_task_count
-  alb_name                = split("/", module.alb.arn)[1]
-  target_group_name       = module.alb.target_group_name
-  documentdb_cluster_id   = var.enable_documentdb ? module.documentdb[0].cluster_id : ""
+  app_name              = var.app_name
+  environment           = var.environment
+  aws_region            = var.aws_region
+  alert_email           = var.alert_email
+  ecs_cluster_name      = module.ecs.cluster_name
+  ecs_service_name      = module.ecs.service_name
+  max_task_count        = var.max_task_count
+  alb_name              = split("/", module.alb.arn)[1]
+  target_group_name     = module.alb.target_group_name
+  documentdb_cluster_id = var.enable_documentdb ? module.documentdb[0].cluster_id : ""
 
   depends_on = [
     module.ecs,

@@ -140,9 +140,9 @@ resource "aws_lb_listener" "https" {
 
 # If no domain, forward HTTP to backend
 resource "aws_lb_listener_rule" "backend_http" {
-  count            = var.domain_name != "" ? 0 : 1
-  listener_arn     = aws_lb_listener.http.arn
-  priority         = 100
+  count        = var.domain_name != "" ? 0 : 1
+  listener_arn = aws_lb_listener.http.arn
+  priority     = 100
   action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.backend.arn

@@ -51,10 +51,10 @@ resource "aws_docdb_cluster_parameter_group" "main" {
 
 # DocumentDB Cluster Instances
 resource "aws_docdb_cluster_instance" "main" {
-  count              = var.cluster_size
-  cluster_identifier = aws_docdb_cluster.main.id
-  instance_class     = var.instance_class
-  engine              = "docdb"
+  count                      = var.cluster_size
+  cluster_identifier         = aws_docdb_cluster.main.id
+  instance_class             = var.instance_class
+  engine                     = "docdb"
   auto_minor_version_upgrade = true
 
   tags = {

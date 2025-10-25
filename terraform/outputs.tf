@@ -36,8 +36,8 @@ output "documentdb_endpoint" {
 
 output "documentdb_connection_string" {
   description = "MongoDB connection string for DocumentDB"
-  value = var.enable_documentdb ? "mongodb://${var.documentdb_username}:password@${module.documentdb[0].cluster_endpoint}:27017/?tls=true" : null
-  sensitive = true
+  value       = var.enable_documentdb ? "mongodb://${var.documentdb_username}:password@${module.documentdb[0].cluster_endpoint}:27017/?tls=true" : null
+  sensitive   = true
 }
 
 output "vpc_id" {

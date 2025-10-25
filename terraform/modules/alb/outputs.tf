@@ -31,5 +31,5 @@ output "certificate_arn" {
 
 output "certificate_validation_required" {
   description = "Instructions for validating certificate if using custom domain"
-  value = var.domain_name != "" ? "Please add the DNS validation records from ACM to your domain provider. Check AWS ACM console for validation details." : "No certificate configured (HTTP only)"
+  value       = var.domain_name != "" ? "Please add the DNS validation records from ACM to your domain provider. Check AWS ACM console for validation details." : "No certificate configured (HTTP only)"
 }
