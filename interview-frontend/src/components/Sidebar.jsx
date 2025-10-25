@@ -27,7 +27,9 @@ export default function Sidebar() {
   ]
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-neutral-200 overflow-y-auto flex flex-col">
+    <>
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex fixed left-0 top-0 h-screen w-64 bg-white border-r border-neutral-200 overflow-y-auto flex-col">
       <div className="p-6">
         <div className="flex items-center gap-3 mb-1">
           <img
@@ -89,5 +91,41 @@ export default function Sidebar() {
         </button>
       </div>
     </aside>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 px-2 py-2 z-50">
+        <div className="flex items-center justify-around max-w-md mx-auto">
+          {navItems.map((item) => {
+            const Icon = item.icon
+            const active = isActive(item.path)
+
+            return (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
+                  active
+                    ? 'text-brand-600'
+                    : 'text-neutral-600'
+                }`}
+              >
+                <Icon className={`w-5 h-5 ${active ? 'stroke-2' : ''}`} />
+                <span className="text-xs font-medium">{item.label}</span>
+              </button>
+            )
+          })}
+          <button
+            onClick={() => {
+              logout()
+              navigate('/login')
+            }}
+            className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-neutral-600 transition-colors"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="text-xs font-medium">Logout</span>
+          </button>
+        </div>
+      </nav>
+    </>
   )
 }

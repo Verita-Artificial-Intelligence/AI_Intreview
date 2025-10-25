@@ -190,14 +190,14 @@ const Marketplace = () => {
     <div className="min-h-screen bg-white">
       <Sidebar />
 
-      <main className="ml-64 flex h-screen overflow-hidden">
+      <main className="lg:ml-64 flex h-screen overflow-hidden pb-16 lg:pb-0">
         {/* Left side - Job List */}
         <div
           className={`flex-shrink-0 overflow-y-auto ${
-            selectedJob ? 'w-1/2' : 'w-full'
+            selectedJob ? 'hidden lg:block lg:w-1/2' : 'w-full'
           } transition-all duration-300`}
         >
-          <div className="px-6 py-8">
+          <div className="px-4 sm:px-6 py-4 sm:py-8">
             {/* Header */}
             <div className="mb-6">
               <h1 className="text-2xl font-semibold text-neutral-900 mb-1">
@@ -392,8 +392,8 @@ const Marketplace = () => {
 
         {/* Right side - Job Details */}
         {selectedJob && (
-          <div className="w-1/2 bg-white overflow-y-auto flex flex-col py-8">
-            <div className="flex flex-col h-full border-l border-gray-200 relative">
+          <div className="fixed lg:relative inset-0 lg:inset-auto w-full lg:w-1/2 bg-white overflow-y-auto flex flex-col py-4 sm:py-8 z-40 lg:z-auto">
+            <div className="flex flex-col h-full lg:border-l border-gray-200 relative">
               {/* Close button at top right */}
               <div className="absolute top-0 right-6">
                 <button

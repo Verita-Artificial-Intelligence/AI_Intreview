@@ -65,8 +65,8 @@ const ProfileSetup = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-3 bg-background">
-      <Card className="w-full max-w-lg p-6 bg-surface shadow-xl rounded-xl border-0">
+    <div className="min-h-screen flex items-center justify-center p-3 sm:p-6 bg-background">
+      <Card className="w-full max-w-lg p-4 sm:p-6 bg-surface shadow-xl rounded-xl border-0">
         <div className="mb-6">
           <h1 className="text-2xl font-display font-bold mb-1 text-neutral-900">
             Complete Your Profile
@@ -140,12 +140,12 @@ const ProfileSetup = () => {
                   }
                 }}
                 className="flex-1 h-8 text-sm rounded-lg border-neutral-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-200"
-                placeholder="e.g. Adobe Creative Suite, Figma, Cinema 4D, etc."
+                placeholder="e.g. Adobe, Figma, etc."
               />
               <Button
                 type="button"
                 onClick={addSkill}
-                className="h-8 w-8 flex items-center justify-center rounded-lg bg-brand-500 hover:bg-brand-600 text-white transition-colors"
+                className="h-8 w-8 sm:w-auto sm:px-3 flex items-center justify-center rounded-lg bg-brand-500 hover:bg-brand-600 text-white transition-colors"
               >
                 <Plus className="w-4 h-4" />
               </Button>

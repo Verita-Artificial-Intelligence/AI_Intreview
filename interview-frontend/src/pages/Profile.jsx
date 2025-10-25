@@ -287,7 +287,7 @@ export default function Profile() {
     return (
       <div className="min-h-screen bg-white">
         <Sidebar />
-        <main className="ml-64 flex items-center justify-center">
+        <main className="lg:ml-64 flex items-center justify-center pb-16 lg:pb-0">
           <p className="text-sm text-gray-600">Loading profile...</p>
         </main>
       </div>
@@ -299,28 +299,28 @@ export default function Profile() {
       <Sidebar />
 
       {/* Main Content */}
-      <main className="ml-64 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+      <main className="lg:ml-64 overflow-y-auto pb-20 lg:pb-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
           {/* Header */}
-          <div className="mb-6">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 rounded-md flex items-center justify-center text-lg font-semibold text-neutral-900 bg-brand-200 flex-shrink-0">
+          <div className="mb-4 sm:mb-6">
+            <div className="flex items-center gap-3 sm:gap-4 mb-4">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-md flex items-center justify-center text-base sm:text-lg font-semibold text-neutral-900 bg-brand-200 flex-shrink-0">
                 {profileData.name?.charAt(0).toUpperCase() || 'U'}
               </div>
               <div>
-                <h1 className="text-2xl font-semibold text-neutral-900 mb-1">
+                <h1 className="text-xl sm:text-2xl font-semibold text-neutral-900 mb-1">
                   {profileData.name}
                 </h1>
-                <p className="text-sm text-gray-500">{profileData.email}</p>
+                <p className="text-xs sm:text-sm text-gray-500">{profileData.email}</p>
               </div>
             </div>
           </div>
 
           {/* Profile Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
             {/* Left Column - Expertise Card */}
             <div className="lg:col-span-1">
-              <Card className="p-6 bg-white border border-neutral-200 h-fit sticky top-6">
+              <Card className="p-4 sm:p-6 bg-white border border-neutral-200 h-fit lg:sticky lg:top-6">
                 <div className="space-y-4">
                   {/* Status Badge */}
                   <div>
@@ -444,7 +444,7 @@ export default function Profile() {
             {/* Right Column - Main Content */}
             <div className="lg:col-span-3 space-y-4">
               {/* Personal Information */}
-              <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+              <Card className="p-4 sm:p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-base font-semibold text-neutral-900">
                     Personal Information
@@ -504,7 +504,7 @@ export default function Profile() {
               </Card>
 
               {/* Resume */}
-              <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+              <Card className="p-4 sm:p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-base font-semibold text-neutral-900">
                     Resume
@@ -556,16 +556,16 @@ export default function Profile() {
                 ) : (
                   <div>
                     {profileData.resume_url ? (
-                      <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg border border-neutral-200">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-blue-100 rounded-lg">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
                             <FileText className="w-5 h-5 text-blue-600" />
                           </div>
-                          <div>
+                          <div className="min-w-0 flex-1">
                             <p className="font-semibold text-sm text-neutral-900">
                               Resume
                             </p>
-                            <p className="text-xs text-neutral-600 truncate max-w-md">
+                            <p className="text-xs text-neutral-600 truncate">
                               {profileData.resume_url}
                             </p>
                           </div>
@@ -574,7 +574,7 @@ export default function Profile() {
                           href={profileData.resume_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-medium transition-colors"
+                          className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-medium transition-colors flex-shrink-0 w-full sm:w-auto"
                         >
                           <Download className="w-3 h-3" />
                           View Resume
@@ -593,7 +593,7 @@ export default function Profile() {
               </Card>
 
               {/* Bio */}
-              <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+              <Card className="p-4 sm:p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-base font-semibold text-neutral-900">
                     About
@@ -634,7 +634,7 @@ export default function Profile() {
               </Card>
 
               {/* Education */}
-              <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+              <Card className="p-4 sm:p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-base font-semibold text-neutral-900">
                     Education
@@ -682,7 +682,7 @@ export default function Profile() {
                             <X className="w-4 h-4" />
                           </button>
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <Input
                             placeholder="School/University"
                             value={edu.school}
@@ -759,7 +759,7 @@ export default function Profile() {
               </Card>
 
               {/* Work Experience */}
-              <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+              <Card className="p-4 sm:p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-base font-semibold text-neutral-900">
                     Work Experience
@@ -808,7 +808,7 @@ export default function Profile() {
                           </button>
                         </div>
                         <div className="space-y-3">
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <Input
                               placeholder="Company"
                               value={exp.company}
@@ -917,7 +917,7 @@ export default function Profile() {
               </Card>
 
               {/* Projects */}
-              <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+              <Card className="p-4 sm:p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-base font-semibold text-neutral-900">
                     Projects
@@ -1045,7 +1045,7 @@ export default function Profile() {
               </Card>
 
               {/* Publications */}
-              <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+              <Card className="p-4 sm:p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-base font-semibold text-neutral-900">
                     Publications
@@ -1093,14 +1093,14 @@ export default function Profile() {
                             <X className="w-4 h-4" />
                           </button>
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <Input
                             placeholder="Title"
                             value={pub.title}
                             onChange={(e) =>
                               updatePublication(index, 'title', e.target.value)
                             }
-                            className="text-sm col-span-2"
+                            className="text-sm sm:col-span-2"
                           />
                           <Input
                             placeholder="Publisher/Venue"
@@ -1184,7 +1184,7 @@ export default function Profile() {
               </Card>
 
               {/* Certifications */}
-              <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+              <Card className="p-4 sm:p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-base font-semibold text-neutral-900">
                     Certifications
@@ -1232,14 +1232,14 @@ export default function Profile() {
                             <X className="w-4 h-4" />
                           </button>
                         </div>
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           <Input
                             placeholder="Certification Name"
                             value={cert.name}
                             onChange={(e) =>
                               updateCertification(index, 'name', e.target.value)
                             }
-                            className="text-sm col-span-2"
+                            className="text-sm sm:col-span-2"
                           />
                           <Input
                             placeholder="Year"
@@ -1259,7 +1259,7 @@ export default function Profile() {
                                 e.target.value
                               )
                             }
-                            className="text-sm col-span-3"
+                            className="text-sm sm:col-span-3"
                           />
                         </div>
                       </div>

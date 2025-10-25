@@ -329,7 +329,7 @@ const AdminInterviewReview = () => {
     return (
       <div className="min-h-screen bg-white">
         <Sidebar />
-        <main className="ml-64 overflow-y-auto">
+        <main className="lg:ml-64 overflow-y-auto pb-16 lg:pb-0">
           <div className="flex items-center justify-center min-h-screen">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500 mx-auto mb-3"></div>
@@ -345,7 +345,7 @@ const AdminInterviewReview = () => {
     return (
       <div className="min-h-screen bg-white">
         <Sidebar />
-        <main className="ml-64 overflow-y-auto">
+        <main className="lg:ml-64 overflow-y-auto pb-16 lg:pb-0">
           <div className="flex items-center justify-center min-h-screen">
             <p className="text-neutral-600">Interview not found</p>
           </div>
@@ -361,7 +361,7 @@ const AdminInterviewReview = () => {
     return (
       <div className="min-h-screen bg-white">
         <Sidebar />
-        <main className="ml-64 overflow-y-auto">
+        <main className="lg:ml-64 overflow-y-auto pb-16 lg:pb-0">
           <div className="max-w-7xl mx-auto px-6 py-8">
             <Button
               onClick={() => navigate('/')}
@@ -418,7 +418,7 @@ const AdminInterviewReview = () => {
       <Sidebar />
 
       {/* Main Content */}
-      <main className="ml-64 overflow-y-auto">
+      <main className="lg:ml-64 overflow-y-auto pb-16 lg:pb-0">
         <div className="max-w-7xl mx-auto px-6 py-8">
           {/* Header */}
           <div className="mb-6">
