@@ -8,6 +8,7 @@ import asyncio
 import base64
 import json
 import logging
+import tempfile
 from typing import Optional
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from uuid import uuid4
@@ -17,6 +18,7 @@ from services.realtime_service import RealtimeService
 from services.audio_buffer import AudioBuffer
 from services.audio_mixer import AudioMixer
 from services.speech_activity import SpeechActivityMonitor
+from services.s3_service import s3_service
 from database import get_interviews_collection
 from prompts.chat import get_interviewer_system_prompt
 from pathlib import Path
@@ -428,77 +430,109 @@ async def save_transcript(interview_id: str, transcript: list[dict]):
 
 async def save_mixed_audio(session_id: str, interview_id: str, audio_buffer: AudioBuffer):
     """
-    Mix and save the audio streams for this interview.
+    Mix and save the audio streams for this interview to S3.
     """
     try:
-        # Get buffer stats before flushing
         stats = await audio_buffer.get_stats()
         logger.info(f"Audio buffer stats for interview {interview_id}: {stats}")
-        
-        # Flush audio buffer to get all chunks
+
         mic_chunks, ai_chunks = await audio_buffer.flush()
 
         if not mic_chunks and not ai_chunks:
             logger.warning(f"No audio data to save for interview {interview_id}")
             return
 
-        # Create audio directory
-        audio_dir = Path("uploads/audio")
-        audio_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Initialize mixer and paths dictionary
-        mixer = AudioMixer(sample_rate=24000, channels=1)
-        paths = {}
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            mixer = AudioMixer(sample_rate=24000, channels=1)
+            s3_keys = {}
 
-        # Save microphone audio stream separately
-        if mic_chunks:
-            mic_path = audio_dir / f"interview_{interview_id}_mic.wav"
-            paths["mic"] = str(mic_path)
+            # Save microphone audio stream separately
+            if mic_chunks:
+                mic_filename = f"interview_{interview_id}_mic.wav"
+                mic_path = temp_path / mic_filename
+                try:
+                    mic_clip = mixer._chunks_to_audioclip(mic_chunks, 1.0)
+                    mic_clip.write_audiofile(str(mic_path), fps=mixer.sample_rate, nbytes=2, codec='pcm_s16le', logger=None)
+                    mic_clip.close()
+                    logger.info(f"Microphone audio saved to temp: {mic_path}")
+
+                    s3_key = s3_service.generate_s3_key(f"audio/{interview_id}", mic_filename)
+                    with open(mic_path, "rb") as f:
+                        uploaded_key = await s3_service.upload_file(
+                            file_content=f.read(),
+                            s3_key=s3_key,
+                            content_type="audio/wav",
+                            is_temp=False
+                        )
+                    if uploaded_key:
+                        s3_keys["mic"] = uploaded_key
+                        logger.info(f"Microphone audio uploaded to S3: {uploaded_key}")
+                except Exception as e:
+                    logger.error(f"Failed to save/upload microphone audio for interview {interview_id}: {e}", exc_info=True)
+
+            # Save AI audio stream separately
+            if ai_chunks:
+                ai_filename = f"interview_{interview_id}_ai.wav"
+                ai_path = temp_path / ai_filename
+                try:
+                    ai_clip = mixer._chunks_to_audioclip(ai_chunks, 1.0)
+                    ai_clip.write_audiofile(str(ai_path), fps=mixer.sample_rate, nbytes=2, codec='pcm_s16le', logger=None)
+                    ai_clip.close()
+                    logger.info(f"AI audio saved to temp: {ai_path}")
+
+                    s3_key = s3_service.generate_s3_key(f"audio/{interview_id}", ai_filename)
+                    with open(ai_path, "rb") as f:
+                        uploaded_key = await s3_service.upload_file(
+                            file_content=f.read(),
+                            s3_key=s3_key,
+                            content_type="audio/wav",
+                            is_temp=False
+                        )
+                    if uploaded_key:
+                        s3_keys["ai"] = uploaded_key
+                        logger.info(f"AI audio uploaded to S3: {uploaded_key}")
+                except Exception as e:
+                    logger.error(f"Failed to save/upload AI audio for interview {interview_id}: {e}", exc_info=True)
+
+            # Mix the two streams
+            mixed_filename = f"interview_{interview_id}_mixed.wav"
+            mixed_path = temp_path / mixed_filename
             try:
-                mic_clip = mixer._chunks_to_audioclip(mic_chunks, 1.0)
-                mic_clip.write_audiofile(str(mic_path), fps=mixer.sample_rate, nbytes=2, codec='pcm_s16le', logger=None)
-                mic_clip.close()
-                logger.info(f"Microphone audio saved to {mic_path}")
-            except Exception as e:
-                logger.error(f"Failed to save microphone audio for interview {interview_id}: {e}", exc_info=True)
+                success = await mixer.mix_streams(
+                    mic_chunks=mic_chunks,
+                    ai_chunks=ai_chunks,
+                    output_path=mixed_path,
+                    mic_volume=1.0,
+                    ai_volume=1.0
+                )
+                if success:
+                    logger.info(f"Mixed audio saved to temp: {mixed_path}")
 
-        # Save AI audio stream separately
-        if ai_chunks:
-            ai_path = audio_dir / f"interview_{interview_id}_ai.wav"
-            paths["ai"] = str(ai_path)
-            try:
-                ai_clip = mixer._chunks_to_audioclip(ai_chunks, 1.0)
-                ai_clip.write_audiofile(str(ai_path), fps=mixer.sample_rate, nbytes=2, codec='pcm_s16le', logger=None)
-                ai_clip.close()
-                logger.info(f"AI audio saved to {ai_path}")
+                    s3_key = s3_service.generate_s3_key(f"audio/{interview_id}", mixed_filename)
+                    with open(mixed_path, "rb") as f:
+                        uploaded_key = await s3_service.upload_file(
+                            file_content=f.read(),
+                            s3_key=s3_key,
+                            content_type="audio/wav",
+                            is_temp=False
+                        )
+                    if uploaded_key:
+                        s3_keys["mixed"] = uploaded_key
+                        logger.info(f"Mixed audio uploaded to S3: {uploaded_key}")
+                else:
+                    logger.error(f"Audio mixing failed for interview {interview_id}, but individual streams were saved.")
             except Exception as e:
-                logger.error(f"Failed to save AI audio for interview {interview_id}: {e}", exc_info=True)
+                logger.error(f"An exception occurred during audio mixing for interview {interview_id}: {e}", exc_info=True)
 
-        # Mix the two streams
-        mixed_path = audio_dir / f"interview_{interview_id}_mixed.wav"
-        paths["mixed"] = str(mixed_path)
-        try:
-            success = await mixer.mix_streams(
-                mic_chunks=mic_chunks,
-                ai_chunks=ai_chunks,
-                output_path=mixed_path,
-                mic_volume=1.0,
-                ai_volume=1.0
-            )
-            if success:
-                logger.info(f"Mixed audio saved successfully to {mixed_path}")
-            else:
-                logger.error(f"Audio mixing failed for interview {interview_id}, but individual streams were saved.")
-        except Exception as e:
-            logger.error(f"An exception occurred during audio mixing for interview {interview_id}: {e}", exc_info=True)
-        
-        # Update database with all audio paths
+            # Temp files automatically cleaned up when exiting context manager
+
         interviews_collection = get_interviews_collection()
         await interviews_collection.update_one(
             {"id": interview_id},
             {"$set": {
-                "audio_paths": paths,
-                "audio_path": paths.get("mixed", paths.get("mic")) # For legacy support
+                "audio_paths": s3_keys,
+                "audio_path": s3_keys.get("mixed", s3_keys.get("mic"))  # For legacy support
             }}
         )
 

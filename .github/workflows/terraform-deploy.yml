@@ -1,0 +1,219 @@
+name: Terraform Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform-deploy.yml'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'terraform/**'
+  # Also run after Docker image is built
+  workflow_run:
+    workflows: ["Docker Build & Push"]
+    types: [completed]
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  AWS_REGION: us-east-1
+  TF_VERSION: 1.6.0
+
+jobs:
+  terraform:
+    name: Terraform Plan & Apply
+    runs-on: ubuntu-latest
+
+    # Use development environment for PRs, production for main branch
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Format Check
+        working-directory: ./terraform
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Validate
+        working-directory: ./terraform
+        run: terraform validate
+
+      - name: Decode Secrets (Dev)
+        if: github.ref != 'refs/heads/main'
+        working-directory: ./terraform
+        run: |
+          echo "${{ secrets.TF_VARS_FILE_DEV }}" | base64 -d > secrets.tfvars
+        shell: bash
+
+      - name: Decode Secrets (Prod)
+        if: github.ref == 'refs/heads/main'
+        working-directory: ./terraform
+        run: |
+          echo "${{ secrets.TF_VARS_FILE_PROD }}" | base64 -d > secrets.tfvars
+        shell: bash
+
+      - name: Terraform Init
+        working-directory: ./terraform
+        run: terraform init -backend=true
+
+      - name: Terraform Plan (Dev)
+        if: github.ref != 'refs/heads/main'
+        working-directory: ./terraform
+        run: |
+          terraform plan \
+            -var-file="environments/dev.tfvars" \
+            -var-file="secrets.tfvars" \
+            -out=tfplan
+        env:
+          TF_LOG: INFO
+
+      - name: Terraform Plan (Prod)
+        if: github.ref == 'refs/heads/main'
+        working-directory: ./terraform
+        run: |
+          terraform plan \
+            -var-file="environments/prod.tfvars" \
+            -var-file="secrets.tfvars" \
+            -out=tfplan
+        env:
+          TF_LOG: INFO
+
+      - name: Save Plan
+        if: always()
+        working-directory: ./terraform
+        run: |
+          terraform show -json tfplan > tfplan.json
+          echo "## Terraform Plan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          terraform show tfplan | tail -50 >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Comment Plan on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('./terraform/tfplan.json', 'utf8');
+            const planObj = JSON.parse(plan);
+
+            let comment = '## Terraform Plan\n\n';
+            comment += `- **Resources to add:** ${planObj.resource_changes?.filter(r => r.change.actions.includes('create')).length || 0}\n`;
+            comment += `- **Resources to modify:** ${planObj.resource_changes?.filter(r => r.change.actions.includes('update')).length || 0}\n`;
+            comment += `- **Resources to delete:** ${planObj.resource_changes?.filter(r => r.change.actions.includes('delete')).length || 0}\n\n`;
+            comment += '**Review and approve if changes look correct.**';
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Terraform Apply (Dev)
+        if: github.ref != 'refs/heads/main' && github.event_name == 'push'
+        working-directory: ./terraform
+        run: |
+          terraform apply -auto-approve tfplan
+        env:
+          TF_LOG: INFO
+
+      - name: Terraform Apply (Prod) - Manual Approval Required
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        working-directory: ./terraform
+        run: |
+          echo "⚠️  Production apply requires manual approval in GitHub Environments"
+          echo "Plan complete. Review in GitHub Actions and approve to deploy."
+          terraform show tfplan
+
+      - name: Get Terraform Outputs
+        if: github.event_name == 'push'
+        working-directory: ./terraform
+        run: |
+          terraform output -json > outputs.json
+          cat outputs.json | jq '.' > /tmp/tf_outputs.txt
+          echo "## Deployment Outputs" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
+          cat /tmp/tf_outputs.txt >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify Slack
+        if: always()
+        uses: slackapi/slack-github-action@v1
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          payload: |
+            {
+              "text": "Terraform Deployment",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "🚀 Terraform Deployment - ${{ job.status }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Environment:*\n${{ github.ref == 'refs/heads/main' && 'Production' || 'Development' }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Status:*\n${{ job.status }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch:*\n${{ github.ref }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit:*\n<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Cleanup Secrets
+        if: always()
+        working-directory: ./terraform
+        run: rm -f secrets.tfvars
+
+      - name: Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-plans
+          path: |
+            ./terraform/tfplan.json
+            ./terraform/outputs.json
+          retention-days: 30

@@ -17,6 +17,11 @@ APIFY_API_KEY = os.environ.get("APIFY_API_KEY")
 # CORS Configuration
 CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*").split(",")
 
+# AWS S3 Configuration
+S3_BUCKET = os.environ.get("S3_BUCKET")
+AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
+S3_TEMP_FILE_RETENTION_DAYS = 7  # Temp files auto-deleted after this many days
+
 # AI Interviewer Persona
 AI_INTERVIEWER_PERSONA = {
     "name": "Sarah",
@@ -92,6 +97,11 @@ class Settings:
 
     # CORS
     CORS_ORIGINS = CORS_ORIGINS
+
+    # AWS S3
+    S3_BUCKET = S3_BUCKET
+    AWS_REGION = AWS_REGION
+    S3_TEMP_FILE_RETENTION_DAYS = S3_TEMP_FILE_RETENTION_DAYS
 
     # AI Persona (convert dict to instruction string)
     AI_INTERVIEWER_PERSONA = f"""You are {AI_INTERVIEWER_PERSONA['name']}, {AI_INTERVIEWER_PERSONA['title']}.

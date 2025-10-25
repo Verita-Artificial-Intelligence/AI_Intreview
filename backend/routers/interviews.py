@@ -6,9 +6,11 @@ from models.annotation import AnnotationTask
 from services import InterviewService
 from services.resume_service import ResumeService
 from services.annotation_service import AnnotationService
+from services.s3_service import s3_service
 import logging
 import os
 import subprocess
+import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -17,10 +19,6 @@ from database import get_interviews_collection, get_candidates_collection, db
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-# Create uploads directory if it doesn't exist
-UPLOAD_DIR = Path("uploads/videos")
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 FFMPEG_VIDEO_PRESET = os.getenv("FFMPEG_VIDEO_PRESET", "veryfast")
 FFMPEG_CRF = os.getenv("FFMPEG_CRF", "23")
@@ -259,87 +257,110 @@ async def upload_interview_video(
     session_id: str = Form(...),
     interview_id: Optional[str] = Form(None),
 ):
-    """Upload interview video recording and combine with server-mixed audio"""
+    """Upload interview video recording and combine with server-mixed audio from S3"""
     try:
-        # Generate temporary video filename (video-only)
-        temp_video_filename = f"{session_id}_video_only.webm"
-        if interview_id:
-            temp_video_filename = f"{interview_id}_{session_id}_video_only.webm"
+        video_content = await video.read()
+        logger.info(f"Video uploaded: {session_id} ({len(video_content)} bytes)")
 
-        temp_video_path = UPLOAD_DIR / temp_video_filename
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
 
-        # Save video-only file temporarily
-        async with aiofiles.open(temp_video_path, "wb") as f:
-            content = await video.read()
-            await f.write(content)
+            temp_video_filename = f"{session_id}_video_only.webm"
+            if interview_id:
+                temp_video_filename = f"{interview_id}_{session_id}_video_only.webm"
 
-        logger.info(f"Video uploaded: {temp_video_filename} ({len(content)} bytes)")
+            temp_video_path = temp_path / temp_video_filename
 
-        # Wait for mixed audio to be ready (with timeout)
-        audio_path = None
-        interviews_collection = None
-        if interview_id:
-            interviews_collection = get_interviews_collection()
-            # Poll for audio path for up to 10 seconds
-            max_attempts = 20
-            attempt = 0
-            while attempt < max_attempts:
-                interview_doc = await interviews_collection.find_one({"id": interview_id})
-                if interview_doc:
-                    audio_path = interview_doc.get("audio_path")
-                    if audio_path and Path(audio_path).exists():
-                        logger.info(f"Mixed audio found: {audio_path}")
-                        break
+            with open(temp_video_path, "wb") as f:
+                f.write(video_content)
 
-                attempt += 1
-                if attempt < max_attempts:
-                    logger.info(f"Waiting for mixed audio... attempt {attempt}/{max_attempts}")
-                    await asyncio.sleep(0.5)
+            audio_s3_key = None
+            audio_local_path = None
+            interviews_collection = None
+            if interview_id:
+                interviews_collection = get_interviews_collection()
+                max_attempts = 20
+                attempt = 0
+                while attempt < max_attempts:
+                    interview_doc = await interviews_collection.find_one({"id": interview_id})
+                    if interview_doc:
+                        audio_s3_key = interview_doc.get("audio_path")
+                        if audio_s3_key:
+                            logger.info(f"Mixed audio S3 key found: {audio_s3_key}")
+                            audio_local_path = temp_path / "mixed_audio.wav"
+                            success = await s3_service.download_file_to_path(audio_s3_key, audio_local_path)
+                            if success:
+                                logger.info(f"Mixed audio downloaded from S3 to: {audio_local_path}")
+                                break
+                            else:
+                                logger.warning(f"Failed to download audio from S3: {audio_s3_key}")
+                                audio_s3_key = None
 
-            if not audio_path:
-                logger.warning(f"Mixed audio not ready after {max_attempts * 0.5}s, proceeding with video-only")
+                    attempt += 1
+                    if attempt < max_attempts:
+                        logger.info(f"Waiting for mixed audio... attempt {attempt}/{max_attempts}")
+                        await asyncio.sleep(0.5)
 
-        # If mixed audio exists, combine it with video
-        final_filename = f"{session_id}.mp4"
-        if interview_id:
-            final_filename = f"{interview_id}_{session_id}.mp4"
+                if not audio_s3_key:
+                    logger.warning(f"Mixed audio not ready after {max_attempts * 0.5}s, proceeding with video-only")
 
-        final_video_path = UPLOAD_DIR / final_filename
-        combine_succeeded = False
+            # If mixed audio exists, combine it with video
+            final_filename = f"{session_id}.mp4"
+            if interview_id:
+                final_filename = f"{interview_id}_{session_id}.mp4"
 
-        if audio_path and Path(audio_path).exists():
-            logger.info(f"Combining video with mixed audio: {audio_path}")
-            success = await combine_video_and_audio(
-                temp_video_path,
-                Path(audio_path),
-                final_video_path,
-            )
+            final_video_path = temp_path / final_filename
+            combine_succeeded = False
 
-            if success:
-                temp_video_path.unlink(missing_ok=True)
-                logger.info(f"Final video with audio created: {final_filename}")
-                combine_succeeded = True
+            if audio_local_path and audio_local_path.exists():
+                logger.info(f"Combining video with mixed audio: {audio_local_path}")
+                success = await combine_video_and_audio(
+                    temp_video_path,
+                    audio_local_path,
+                    final_video_path,
+                )
+
+                if success:
+                    logger.info(f"Final video with audio created: {final_filename}")
+                    combine_succeeded = True
+                else:
+                    logger.warning("Failed to combine audio, using video-only file")
+                    final_video_path = temp_video_path
+                    final_filename = temp_video_filename
+                    combine_succeeded = False
             else:
-                logger.warning("Failed to combine audio, using video-only file")
+                # No audio available, use video-only file as final
+                logger.warning(f"No mixed audio found for interview {interview_id}, saving video-only")
                 final_video_path = temp_video_path
                 final_filename = temp_video_filename
                 combine_succeeded = False
-        else:
-            # No audio available, rename video-only file as final
-            logger.warning(f"No mixed audio found for interview {interview_id}, saving video-only")
-            temp_video_path.rename(final_video_path)
-            combine_succeeded = False
 
-        # Update interview with video URL if interview_id provided
+            s3_key = s3_service.generate_s3_key(f"videos/{interview_id if interview_id else session_id}", final_filename)
+            with open(final_video_path, "rb") as f:
+                final_content = f.read()
+                uploaded_key = await s3_service.upload_file(
+                    file_content=final_content,
+                    s3_key=s3_key,
+                    content_type="video/mp4" if final_filename.endswith(".mp4") else "video/webm",
+                    is_temp=False
+                )
+
+            if not uploaded_key:
+                raise HTTPException(status_code=500, detail="Failed to upload video to S3")
+
+            logger.info(f"Video uploaded to S3: {uploaded_key}")
+
+            # Temp files automatically cleaned up when exiting context manager
+
         if interview_id:
             interviews_collection = get_interviews_collection()
-            video_url = f"/uploads/videos/{final_filename}"
+            video_url = f"/uploads/{s3_key}"
 
             if not combine_succeeded:
                 existing = await interviews_collection.find_one(
                     {"id": interview_id}, {"_id": 0, "video_url": 1}
                 )
-                if existing and existing.get("video_url") and existing["video_url"].endswith(".mp4"):
+                if existing and existing.get("video_url") and ".mp4" in existing["video_url"]:
                     logger.info(
                         "Skipping video_url update because existing MP4 should be retained: %s",
                         existing["video_url"],
@@ -347,25 +368,27 @@ async def upload_interview_video(
                     return {
                         "success": True,
                         "filename": final_filename,
-                        "size": len(content),
-                        "path": str(final_video_path),
+                        "size": len(video_content),
+                        "s3_key": s3_key,
+                        "url": video_url
                     }
 
             await interviews_collection.update_one(
                 {"id": interview_id},
-                {"$set": {"video_url": video_url, "video_processing_status": "completed"}}
+                {"$set": {"video_url": s3_key, "video_processing_status": "completed"}}
             )
-            logger.info(f"Updated interview {interview_id} with video_url: {video_url}")
+            logger.info(f"Updated interview {interview_id} with video S3 key: {s3_key}")
 
         return {
             "success": True,
             "filename": final_filename,
-            "size": len(content),
-            "path": str(final_video_path),
+            "size": len(video_content),
+            "s3_key": s3_key,
+            "url": f"/uploads/{s3_key}"
         }
 
     except Exception as e:
-        logger.error(f"Error uploading video: {e}")
+        logger.error(f"Error uploading video: {e}", exc_info=True)
         return {"success": False, "error": str(e)}
 
 

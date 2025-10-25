@@ -1,8 +1,6 @@
 from fastapi import FastAPI, APIRouter
-from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 import logging
-import os
 from config import CORS_ORIGINS
 from database import shutdown_db_client
 from routers import (
@@ -49,6 +47,16 @@ async def shutdown_db():
     await shutdown_db_client()
 
 
+# Health check endpoint for ALB
+@app.get("/health")
+async def health_check():
+    """
+    Health check endpoint for AWS Application Load Balancer.
+    Returns 200 OK if the service is running.
+    """
+    return {"status": "healthy", "service": "ai-interview-api"}
+
+
 # Include all routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(profile.router, prefix="/api/profile", tags=["User Profile"])
@@ -65,14 +73,6 @@ app.include_router(admin.router, prefix="/api", tags=["Admin"])
 
 # Include WebSocket router (not under /api prefix)
 app.include_router(websocket.router, prefix="/ws", tags=["WebSocket"])
-
-# Mount static files for uploads
-UPLOAD_DIR = "uploads"
-if os.path.exists(UPLOAD_DIR):
-    app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
-else:
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-    app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # Configure logging
 logging.basicConfig(
