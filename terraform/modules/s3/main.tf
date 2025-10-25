@@ -1,12 +1,13 @@
 resource "random_string" "bucket_suffix" {
   length  = 8
   special = false
+  upper   = false
   lower   = true
   numeric = true
 }
 
 locals {
-  bucket_name = var.bucket_name != "" ? var.bucket_name : "${var.app_name}-uploads-${data.aws_caller_identity.current.account_id}-${random_string.bucket_suffix.result}"
+  bucket_name = var.bucket_name != "" ? lower(var.bucket_name) : lower("${var.app_name}-uploads-${data.aws_caller_identity.current.account_id}-${random_string.bucket_suffix.result}")
 }
 
 data "aws_caller_identity" "current" {}
