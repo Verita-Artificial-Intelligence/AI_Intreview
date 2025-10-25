@@ -1,14 +1,3 @@
-# Security group rule to allow ECS tasks to access DocumentDB
-resource "aws_security_group_rule" "ecs_to_documentdb" {
-  type                     = "ingress"
-  from_port                = 27017
-  to_port                  = 27017
-  protocol                 = "tcp"
-  security_group_id        = var.security_group_id
-  source_security_group_id = var.ecs_security_group_id
-  description              = "Allow ECS tasks to access DocumentDB"
-}
-
 # DocumentDB Subnet Group
 resource "aws_docdb_subnet_group" "main" {
   name       = "${var.app_name}-docdb-subnet-group"
