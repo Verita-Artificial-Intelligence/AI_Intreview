@@ -216,8 +216,8 @@ export default function Jobs() {
       <div className="min-h-screen bg-white">
         <Sidebar />
 
-        <main className="ml-64 overflow-y-auto h-screen">
-          <div className="max-w-7xl mx-auto px-8 py-8">
+        <main className="lg:ml-64 overflow-y-auto h-screen pb-16 lg:pb-0">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
             {/* Back Button */}
             <button
               onClick={() => setSelectedJob(null)}
@@ -228,7 +228,7 @@ export default function Jobs() {
             </button>
 
             {/* Two Column Layout */}
-            <div className="flex gap-8">
+            <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
               {/* Left Column - Main Content (70%) */}
               <div className="flex-1 space-y-6">
                 {/* Company Name and Position */}
@@ -338,67 +338,69 @@ export default function Jobs() {
                   </div>
 
                   {/* Payout Table */}
-                  <div className="border border-gray-200 rounded-lg overflow-hidden">
-                    <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
-                      <div className="grid grid-cols-6 gap-2 text-xs text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <span>Payout Day</span>
-                          <Info className="w-3 h-3" />
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span>Payout Cycle</span>
-                          <Info className="w-3 h-3" />
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span>Type</span>
-                          <Info className="w-3 h-3" />
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span>Hours</span>
-                          <Info className="w-3 h-3" />
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span>Hours Max</span>
-                          <Info className="w-3 h-3" />
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span>Earned</span>
-                          <Info className="w-3 h-3" />
+                  <div className="border border-gray-200 rounded-lg overflow-x-auto">
+                    <div className="min-w-[600px]">
+                      <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                        <div className="grid grid-cols-6 gap-2 text-xs text-gray-600">
+                          <div className="flex items-center gap-1">
+                            <span>Payout Day</span>
+                            <Info className="w-3 h-3" />
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span>Payout Cycle</span>
+                            <Info className="w-3 h-3" />
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span>Type</span>
+                            <Info className="w-3 h-3" />
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span>Hours</span>
+                            <Info className="w-3 h-3" />
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span>Hours Max</span>
+                            <Info className="w-3 h-3" />
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span>Earned</span>
+                            <Info className="w-3 h-3" />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="divide-y divide-gray-200">
-                      <div className="px-4 py-3 grid grid-cols-6 gap-2 text-sm">
-                        <span className="text-gray-900">29 Oct 2025</span>
-                        <span className="text-gray-600">18 Oct - 24 Oct</span>
-                        <span className="text-gray-600">Contracts</span>
-                        <span className="text-gray-900">0.00</span>
-                        <span className="text-gray-900">40</span>
-                        <span className="text-gray-900">-</span>
-                      </div>
-                      <div className="px-4 py-3 grid grid-cols-6 gap-2 text-sm bg-gray-50">
-                        <span className="text-gray-900">22 Oct 2025</span>
-                        <span className="text-gray-600">11 Oct - 17 Oct</span>
-                        <span className="text-gray-600">Contracts</span>
-                        <span className="text-gray-900">0.00</span>
-                        <span className="text-gray-900">0</span>
-                        <span className="text-gray-900">-</span>
-                      </div>
-                      <div className="px-4 py-3 grid grid-cols-6 gap-2 text-sm">
-                        <span className="text-gray-900">15 Oct 2025</span>
-                        <span className="text-gray-600">04 Oct - 10 Oct</span>
-                        <span className="text-gray-600">Contracts</span>
-                        <span className="text-gray-900">0.00</span>
-                        <span className="text-gray-900">0</span>
-                        <span className="text-gray-900">-</span>
-                      </div>
-                      <div className="px-4 py-3 grid grid-cols-6 gap-2 text-sm bg-gray-50">
-                        <span className="text-gray-900">08 Oct 2025</span>
-                        <span className="text-gray-600">27 Sep - 03 Oct</span>
-                        <span className="text-gray-600">Contracts</span>
-                        <span className="text-gray-900">0.00</span>
-                        <span className="text-gray-900">0</span>
-                        <span className="text-gray-900">-</span>
+                      <div className="divide-y divide-gray-200">
+                        <div className="px-4 py-3 grid grid-cols-6 gap-2 text-sm">
+                          <span className="text-gray-900">29 Oct 2025</span>
+                          <span className="text-gray-600">18 Oct - 24 Oct</span>
+                          <span className="text-gray-600">Contracts</span>
+                          <span className="text-gray-900">0.00</span>
+                          <span className="text-gray-900">40</span>
+                          <span className="text-gray-900">-</span>
+                        </div>
+                        <div className="px-4 py-3 grid grid-cols-6 gap-2 text-sm bg-gray-50">
+                          <span className="text-gray-900">22 Oct 2025</span>
+                          <span className="text-gray-600">11 Oct - 17 Oct</span>
+                          <span className="text-gray-600">Contracts</span>
+                          <span className="text-gray-900">0.00</span>
+                          <span className="text-gray-900">0</span>
+                          <span className="text-gray-900">-</span>
+                        </div>
+                        <div className="px-4 py-3 grid grid-cols-6 gap-2 text-sm">
+                          <span className="text-gray-900">15 Oct 2025</span>
+                          <span className="text-gray-600">04 Oct - 10 Oct</span>
+                          <span className="text-gray-600">Contracts</span>
+                          <span className="text-gray-900">0.00</span>
+                          <span className="text-gray-900">0</span>
+                          <span className="text-gray-900">-</span>
+                        </div>
+                        <div className="px-4 py-3 grid grid-cols-6 gap-2 text-sm bg-gray-50">
+                          <span className="text-gray-900">08 Oct 2025</span>
+                          <span className="text-gray-600">27 Sep - 03 Oct</span>
+                          <span className="text-gray-600">Contracts</span>
+                          <span className="text-gray-900">0.00</span>
+                          <span className="text-gray-900">0</span>
+                          <span className="text-gray-900">-</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -414,13 +416,13 @@ export default function Jobs() {
                       {activeTasks.map((task) => (
                         <div
                           key={task.id}
-                          className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:bg-white hover:shadow-sm transition-all"
+                          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-gray-50 border border-gray-200 rounded-lg hover:bg-white hover:shadow-sm transition-all"
                         >
                           <div className="flex items-center gap-3 flex-1 min-w-0">
                             <div className="p-2 bg-blue-100 rounded-lg text-blue-600 flex-shrink-0">
                               <FileText className="w-4 h-4" />
                             </div>
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1">
                               <p className="text-sm font-medium text-neutral-900 truncate">
                                 {task.data_to_annotate?.title ||
                                   'Creative Task'}
@@ -431,7 +433,7 @@ export default function Jobs() {
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 ml-4">
+                          <div className="flex items-center gap-2 sm:ml-4 flex-shrink-0">
                             <Badge
                               className={`${getAnnotationStatusBadge(task.status).bg} ${getAnnotationStatusBadge(task.status).text} text-xs font-medium px-2.5 py-1`}
                             >
@@ -443,7 +445,7 @@ export default function Jobs() {
                                 handleStartAnnotation(task.id)
                               }}
                               size="sm"
-                              className="bg-brand-500 hover:bg-brand-600 text-white h-8 px-3 text-xs whitespace-nowrap rounded-lg"
+                              className="bg-brand-500 hover:bg-brand-600 text-white h-8 px-3 text-xs whitespace-nowrap rounded-lg flex-1 sm:flex-initial"
                             >
                               {task.status === 'in_progress'
                                 ? 'Continue'
@@ -458,10 +460,10 @@ export default function Jobs() {
               </div>
 
               {/* Vertical Separator */}
-              <div className="w-px bg-gray-200 self-stretch mt-12"></div>
+              <div className="hidden lg:block w-px bg-gray-200 self-stretch mt-12"></div>
 
               {/* Right Column - Project Information (30%) */}
-              <div className="w-[30%] space-y-6">
+              <div className="w-full lg:w-[30%] space-y-6">
                 <h3 className="text-lg font-semibold text-neutral-900">
                   View initial project information
                 </h3>
@@ -635,8 +637,8 @@ export default function Jobs() {
       <Sidebar />
 
       {/* Main Content */}
-      <main className="ml-64 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+      <main className="lg:ml-64 overflow-y-auto pb-16 lg:pb-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
           {/* Header */}
           <div className="mb-6">
             <h1 className="text-2xl font-semibold text-neutral-900 mb-1">

@@ -139,7 +139,7 @@ const AnnotationData = () => {
       <Sidebar />
 
       {/* Main Content */}
-      <main className="ml-64 overflow-y-auto bg-white">
+      <main className="lg:ml-64 overflow-y-auto bg-white pb-16 lg:pb-0">
         <div className="max-w-7xl mx-auto px-8 py-12">
           {/* Header */}
           <div className="mb-12">
