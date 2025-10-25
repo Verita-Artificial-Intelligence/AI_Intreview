@@ -18,7 +18,7 @@ min_task_count     = 1
 max_task_count     = 3
 
 # DocumentDB
-documentdb_username       = "admin"
+documentdb_username       = "dbadmin"
 documentdb_engine_version = "5.0.0"
 enable_documentdb         = true
 
