@@ -28,7 +28,7 @@ enable_lifecycle_rules = true
 object_expiration_days = 180
 
 # HTTPS (REQUIRED for production)
-domain_name = "api.yourdomain.com"  # CHANGE THIS TO YOUR DOMAIN
+domain_name = "api.yourdomain.com" # CHANGE THIS TO YOUR DOMAIN
 
 # Sensitive variables (set via environment or terraform.tfvars)
 # container_image = "123456789.dkr.ecr.us-east-1.amazonaws.com/verita-backend:v1.0.0"

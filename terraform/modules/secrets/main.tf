@@ -13,9 +13,9 @@ resource "aws_secretsmanager_secret" "app_secrets" {
 resource "aws_secretsmanager_secret_version" "app_secrets" {
   secret_id = aws_secretsmanager_secret.app_secrets.id
   secret_string = jsonencode({
-    openai_api_key       = var.openai_api_key
-    jwt_secret           = var.jwt_secret
-    documentdb_password  = var.documentdb_password
+    openai_api_key      = var.openai_api_key
+    jwt_secret          = var.jwt_secret
+    documentdb_password = var.documentdb_password
   })
 }
 

@@ -18,16 +18,16 @@ min_task_count     = 1
 max_task_count     = 3
 
 # DocumentDB
-documentdb_username        = "admin"
-documentdb_engine_version  = "5.0.0"
-enable_documentdb          = true
+documentdb_username       = "admin"
+documentdb_engine_version = "5.0.0"
+enable_documentdb         = true
 
 # S3
-enable_versioning         = false
-enable_lifecycle_rules    = false
+enable_versioning      = false
+enable_lifecycle_rules = false
 
 # HTTPS
-domain_name = ""  # Leave empty for HTTP-only in dev, or set to "api.dev.yourdomain.com"
+domain_name = "" # Leave empty for HTTP-only in dev, or set to "api.dev.yourdomain.com"
 
 # Sensitive variables (set via environment or terraform.tfvars)
 # container_image = "123456789.dkr.ecr.us-east-1.amazonaws.com/verita-backend:latest"

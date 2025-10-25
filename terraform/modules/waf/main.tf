@@ -73,7 +73,7 @@ resource "aws_wafv2_web_acl" "main" {
 
     statement {
       rate_based_statement {
-        limit              = 2000  # Requests per 5 minutes
+        limit              = 2000 # Requests per 5 minutes
         aggregate_key_type = "IP"
       }
     }
