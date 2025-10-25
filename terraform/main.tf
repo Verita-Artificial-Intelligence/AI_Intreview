@@ -47,19 +47,28 @@ module "iam" {
 module "documentdb" {
   source = "./modules/documentdb"
 
-  app_name              = var.app_name
-  environment           = var.environment
-  db_subnet_ids         = module.vpc.private_subnet_ids
-  security_group_id     = module.vpc.documentdb_security_group_id
-  ecs_security_group_id = module.ecs.security_group_id
-  master_username       = var.documentdb_username
-  master_password       = var.documentdb_password
-  engine_version        = var.documentdb_engine_version
-  skip_final_snapshot   = var.environment == "dev"
+  app_name            = var.app_name
+  environment         = var.environment
+  db_subnet_ids       = module.vpc.private_subnet_ids
+  security_group_id   = module.vpc.documentdb_security_group_id
+  master_username     = var.documentdb_username
+  master_password     = var.documentdb_password
+  engine_version      = var.documentdb_engine_version
+  skip_final_snapshot = var.environment == "dev"
 
   count = var.enable_documentdb ? 1 : 0
+}
 
-  depends_on = [module.ecs]
+# Security group rule to allow ECS tasks to access DocumentDB
+resource "aws_security_group_rule" "ecs_to_documentdb" {
+  count                    = var.enable_documentdb ? 1 : 0
+  type                     = "ingress"
+  from_port                = 27017
+  to_port                  = 27017
+  protocol                 = "tcp"
+  security_group_id        = module.vpc.documentdb_security_group_id
+  source_security_group_id = module.ecs.security_group_id
+  description              = "Allow ECS tasks to access DocumentDB"
 }
 
 # Secrets Management

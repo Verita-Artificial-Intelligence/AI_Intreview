@@ -15,11 +15,6 @@ variable "security_group_id" {
   type        = string
 }
 
-variable "ecs_security_group_id" {
-  description = "Security group ID for ECS tasks (to allow access to DocumentDB)"
-  type        = string
-}
-
 variable "master_username" {
   type = string
 }
