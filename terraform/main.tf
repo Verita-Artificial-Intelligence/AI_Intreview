@@ -85,13 +85,12 @@ module "waf" {
 module "ecs" {
   source = "./modules/ecs"
 
-  app_name              = var.app_name
-  environment           = var.environment
-  vpc_id                = module.vpc.vpc_id
-  private_subnet_ids    = module.vpc.private_subnet_ids
-  alb_target_group_arn  = module.alb.target_group_arn
-  alb_security_group_id = module.alb.security_group_id
-  aws_region            = var.aws_region
+  app_name             = var.app_name
+  environment          = var.environment
+  vpc_id               = module.vpc.vpc_id
+  private_subnet_ids   = module.vpc.private_subnet_ids
+  alb_target_group_arn = module.alb.target_group_arn
+  aws_region           = var.aws_region
 
   # Container configuration
   container_image  = var.container_image

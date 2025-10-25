@@ -90,9 +90,8 @@ resource "aws_ecs_task_definition" "backend" {
   }
 }
 
-# Security group for ECS tasks (if not provided by VPC)
+# Security group for ECS tasks
 resource "aws_security_group" "ecs" {
-  count       = var.alb_security_group_id == null ? 1 : 0
   name        = "${var.app_name}-ecs-tasks-sg"
   vpc_id      = var.vpc_id
   description = "Security group for ECS tasks"
@@ -116,10 +115,6 @@ resource "aws_security_group" "ecs" {
   }
 }
 
-locals {
-  ecs_security_group_id = var.alb_security_group_id != null ? var.alb_security_group_id : aws_security_group.ecs[0].id
-}
-
 # ECS Service
 resource "aws_ecs_service" "backend" {
   name            = "${var.app_name}-service"
@@ -130,7 +125,7 @@ resource "aws_ecs_service" "backend" {
 
   network_configuration {
     subnets          = var.private_subnet_ids
-    security_groups  = [local.ecs_security_group_id]
+    security_groups  = [aws_security_group.ecs.id]
     assign_public_ip = false
   }
 
