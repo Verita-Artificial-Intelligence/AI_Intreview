@@ -11,7 +11,13 @@ variable "db_subnet_ids" {
 }
 
 variable "security_group_id" {
-  type = string
+  description = "Security group ID for DocumentDB cluster"
+  type        = string
+}
+
+variable "ecs_security_group_id" {
+  description = "Security group ID for ECS tasks (to allow access to DocumentDB)"
+  type        = string
 }
 
 variable "master_username" {
