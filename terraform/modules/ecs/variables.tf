@@ -22,11 +22,6 @@ variable "alb_target_group_arn" {
   type = string
 }
 
-variable "alb_security_group_id" {
-  type    = string
-  default = null
-}
-
 variable "container_image" {
   type = string
 }
