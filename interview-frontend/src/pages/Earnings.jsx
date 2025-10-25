@@ -80,7 +80,7 @@ export default function Earnings() {
     return (
       <div className="min-h-screen bg-white">
         <Sidebar />
-        <main className="ml-64 flex items-center justify-center">
+        <main className="lg:ml-64 flex items-center justify-center pb-16 lg:pb-0">
           <p className="text-sm text-gray-600">Loading earnings...</p>
         </main>
       </div>
@@ -91,7 +91,7 @@ export default function Earnings() {
     return (
       <div className="min-h-screen bg-white">
         <Sidebar />
-        <main className="ml-64 flex items-center justify-center">
+        <main className="lg:ml-64 flex items-center justify-center pb-16 lg:pb-0">
           <p className="text-sm text-gray-600">Failed to load earnings</p>
         </main>
       </div>
@@ -103,8 +103,8 @@ export default function Earnings() {
       <Sidebar />
 
       {/* Main Content */}
-      <main className="ml-64 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+      <main className="lg:ml-64 overflow-y-auto pb-16 lg:pb-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
           {/* Header */}
           <div className="mb-6">
             <h1 className="text-2xl font-semibold text-neutral-900 mb-1">
@@ -185,11 +185,11 @@ export default function Earnings() {
                   {earnings.transactions.map((transaction) => (
                     <div
                       key={transaction.id}
-                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                       <div className="flex items-center gap-4 flex-1 min-w-0">
                         <div
-                          className={`p-2 rounded-lg ${
+                          className={`p-2 rounded-lg flex-shrink-0 ${
                             transaction.type === 'earning'
                               ? 'bg-green-100'
                               : 'bg-red-100'
@@ -207,7 +207,7 @@ export default function Earnings() {
                             <DollarSign className="w-5 h-5 text-red-600" />
                           )}
                         </div>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <p className="font-medium text-neutral-900 truncate">
                             {transaction.description}
                           </p>
@@ -217,7 +217,7 @@ export default function Earnings() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-4 flex-shrink-0">
                         <div className="text-right">
                           <p
                             className={`font-semibold ${

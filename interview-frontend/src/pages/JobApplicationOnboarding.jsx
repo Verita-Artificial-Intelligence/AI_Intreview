@@ -444,9 +444,40 @@ export default function JobApplicationOnboarding() {
   const currentStepData = stepsNeeded[currentStep - 1]
 
   return (
-    <div className="flex min-h-screen bg-neutral-50">
-      {/* Left Sidebar - Progress */}
-      <div className="w-80 bg-white border-r border-neutral-200 p-8 flex flex-col">
+    <div className="flex min-h-screen bg-neutral-50 flex-col lg:flex-row">
+      {/* Mobile Header */}
+      <div className="lg:hidden bg-white border-b border-neutral-200 p-4">
+        <div className="flex items-center gap-3 mb-3">
+          <img
+            src="/images/verita_ai_logo.jpeg"
+            alt="Verita AI"
+            className="w-8 h-8 rounded-md flex-shrink-0 object-cover"
+          />
+          <div>
+            <h2 className="text-base font-display font-bold text-neutral-900">
+              Complete Your Application
+            </h2>
+            <p className="text-xs text-neutral-600">
+              for {job?.title || 'this position'}
+            </p>
+          </div>
+        </div>
+        {/* Mobile Progress */}
+        <div>
+          <div className="h-1 bg-neutral-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-blue-500 transition-all duration-300"
+              style={{ width: `${progressPercent}%` }}
+            ></div>
+          </div>
+          <p className="text-xs text-neutral-600 mt-2 font-medium">
+            Step {currentStep} of {stepsNeeded.length}: {stepsNeeded[currentStep - 1]?.title}
+          </p>
+        </div>
+      </div>
+
+      {/* Left Sidebar - Progress (Desktop only) */}
+      <div className="hidden lg:flex lg:w-80 bg-white border-r border-neutral-200 p-8 flex-col">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
@@ -552,7 +583,7 @@ export default function JobApplicationOnboarding() {
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-8 py-12">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
           {/* Step Content */}
           {currentStepData.field === 'resume' && (
             <StepResume
@@ -596,11 +627,11 @@ export default function JobApplicationOnboarding() {
           )}
 
           {/* Navigation */}
-          <div className="flex justify-end gap-3 mt-8">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 mt-8">
             <Button
               onClick={handleBack}
               variant="outline"
-              className="border-neutral-300 font-semibold"
+              className="border-neutral-300 font-semibold w-full sm:w-auto"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
@@ -612,7 +643,7 @@ export default function JobApplicationOnboarding() {
                 (currentStepData.field === 'equipment' &&
                   (!cameraReady || !micReady))
               }
-              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold"
+              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold w-full sm:w-auto"
             >
               {loading
                 ? 'Saving...'
@@ -856,10 +887,10 @@ function StepEquipment({
       </div>
 
       {/* Two Column Layout */}
-      <div className="grid lg:grid-cols-[1.2fr,1fr] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.2fr,1fr] gap-6">
         {/* Left Column - Camera Preview */}
         <div>
-          <div className="bg-white border border-neutral-200 overflow-hidden">
+          <div className="bg-white border border-neutral-200 overflow-hidden rounded-lg">
             <div className="aspect-video bg-neutral-900 relative">
               {requestingPermissions ? (
                 <div className="absolute inset-0 flex items-center justify-center">

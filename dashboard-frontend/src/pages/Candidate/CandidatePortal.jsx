@@ -142,7 +142,7 @@ export default function CandidatePortal() {
                   <div>
                     <h3 className="text-sm font-semibold text-neutral-700 mb-2">Ready to Start ({pendingTasks.length})</h3>
                     {pendingTasks.slice(0, 3).map((task) => (
-                      <div key={task.id} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg mb-2">
+                      <div key={task.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-neutral-50 rounded-lg mb-2">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-neutral-900 truncate">Task {task.id.slice(0, 8)}...</p>
                           <p className="text-xs text-neutral-600">Created {new Date(task.created_at).toLocaleDateString()}</p>
@@ -150,7 +150,7 @@ export default function CandidatePortal() {
                         <Button
                           size="sm"
                           onClick={() => navigate(`/candidate/annotate/${task.id}`)}
-                          className="bg-brand-500 hover:bg-brand-600 text-white ml-3"
+                          className="bg-brand-500 hover:bg-brand-600 text-white w-full sm:w-auto sm:ml-3 flex-shrink-0"
                         >
                           <PlayCircle className="w-4 h-4 mr-1" />
                           Start
@@ -165,7 +165,7 @@ export default function CandidatePortal() {
                   <div className="mt-4">
                     <h3 className="text-sm font-semibold text-neutral-700 mb-2">In Progress ({activeTasks.length})</h3>
                     {activeTasks.slice(0, 3).map((task) => (
-                      <div key={task.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg mb-2">
+                      <div key={task.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-yellow-50 rounded-lg mb-2">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-neutral-900 truncate">Task {task.id.slice(0, 8)}...</p>
                           <Badge className="bg-yellow-100 text-yellow-800 mt-1">In Progress</Badge>
@@ -174,7 +174,7 @@ export default function CandidatePortal() {
                           size="sm"
                           variant="outline"
                           onClick={() => navigate(`/candidate/annotate/${task.id}`)}
-                          className="ml-3"
+                          className="w-full sm:w-auto sm:ml-3 flex-shrink-0"
                         >
                           Continue
                         </Button>
