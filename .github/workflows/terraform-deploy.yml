@@ -58,10 +58,6 @@ jobs:
         working-directory: ./terraform
         run: terraform fmt -check -recursive
 
-      - name: Terraform Validate
-        working-directory: ./terraform
-        run: terraform validate
-
       - name: Decode Secrets (Dev)
         if: github.ref != 'refs/heads/main'
         working-directory: ./terraform
@@ -79,6 +75,10 @@ jobs:
       - name: Terraform Init
         working-directory: ./terraform
         run: terraform init -backend=true
+
+      - name: Terraform Validate
+        working-directory: ./terraform
+        run: terraform validate
 
       - name: Terraform Plan (Dev)
         if: github.ref != 'refs/heads/main'
