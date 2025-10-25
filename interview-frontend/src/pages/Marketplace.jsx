@@ -392,7 +392,7 @@ const Marketplace = () => {
 
         {/* Right side - Job Details */}
         {selectedJob && (
-          <div className="fixed lg:relative inset-0 lg:inset-auto w-full lg:w-1/2 bg-white overflow-y-auto flex flex-col py-4 sm:py-8 z-40 lg:z-auto">
+          <div className="fixed lg:relative inset-0 lg:inset-auto w-full lg:w-1/2 bg-white overflow-y-auto flex flex-col py-4 sm:py-8 pb-24 lg:pb-8 z-40 lg:z-auto">
             <div className="flex flex-col h-full lg:border-l border-gray-200 relative">
               {/* Close button at top right */}
               <div className="absolute top-0 right-6">
@@ -689,7 +689,7 @@ const Marketplace = () => {
               </div>
 
               {/* Footer Actions */}
-              <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4">
+              <div className="sticky bottom-0 bg-white border-t border-gray-200 px-4 sm:px-6 py-4 mb-16 lg:mb-0">
                 {(() => {
                   const application = getJobApplication(selectedJob.id)
                   const hasApplied = !!application

@@ -185,11 +185,11 @@ export default function Earnings() {
                   {earnings.transactions.map((transaction) => (
                     <div
                       key={transaction.id}
-                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                       <div className="flex items-center gap-4 flex-1 min-w-0">
                         <div
-                          className={`p-2 rounded-lg ${
+                          className={`p-2 rounded-lg flex-shrink-0 ${
                             transaction.type === 'earning'
                               ? 'bg-green-100'
                               : 'bg-red-100'
@@ -207,7 +207,7 @@ export default function Earnings() {
                             <DollarSign className="w-5 h-5 text-red-600" />
                           )}
                         </div>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <p className="font-medium text-neutral-900 truncate">
                             {transaction.description}
                           </p>
@@ -217,7 +217,7 @@ export default function Earnings() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-4 flex-shrink-0">
                         <div className="text-right">
                           <p
                             className={`font-semibold ${
