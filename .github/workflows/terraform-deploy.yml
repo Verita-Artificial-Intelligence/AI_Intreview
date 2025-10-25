@@ -149,10 +149,11 @@ jobs:
 
       - name: Get Terraform Outputs
         if: github.event_name == 'push'
+        continue-on-error: true
         working-directory: ./terraform
         run: |
-          terraform output -json > outputs.json
-          cat outputs.json | jq '.' > /tmp/tf_outputs.txt
+          terraform output -json > outputs.json || echo "{}" > outputs.json
+          cat outputs.json | jq '.' > /tmp/tf_outputs.txt || echo "No outputs available" > /tmp/tf_outputs.txt
           echo "## Deployment Outputs" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
           cat /tmp/tf_outputs.txt >> $GITHUB_STEP_SUMMARY
