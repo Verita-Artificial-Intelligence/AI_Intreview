@@ -1,6 +1,3 @@
-locals {
-  mongodb_connection_uri = var.enable_documentdb ? "mongodb://${var.documentdb_username}:${nonsensitive(var.documentdb_password)}@${try(module.documentdb[0].cluster_endpoint, "")}:27017/?tls=true&tlsCAFile=rds-combined-ca-bundle.pem" : var.mongodb_uri
-}
 
 # VPC and Networking
 module "vpc" {
@@ -113,7 +110,8 @@ module "ecs" {
     S3_BUCKET      = module.s3.bucket_name
     OPENAI_API_KEY = var.openai_api_key
     JWT_SECRET     = var.jwt_secret
-    MONGODB_URI    = local.mongodb_connection_uri
+    MONGO_URL      = coalesce(var.mongodb_uri, "mongodb://localhost:27017")
+    DB_NAME        = "verita_ai_interview"
     LOG_LEVEL      = var.environment == "prod" ? "INFO" : "DEBUG"
   }
 
