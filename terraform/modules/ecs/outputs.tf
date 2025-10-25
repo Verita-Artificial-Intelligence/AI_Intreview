@@ -21,3 +21,8 @@ output "task_definition_arn" {
 output "cloudwatch_log_group" {
   value = aws_cloudwatch_log_group.ecs.name
 }
+
+output "security_group_id" {
+  description = "Security group ID for ECS tasks"
+  value       = aws_security_group.ecs.id
+}
