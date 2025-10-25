@@ -125,7 +125,7 @@ const Interviews = () => {
       <Sidebar />
 
       {/* Main Content */}
-      <main className="ml-64 overflow-y-auto">
+      <main className="lg:ml-64 overflow-y-auto pb-16 lg:pb-0">
         <div className="max-w-7xl mx-auto px-6 py-8">
           {/* Header */}
           <div className="mb-6">

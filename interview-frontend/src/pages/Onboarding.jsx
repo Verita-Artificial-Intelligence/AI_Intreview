@@ -818,9 +818,37 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="flex min-h-screen bg-neutral-50">
-      {/* Left Sidebar - Progress */}
-      <div className="w-80 bg-white border-r border-neutral-200 p-8 flex flex-col">
+    <div className="flex min-h-screen bg-neutral-50 flex-col lg:flex-row">
+      {/* Mobile Header */}
+      <div className="lg:hidden bg-white border-b border-neutral-200 p-4">
+        <div className="flex items-center gap-3 mb-3">
+          <img
+            src="/images/verita_ai_logo.jpeg"
+            alt="Verita AI"
+            className="w-8 h-8 rounded-md flex-shrink-0 object-cover"
+          />
+          <div>
+            <h2 className="text-base font-display font-bold text-neutral-900">
+              Complete Your Profile
+            </h2>
+          </div>
+        </div>
+        {/* Mobile Progress */}
+        <div>
+          <div className="h-1 bg-neutral-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-blue-500 transition-all duration-300"
+              style={{ width: `${progressPercent}%` }}
+            ></div>
+          </div>
+          <p className="text-xs text-neutral-600 mt-2 font-medium">
+            Step {currentStep} of {STEPS.length}: {STEPS[currentStep - 1]?.title}
+          </p>
+        </div>
+      </div>
+
+      {/* Left Sidebar - Progress (Desktop only) */}
+      <div className="hidden lg:flex lg:w-80 bg-white border-r border-neutral-200 p-8 flex-col">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
@@ -908,7 +936,7 @@ export default function Onboarding() {
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-8 py-12">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
           {/* Step Content */}
           {currentStep === 1 && (
             <StepResume
@@ -966,13 +994,13 @@ export default function Onboarding() {
           )}
 
           {/* Navigation */}
-          <div className="flex justify-end gap-3 mt-8">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 mt-8">
             {currentStep > 1 && (
               <Button
                 onClick={handleBack}
                 disabled={scrapingLinkedIn}
                 variant="outline"
-                className="border-neutral-300 font-semibold"
+                className="border-neutral-300 font-semibold w-full sm:w-auto"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
@@ -981,7 +1009,7 @@ export default function Onboarding() {
             <Button
               onClick={handleNext}
               disabled={loading || scrapingLinkedIn}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold"
+              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold w-full sm:w-auto"
             >
               {loading
                 ? 'Saving...'
@@ -1074,9 +1102,9 @@ function StepPersonalInfo({
         </p>
       </div>
 
-      <Card className="p-8 border border-neutral-200 space-y-6">
+      <Card className="p-4 sm:p-6 lg:p-8 border border-neutral-200 space-y-4 sm:space-y-6">
         {/* Name Row */}
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <div>
             <label className="block text-xs font-semibold text-neutral-600 tracking-wide mb-2">
               FIRST NAME *
@@ -1104,7 +1132,7 @@ function StepPersonalInfo({
         </div>
 
         {/* Contact Row */}
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <div>
             <label className="block text-xs font-semibold text-neutral-600 tracking-wide mb-2">
               EMAIL *
@@ -1132,7 +1160,7 @@ function StepPersonalInfo({
         </div>
 
         {/* Location Row */}
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <div>
             <label className="block text-xs font-semibold text-neutral-600 tracking-wide mb-2">
               CITY *
@@ -1337,7 +1365,7 @@ function StepExperience({
             Education
           </h2>
           {formData.education.map((edu, index) => (
-            <Card key={index} className="p-6 border border-neutral-200 mb-4">
+            <Card key={index} className="p-4 sm:p-6 border border-neutral-200 mb-4">
               <div className="flex justify-between items-start mb-4">
                 <p className="text-sm font-semibold text-neutral-700">
                   Education {index + 1}
@@ -1349,7 +1377,7 @@ function StepExperience({
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   placeholder="School/University"
                   value={edu.school}
@@ -1401,7 +1429,7 @@ function StepExperience({
             Work Experience
           </h2>
           {formData.workExperience.map((exp, index) => (
-            <Card key={index} className="p-6 border border-neutral-200 mb-4">
+            <Card key={index} className="p-4 sm:p-6 border border-neutral-200 mb-4">
               <div className="flex justify-between items-start mb-4">
                 <p className="text-sm font-semibold text-neutral-700">
                   Experience {index + 1}
@@ -1414,7 +1442,7 @@ function StepExperience({
                 </button>
               </div>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
                     placeholder="Company"
                     value={exp.company}
@@ -1527,7 +1555,7 @@ function StepExperience({
             Publications
           </h2>
           {formData.publications.map((pub, index) => (
-            <Card key={index} className="p-6 border border-neutral-200 mb-4">
+            <Card key={index} className="p-4 sm:p-6 border border-neutral-200 mb-4">
               <div className="flex justify-between items-start mb-4">
                 <p className="text-sm font-semibold text-neutral-700">
                   Publication {index + 1}
@@ -1539,7 +1567,7 @@ function StepExperience({
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   placeholder="Title"
                   value={pub.title}
@@ -1591,7 +1619,7 @@ function StepExperience({
             Certifications
           </h2>
           {formData.certifications.map((cert, index) => (
-            <Card key={index} className="p-6 border border-neutral-200 mb-4">
+            <Card key={index} className="p-4 sm:p-6 border border-neutral-200 mb-4">
               <div className="flex justify-between items-start mb-4">
                 <p className="text-sm font-semibold text-neutral-700">
                   Certification {index + 1}
@@ -1603,7 +1631,7 @@ function StepExperience({
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Input
                   placeholder="Certification Name"
                   value={cert.name}

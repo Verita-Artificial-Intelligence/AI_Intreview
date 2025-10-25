@@ -216,8 +216,8 @@ export default function Jobs() {
       <div className="min-h-screen bg-white">
         <Sidebar />
 
-        <main className="ml-64 overflow-y-auto h-screen">
-          <div className="max-w-7xl mx-auto px-8 py-8">
+        <main className="lg:ml-64 overflow-y-auto h-screen pb-16 lg:pb-0">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
             {/* Back Button */}
             <button
               onClick={() => setSelectedJob(null)}
@@ -635,8 +635,8 @@ export default function Jobs() {
       <Sidebar />
 
       {/* Main Content */}
-      <main className="ml-64 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+      <main className="lg:ml-64 overflow-y-auto pb-16 lg:pb-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
           {/* Header */}
           <div className="mb-6">
             <h1 className="text-2xl font-semibold text-neutral-900 mb-1">

@@ -390,7 +390,7 @@ const AdminDataExplorer = () => {
   return (
     <div className="min-h-screen bg-white">
       <Sidebar />
-      <main className="ml-64 overflow-y-auto bg-white">
+      <main className="lg:ml-64 overflow-y-auto bg-white pb-16 lg:pb-0">
         <div className="max-w-7xl mx-auto px-8 py-12">
           <div className="mb-10 flex flex-wrap items-start justify-between gap-6">
             <div>
