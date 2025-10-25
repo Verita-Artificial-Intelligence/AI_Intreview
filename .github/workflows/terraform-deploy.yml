@@ -4,14 +4,14 @@ on:
   push:
     branches:
       - main
-      - develop
+      - development
     paths:
       - 'terraform/**'
       - '.github/workflows/terraform-deploy.yml'
   pull_request:
     branches:
       - main
-      - develop
+      - development
     paths:
       - 'terraform/**'
   # Also run after Docker image is built
@@ -20,7 +20,7 @@ on:
     types: [completed]
     branches:
       - main
-      - develop
+      - development
 
 permissions:
   contents: read
