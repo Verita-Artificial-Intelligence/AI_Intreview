@@ -73,6 +73,7 @@ jobs:
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_INTERVIEW }}
+          REACT_APP_BACKEND_URL: ${{ github.ref == 'refs/heads/main' && 'https://api.verita-ai.com' || 'https://staging.api.verita-ai.com' }}
 
       - name: Deploy to Vercel
         run: |
@@ -115,6 +116,7 @@ jobs:
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_DASHBOARD }}
+          REACT_APP_BACKEND_URL: ${{ github.ref == 'refs/heads/main' && 'https://api.verita-ai.com' || 'https://staging.api.verita-ai.com' }}
 
       - name: Deploy to Vercel
         run: |

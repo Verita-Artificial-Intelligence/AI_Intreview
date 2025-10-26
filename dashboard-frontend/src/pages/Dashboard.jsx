@@ -106,9 +106,10 @@ const Dashboard = () => {
       const response = await axios.get(
         `${API}/annotations/annotators/stats?${params.toString()}`
       )
-      setAnnotatorStats(response.data)
+      setAnnotatorStats(Array.isArray(response.data) ? response.data : [])
     } catch (error) {
       console.error('Error fetching annotator stats:', error)
+      setAnnotatorStats([])
     } finally {
       setAnnotatorLoading(false)
     }
