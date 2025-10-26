@@ -128,3 +128,8 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "github_repository_url" {
+  description = "GitHub repository URL (e.g., https://github.com/username/repo)"
+  type        = string
+}

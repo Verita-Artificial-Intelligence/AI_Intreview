@@ -5,6 +5,9 @@ aws_region  = "us-east-1"
 environment = "dev"
 app_name    = "verita-ai-interview"
 
+# GitHub Repository
+github_repository_url = "https://github.com/Verita-Artificial-Intelligence/AI_Intreview"
+
 # Networking
 vpc_cidr = "10.0.0.0/16"
 
