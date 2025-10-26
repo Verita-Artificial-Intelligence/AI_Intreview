@@ -61,7 +61,7 @@ jobs:
       - name: Deploy to Vercel
         run: |
           cd interview-frontend
-          vercel deploy --build-env REACT_APP_BACKEND_URL=${{ github.ref == 'refs/heads/main' && 'https://api.verita-ai.com' || 'https://staging.api.verita-ai.com' }} ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }} --yes
+          vercel deploy --build-env REACT_APP_BACKEND_URL="${{ github.ref == 'refs/heads/main' && 'https://api.verita-ai.com' || 'https://staging.api.verita-ai.com' }}" ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }} --yes
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_INTERVIEW }}
@@ -87,7 +87,7 @@ jobs:
       - name: Deploy to Vercel
         run: |
           cd dashboard-frontend
-          vercel deploy --build-env REACT_APP_BACKEND_URL=${{ github.ref == 'refs/heads/main' && 'https://api.verita-ai.com' || 'https://staging.api.verita-ai.com' }} ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }} --yes
+          vercel deploy --build-env REACT_APP_BACKEND_URL="${{ github.ref == 'refs/heads/main' && 'https://api.verita-ai.com' || 'https://staging.api.verita-ai.com' }}" ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }} --yes
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_DASHBOARD }}
