@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from typing import List
-from models import Job, JobCreate, JobStatusUpdate
+from models import Job, JobCreate, JobUpdate, JobStatusUpdate
 from utils import prepare_for_mongo, parse_from_mongo
 from database import get_jobs_collection
 
@@ -37,6 +37,32 @@ class JobService:
             raise HTTPException(status_code=404, detail="Job not found")
 
         return Job(**job_doc)
+
+    @staticmethod
+    async def update_job(job_id: str, job_update: JobUpdate) -> Job:
+        """Update job fields"""
+        jobs_collection = get_jobs_collection()
+
+        # Verify job exists
+        job = await JobService.get_job(job_id)
+
+        # Build update document with only non-None fields
+        update_data = {}
+        for field, value in job_update.model_dump(exclude_none=True).items():
+            update_data[field] = value
+
+        if not update_data:
+            # No fields to update
+            return job
+
+        # Update the job
+        await jobs_collection.update_one(
+            {"id": job_id}, {"$set": update_data}
+        )
+
+        # Return updated job
+        updated_job_doc = await jobs_collection.find_one({"id": job_id}, {"_id": 0})
+        return Job(**updated_job_doc)
 
     @staticmethod
     async def update_job_status(job_id: str, status_update: JobStatusUpdate) -> Job:

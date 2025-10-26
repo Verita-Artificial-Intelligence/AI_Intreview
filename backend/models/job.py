@@ -68,5 +68,19 @@ class JobCreate(BaseModel):
     custom_exercise_prompt: Optional[str] = None
 
 
+class JobUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    position_type: Optional[str] = None
+    pay_per_hour: Optional[float] = None
+    availability: Optional[str] = None
+
+    # Interview configuration
+    interview_type: Optional[InterviewType] = None
+    skills: Optional[List[SkillDefinition]] = None
+    custom_questions: Optional[List[str]] = None
+    custom_exercise_prompt: Optional[str] = None
+
+
 class JobStatusUpdate(BaseModel):
     status: JobStatus
