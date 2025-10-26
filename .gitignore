@@ -151,3 +151,4 @@ terraform/*.auto.tfvars
 # Secret generation scripts output
 generate-github-secrets.sh
 
+.vercel

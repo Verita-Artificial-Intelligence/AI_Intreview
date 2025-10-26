@@ -49,7 +49,9 @@ def chunk_audio(audio_data: bytes, chunk_size_bytes: int) -> List[bytes]:
     return chunks
 
 
-def calculate_chunk_size(sample_rate: int, duration_ms: int, bytes_per_sample: int = 2) -> int:
+def calculate_chunk_size(
+    sample_rate: int, duration_ms: int, bytes_per_sample: int = 2
+) -> int:
     """
     Calculate chunk size in bytes for given parameters.
 

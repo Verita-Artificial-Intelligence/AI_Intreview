@@ -311,7 +311,9 @@ export default function Profile() {
                 <h1 className="text-xl sm:text-2xl font-semibold text-neutral-900 mb-1">
                   {profileData.name}
                 </h1>
-                <p className="text-xs sm:text-sm text-gray-500">{profileData.email}</p>
+                <p className="text-xs sm:text-sm text-gray-500">
+                  {profileData.email}
+                </p>
               </div>
             </div>
           </div>

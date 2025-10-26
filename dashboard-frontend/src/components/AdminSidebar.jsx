@@ -1,5 +1,12 @@
 import { useLocation } from 'react-router-dom'
-import { Users, Briefcase, BarChart, FileText, Table, ChevronRight } from 'lucide-react'
+import {
+  Users,
+  Briefcase,
+  BarChart,
+  FileText,
+  Table,
+  ChevronRight,
+} from 'lucide-react'
 
 export default function AdminSidebar() {
   const location = useLocation()
@@ -27,7 +34,9 @@ export default function AdminSidebar() {
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-neutral-200 overflow-y-auto">
       <div className="p-6">
-        <h2 className="text-xl font-display font-bold text-neutral-900 mb-1">Verita</h2>
+        <h2 className="text-xl font-display font-bold text-neutral-900 mb-1">
+          Verita
+        </h2>
         <p className="text-xs text-neutral-600">AI Interview Platform</p>
       </div>
 

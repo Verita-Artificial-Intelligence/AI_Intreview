@@ -3,8 +3,22 @@ from .candidate import Candidate, CandidateCreate
 from .interview import Interview, InterviewCreate
 from .chat import ChatMessage, ChatRequest
 from .audio import TTSRequest, TTSResponse, STTResponse
-from .job import Job, JobCreate, JobUpdate, JobStatusUpdate, InterviewType, SkillDefinition
-from .annotation import AnnotationTask, AnnotationTaskCreate, AnnotationTaskUpdate, AnnotationTaskAssign, AnnotationTaskStatus, AnnotatorStats
+from .job import (
+    Job,
+    JobCreate,
+    JobUpdate,
+    JobStatusUpdate,
+    InterviewType,
+    SkillDefinition,
+)
+from .annotation import (
+    AnnotationTask,
+    AnnotationTaskCreate,
+    AnnotationTaskUpdate,
+    AnnotationTaskAssign,
+    AnnotationTaskStatus,
+    AnnotatorStats,
+)
 from .annotation_data import AnnotationData, AnnotationDataCreate, DataType
 from .earnings import Earning, EarningsSummary, EarningStatus
 from .admin_data import AdminDataRecord, AdminDataPage

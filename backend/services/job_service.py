@@ -56,9 +56,7 @@ class JobService:
             return job
 
         # Update the job
-        await jobs_collection.update_one(
-            {"id": job_id}, {"$set": update_data}
-        )
+        await jobs_collection.update_one({"id": job_id}, {"$set": update_data})
 
         # Return updated job
         updated_job_doc = await jobs_collection.find_one({"id": job_id}, {"_id": 0})
@@ -81,17 +79,14 @@ class JobService:
         if new_index < current_index:
             raise HTTPException(
                 status_code=400,
-                detail=f"Cannot move job backward from {job.status} to {status_update.status}. Jobs can only progress forward."
+                detail=f"Cannot move job backward from {job.status} to {status_update.status}. Jobs can only progress forward.",
             )
 
         # If moving to completed, check if all tasks are done
         if status_update.status == "completed" and job.status != "completed":
             can_complete = await JobService.can_complete_job(job_id)
             if not can_complete["can_complete"]:
-                raise HTTPException(
-                    status_code=400,
-                    detail=can_complete["reason"]
-                )
+                raise HTTPException(status_code=400, detail=can_complete["reason"])
 
         # Update status
         await jobs_collection.update_one(
@@ -119,12 +114,13 @@ class JobService:
                 "can_complete": True,
                 "reason": "No annotation tasks for this job",
                 "completed_tasks": 0,
-                "total_tasks": 0
+                "total_tasks": 0,
             }
 
         # Check if all tasks are completed or reviewed
         completed_tasks = [
-            task for task in all_tasks
+            task
+            for task in all_tasks
             if task.get("status") in ["completed", "reviewed"]
         ]
 
@@ -132,15 +128,20 @@ class JobService:
 
         return {
             "can_complete": can_complete,
-            "reason": f"Only {len(completed_tasks)} of {len(all_tasks)} annotation tasks are completed" if not can_complete else "All tasks completed",
+            "reason": (
+                f"Only {len(completed_tasks)} of {len(all_tasks)} annotation tasks are completed"
+                if not can_complete
+                else "All tasks completed"
+            ),
             "completed_tasks": len(completed_tasks),
-            "total_tasks": len(all_tasks)
+            "total_tasks": len(all_tasks),
         }
 
     @staticmethod
     async def delete_job(job_id: str):
         """Delete a job and all associated interviews"""
         from database import db
+
         jobs_collection = get_jobs_collection()
 
         # Verify job exists
@@ -155,4 +156,7 @@ class JobService:
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Job not found")
 
-        return {"success": True, "message": "Job and associated interviews deleted successfully"}
+        return {
+            "success": True,
+            "message": "Job and associated interviews deleted successfully",
+        }

@@ -40,7 +40,7 @@ class AudioMixer:
         ai_chunks: List[AudioChunk],
         output_path: Path,
         mic_volume: float = 1.0,
-        ai_volume: float = 1.0
+        ai_volume: float = 1.0,
     ) -> bool:
         """
         Mix microphone and AI audio streams into a single audio file.
@@ -66,7 +66,9 @@ class AudioMixer:
             if mic_chunks:
                 mic_clip = self._chunks_to_audioclip(mic_chunks, mic_volume)
                 clips.append(mic_clip)
-                logger.info(f"Created mic audio clip: duration={mic_clip.duration:.2f}s")
+                logger.info(
+                    f"Created mic audio clip: duration={mic_clip.duration:.2f}s"
+                )
 
             if ai_chunks:
                 ai_clip = self._chunks_to_audioclip(ai_chunks, ai_volume)
@@ -79,16 +81,18 @@ class AudioMixer:
             else:
                 final_audio = CompositeAudioClip(clips)
 
-            logger.info(f"Mixing audio streams: final duration={final_audio.duration:.2f}s")
+            logger.info(
+                f"Mixing audio streams: final duration={final_audio.duration:.2f}s"
+            )
 
             # Write to output file
             final_audio.write_audiofile(
                 str(output_path),
                 fps=self.sample_rate,
                 nbytes=2,  # 16-bit audio
-                codec='pcm_s16le',  # WAV format
+                codec="pcm_s16le",  # WAV format
                 ffmpeg_params=["-ac", str(self.channels)],  # Mono/stereo
-                logger=None  # Suppress MoviePy logs
+                logger=None,  # Suppress MoviePy logs
             )
 
             # Close clips to free resources
@@ -103,16 +107,24 @@ class AudioMixer:
             logger.error(f"Error mixing audio: {e}", exc_info=True)
             return False
 
-    def _chunks_to_audioclip(self, chunks: List[AudioChunk], volume: float) -> AudioClip:
+    def _chunks_to_audioclip(
+        self, chunks: List[AudioChunk], volume: float
+    ) -> AudioClip:
         if not chunks:
-            return AudioClip(lambda t: np.zeros((len(np.atleast_1d(t)), 1)), duration=0.0, fps=self.sample_rate)
+            return AudioClip(
+                lambda t: np.zeros((len(np.atleast_1d(t)), 1)),
+                duration=0.0,
+                fps=self.sample_rate,
+            )
 
         # Sort chunks by timestamp to ensure chronological order
         sorted_chunks = sorted(chunks, key=lambda c: c.timestamp)
 
         # Determine total duration of the final clip
         last_chunk = sorted_chunks[-1]
-        last_chunk_duration_seconds = (len(last_chunk.data) / (2 * self.channels)) / self.sample_rate
+        last_chunk_duration_seconds = (
+            len(last_chunk.data) / (2 * self.channels)
+        ) / self.sample_rate
         total_duration = last_chunk.timestamp + last_chunk_duration_seconds
 
         # Create a silent numpy array representing the full audio timeline
@@ -122,10 +134,12 @@ class AudioMixer:
         # Place each chunk's audio data onto the timeline
         for chunk in sorted_chunks:
             start_sample = int(chunk.timestamp * self.sample_rate)
-            
+
             # Convert PCM16 byte data to a numpy array of floats
-            pcm_data = np.frombuffer(chunk.data, dtype=np.int16).astype(np.float32) / 32768.0
-            
+            pcm_data = (
+                np.frombuffer(chunk.data, dtype=np.int16).astype(np.float32) / 32768.0
+            )
+
             end_sample = start_sample + len(pcm_data)
 
             # Mix audio by adding the new chunk to the corresponding slice of the timeline

@@ -60,7 +60,9 @@ class SpeechActivityMonitor:
         self.min_speech_ms = max(self.chunk_ms, min_speech_ms)
         self.min_silence_ms = max(self.chunk_ms, min_silence_ms)
         self.release_guard_ms = (
-            release_guard_ms if release_guard_ms is not None else max(self.chunk_ms, 200)
+            release_guard_ms
+            if release_guard_ms is not None
+            else max(self.chunk_ms, 200)
         )
 
         self._false_turns = 0
@@ -130,7 +132,9 @@ class SpeechActivityMonitor:
         """Whether any speech has been detected this turn."""
         return self._turn_started and self._turn_speech_ms > 0
 
-    def register_chunk(self, audio_bytes: bytes, *, now: Optional[float] = None) -> Tuple[float, bool]:
+    def register_chunk(
+        self, audio_bytes: bytes, *, now: Optional[float] = None
+    ) -> Tuple[float, bool]:
         """
         Update activity metrics using a new microphone chunk.
 
@@ -169,7 +173,9 @@ class SpeechActivityMonitor:
 
         elapsed_ms = int((now - self._last_speech_time) * 1000)
         # Allow quick fallbacks so we do not chop syllables mid-word.
-        return elapsed_ms <= self.release_guard_ms and rms >= (self.speech_threshold * 0.6)
+        return elapsed_ms <= self.release_guard_ms and rms >= (
+            self.speech_threshold * 0.6
+        )
 
     def can_commit(self, now: Optional[float] = None) -> bool:
         """

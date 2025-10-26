@@ -32,8 +32,7 @@ async def get_annotation_data_list(
 
 @router.post("/upload")
 async def upload_annotation_file(
-    file: UploadFile = File(...),
-    job_id: str = Form(default=None)
+    file: UploadFile = File(...), job_id: str = Form(default=None)
 ):
     """Upload a file for annotation data"""
     try:
@@ -59,8 +58,8 @@ async def upload_annotation_file(
             content={
                 "message": "File uploaded successfully",
                 "url": file_url,
-                "filename": file.filename
-            }
+                "filename": file.filename,
+            },
         )
 
     except Exception as e:

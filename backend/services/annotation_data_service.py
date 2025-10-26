@@ -3,7 +3,12 @@ from typing import List, Optional
 from models import AnnotationData, AnnotationDataCreate
 from models.annotation import AnnotationTask
 from utils import prepare_for_mongo, parse_from_mongo
-from database import get_annotation_data_collection, get_jobs_collection, get_interviews_collection, get_annotations_collection
+from database import (
+    get_annotation_data_collection,
+    get_jobs_collection,
+    get_interviews_collection,
+    get_annotations_collection,
+)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -27,22 +32,23 @@ class AnnotationDataService:
         if job.get("status") != "pending":
             raise HTTPException(
                 status_code=400,
-                detail=f"Cannot add annotation data. Job is in '{job.get('status')}' status. Annotation data can only be added when job is in 'pending' status."
+                detail=f"Cannot add annotation data. Job is in '{job.get('status')}' status. Annotation data can only be added when job is in 'pending' status.",
             )
 
         # Create annotation data (excluding instructions field which is only for tasks)
         data_dict = data.model_dump()
-        instructions = data_dict.pop('instructions')  # Remove instructions from data, use only for tasks
+        instructions = data_dict.pop(
+            "instructions"
+        )  # Remove instructions from data, use only for tasks
 
         annotation_data = AnnotationData(**data_dict)
         doc = prepare_for_mongo(annotation_data.model_dump())
         await annotation_data_collection.insert_one(doc)
 
         # Find all accepted candidates for this job
-        accepted_interviews = await interviews_collection.find({
-            "job_id": data.job_id,
-            "acceptance_status": "accepted"
-        }, {"_id": 0}).to_list(length=None)
+        accepted_interviews = await interviews_collection.find(
+            {"job_id": data.job_id, "acceptance_status": "accepted"}, {"_id": 0}
+        ).to_list(length=None)
 
         # Create annotation tasks for each accepted candidate
         tasks_created = 0
@@ -65,19 +71,23 @@ class AnnotationDataService:
                 task_description=data.description,
                 instructions=instructions,
                 data_to_annotate=data_to_annotate,
-                status="assigned"
+                status="assigned",
             )
 
             task_doc = prepare_for_mongo(task.model_dump())
             await annotations_collection.insert_one(task_doc)
             tasks_created += 1
 
-        logger.info(f"Created annotation data {annotation_data.id} and {tasks_created} tasks for accepted candidates")
+        logger.info(
+            f"Created annotation data {annotation_data.id} and {tasks_created} tasks for accepted candidates"
+        )
 
         return annotation_data
 
     @staticmethod
-    async def get_annotation_data_list(job_id: Optional[str] = None) -> List[AnnotationData]:
+    async def get_annotation_data_list(
+        job_id: Optional[str] = None,
+    ) -> List[AnnotationData]:
         """Get annotation data with optional job filter"""
         annotation_data_collection = get_annotation_data_collection()
 
@@ -85,7 +95,9 @@ class AnnotationDataService:
         if job_id:
             query["job_id"] = job_id
 
-        data_docs = await annotation_data_collection.find(query, {"_id": 0}).to_list(1000)
+        data_docs = await annotation_data_collection.find(query, {"_id": 0}).to_list(
+            1000
+        )
         return [AnnotationData(**doc) for doc in data_docs]
 
     @staticmethod
@@ -93,7 +105,9 @@ class AnnotationDataService:
         """Get a specific annotation data by ID"""
         annotation_data_collection = get_annotation_data_collection()
 
-        data_doc = await annotation_data_collection.find_one({"id": data_id}, {"_id": 0})
+        data_doc = await annotation_data_collection.find_one(
+            {"id": data_id}, {"_id": 0}
+        )
         if not data_doc:
             raise HTTPException(status_code=404, detail="Annotation data not found")
 

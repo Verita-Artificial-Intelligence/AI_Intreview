@@ -82,9 +82,7 @@ class TimingTracker:
 
         # Transcript to TTS latency
         if self.transcript_received and self.tts_first_chunk:
-            metrics.transcript_to_tts = (
-                self.tts_first_chunk - self.transcript_received
-            )
+            metrics.transcript_to_tts = self.tts_first_chunk - self.transcript_received
 
         # TTS to playback latency
         if self.tts_first_chunk and self.playback_start:

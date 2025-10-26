@@ -10,7 +10,9 @@ from services.speech_activity import SpeechActivityMonitor, pcm16_rms  # noqa: E
 
 def make_pcm16(amplitude: int, samples: int = 2400) -> bytes:
     """Helper to create constant PCM16 audio chunks."""
-    return b"".join(int(amplitude).to_bytes(2, "little", signed=True) for _ in range(samples))
+    return b"".join(
+        int(amplitude).to_bytes(2, "little", signed=True) for _ in range(samples)
+    )
 
 
 def test_pcm16_rms_handles_silence_and_constant_signal():
@@ -40,7 +42,9 @@ def test_speech_activity_monitor_requires_speech_and_silence_before_commit():
     assert rms > monitor.speech_threshold
     assert monitor.speech_ms == 100
 
-    rms_near, is_speech_near = monitor.register_chunk(near_threshold_chunk, now=base + 0.1)
+    rms_near, is_speech_near = monitor.register_chunk(
+        near_threshold_chunk, now=base + 0.1
+    )
     assert is_speech_near  # hysteresis keeps the turn active
     assert rms_near < monitor.speech_threshold
     assert monitor.speech_ms == 200

@@ -32,7 +32,8 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserProfile = async () => {
     try {
-      const endpoint = role === 'admin' ? `${API}/admin/profile` : `${API}/profile/me`
+      const endpoint =
+        role === 'admin' ? `${API}/admin/profile` : `${API}/profile/me`
       const response = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -61,7 +62,8 @@ export const AuthProvider = ({ children }) => {
   }
 
   const login = async (email, password, userRole = 'candidate') => {
-    const endpoint = userRole === 'admin' ? `${API}/admin/login` : `${API}/auth/login`
+    const endpoint =
+      userRole === 'admin' ? `${API}/admin/login` : `${API}/auth/login`
     const response = await axios.post(endpoint, {
       email,
       password,

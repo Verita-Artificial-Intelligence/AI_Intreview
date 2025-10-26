@@ -46,7 +46,7 @@ class S3Service:
         file_content: bytes,
         s3_key: str,
         content_type: str = "application/octet-stream",
-        is_temp: bool = False
+        is_temp: bool = False,
     ) -> Optional[str]:
         """
         Upload file to S3.
@@ -67,7 +67,7 @@ class S3Service:
         try:
             tags = {
                 "FileType": "temp" if is_temp else "final",
-                "CreatedAt": datetime.utcnow().isoformat()
+                "CreatedAt": datetime.utcnow().isoformat(),
             }
             tag_set = "&".join([f"{k}={v}" for k, v in tags.items()])
 
@@ -76,10 +76,12 @@ class S3Service:
                 Key=s3_key,
                 Body=file_content,
                 ContentType=content_type,
-                Tagging=tag_set
+                Tagging=tag_set,
             )
 
-            logger.info(f"Uploaded file to S3: s3://{self.bucket_name}/{s3_key} (temp={is_temp})")
+            logger.info(
+                f"Uploaded file to S3: s3://{self.bucket_name}/{s3_key} (temp={is_temp})"
+            )
             return s3_key
 
         except (ClientError, BotoCoreError) as e:
@@ -94,7 +96,7 @@ class S3Service:
         file_path: Path,
         s3_key: str,
         content_type: str = "application/octet-stream",
-        is_temp: bool = False
+        is_temp: bool = False,
     ) -> Optional[str]:
         """
         Upload file from local path to S3.
@@ -131,10 +133,7 @@ class S3Service:
             return None
 
         try:
-            response = self.s3_client.get_object(
-                Bucket=self.bucket_name,
-                Key=s3_key
-            )
+            response = self.s3_client.get_object(Bucket=self.bucket_name, Key=s3_key)
             content = response["Body"].read()
             logger.info(f"Downloaded file from S3: s3://{self.bucket_name}/{s3_key}")
             return content
@@ -189,10 +188,7 @@ class S3Service:
             return False
 
         try:
-            self.s3_client.delete_object(
-                Bucket=self.bucket_name,
-                Key=s3_key
-            )
+            self.s3_client.delete_object(Bucket=self.bucket_name, Key=s3_key)
             logger.info(f"Deleted file from S3: s3://{self.bucket_name}/{s3_key}")
             return True
 
@@ -218,10 +214,7 @@ class S3Service:
             return None
 
         try:
-            response = self.s3_client.get_object(
-                Bucket=self.bucket_name,
-                Key=s3_key
-            )
+            response = self.s3_client.get_object(Bucket=self.bucket_name, Key=s3_key)
             return response["Body"]
 
         except ClientError as e:

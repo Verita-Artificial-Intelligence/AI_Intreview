@@ -98,12 +98,10 @@ class RealtimeService:
                 "voice": self.voice,
                 "input_audio_format": "pcm16",
                 "output_audio_format": "pcm16",
-                "input_audio_transcription": {
-                    "model": "whisper-1"
-                },
+                "input_audio_transcription": {"model": "whisper-1"},
                 "turn_detection": {
                     "type": "server_vad",
-                    "silence_duration_ms": self._current_silence_duration_ms
+                    "silence_duration_ms": self._current_silence_duration_ms,
                 },
                 "tools": [
                     {
@@ -113,10 +111,13 @@ class RealtimeService:
                         "parameters": {
                             "type": "object",
                             "properties": {
-                                "reason": {"type": "string", "description": "Why the conversation is ending."}
+                                "reason": {
+                                    "type": "string",
+                                    "description": "Why the conversation is ending.",
+                                }
                             },
-                            "required": []
-                        }
+                            "required": [],
+                        },
                     }
                 ],
             },
@@ -132,28 +133,26 @@ class RealtimeService:
             silence_duration_ms: New silence duration in milliseconds.
         """
         import time
-        
+
         target = max(200, min(silence_duration_ms, self._max_silence_duration_ms))
         if target == self._current_silence_duration_ms:
             return
-            
+
         # Throttle VAD updates to avoid overwhelming OpenAI API
         current_time = time.time()
         if current_time - self._last_vad_update_time < 0.5:  # Max 2 updates per second
             return
-        
+
         self._last_vad_update_time = current_time
 
         event = {
             "type": "session.update",
             "session": {
-                "input_audio_transcription": {
-                    "model": "whisper-1"
-                },
+                "input_audio_transcription": {"model": "whisper-1"},
                 "turn_detection": {
                     "type": "server_vad",
                     "silence_duration_ms": target,
-                }
+                },
             },
         }
         await self.send_event(event)
@@ -247,5 +246,5 @@ class RealtimeService:
                 pass
 
         if self.ws:
-                    await self.ws.close()
-                    logger.info("Connection closed")
+            await self.ws.close()
+            logger.info("Connection closed")

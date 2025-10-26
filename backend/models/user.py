@@ -29,7 +29,7 @@ class User(BaseModel):
     publications: Optional[List[dict]] = None
     certifications: Optional[List[dict]] = None
     resume_url: Optional[str] = None
-    
+
     # Work authorization
     work_authorization: Optional[str] = None  # citizen, work_visa, need_sponsorship
     citizenship: Optional[str] = None

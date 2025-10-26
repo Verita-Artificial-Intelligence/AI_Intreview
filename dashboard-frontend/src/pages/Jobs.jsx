@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
-import { Briefcase, Plus, Search, FileText, MessagesSquare, Pencil } from 'lucide-react'
+import {
+  Briefcase,
+  Plus,
+  Search,
+  FileText,
+  MessagesSquare,
+  Pencil,
+} from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -82,7 +89,10 @@ const Jobs = () => {
       setShowJobForm(false)
       setEditingJob(null)
     } catch (error) {
-      console.error(jobId ? 'Error updating job:' : 'Error creating job:', error)
+      console.error(
+        jobId ? 'Error updating job:' : 'Error creating job:',
+        error
+      )
       throw error
     }
   }

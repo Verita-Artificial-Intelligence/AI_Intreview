@@ -20,7 +20,7 @@ class ResumeService:
     All methods are designed to fail gracefully without breaking the application.
     """
 
-    SUPPORTED_FORMATS = {'.pdf', '.txt', '.doc', '.docx'}
+    SUPPORTED_FORMATS = {".pdf", ".txt", ".doc", ".docx"}
     MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
     @staticmethod
@@ -61,11 +61,11 @@ class ResumeService:
             await file.seek(0)
 
             # Extract text based on file type
-            if file_ext == '.pdf':
+            if file_ext == ".pdf":
                 return ResumeService._extract_from_pdf(content)
-            elif file_ext == '.txt':
+            elif file_ext == ".txt":
                 return ResumeService._extract_from_txt(content)
-            elif file_ext in ['.doc', '.docx']:
+            elif file_ext in [".doc", ".docx"]:
                 return ResumeService._extract_from_docx(content)
             else:
                 logger.warning(f"Unhandled resume format: {file_ext}")
@@ -88,6 +88,7 @@ class ResumeService:
         """
         try:
             import io
+
             pdf_file = io.BytesIO(content)
             pdf_reader = PyPDF2.PdfReader(pdf_file)
 
@@ -123,9 +124,9 @@ class ResumeService:
         try:
             # Try UTF-8 first, fallback to latin-1
             try:
-                text = content.decode('utf-8')
+                text = content.decode("utf-8")
             except UnicodeDecodeError:
-                text = content.decode('latin-1')
+                text = content.decode("latin-1")
 
             extracted_text = text.strip()
 
@@ -152,6 +153,7 @@ class ResumeService:
         """
         try:
             import io
+
             doc_file = io.BytesIO(content)
             doc = docx.Document(doc_file)
 
@@ -189,7 +191,7 @@ class ResumeService:
                 return ""
 
             # Remove excessive whitespace
-            lines = [line.strip() for line in text.split('\n')]
+            lines = [line.strip() for line in text.split("\n")]
             lines = [line for line in lines if line]  # Remove empty lines
             sanitized = "\n".join(lines)
 

@@ -57,7 +57,9 @@ const AdminInterviewReview = () => {
   const scrollToTranscriptEntry = (entryIndex) => {
     if (!transcriptRef.current) return
 
-    const transcriptEntries = transcriptRef.current.querySelectorAll('[data-transcript-entry]')
+    const transcriptEntries = transcriptRef.current.querySelectorAll(
+      '[data-transcript-entry]'
+    )
     const targetEntry = transcriptEntries[entryIndex - 1] // Convert to 0-based index
 
     if (targetEntry) {
@@ -86,7 +88,10 @@ const AdminInterviewReview = () => {
       }
 
       // Parse citation numbers
-      const citationNumbers = match[1].split(',').map(num => parseInt(num.trim())).filter(num => !isNaN(num))
+      const citationNumbers = match[1]
+        .split(',')
+        .map((num) => parseInt(num.trim()))
+        .filter((num) => !isNaN(num))
 
       // Create clickable citation spans
       citationNumbers.forEach((num, index) => {
@@ -408,9 +413,13 @@ const AdminInterviewReview = () => {
   }
 
   // Derive inline loading flags for analysis sections
-  const hasTranscript = Array.isArray(interview?.transcript) && interview.transcript.length > 0
+  const hasTranscript =
+    Array.isArray(interview?.transcript) && interview.transcript.length > 0
   const hasMessages = Array.isArray(messages) && messages.length > 0
-  const isAnalysisLoadingInline = analyzing || analysis?.processing || (!analysis && (hasTranscript || hasMessages))
+  const isAnalysisLoadingInline =
+    analyzing ||
+    analysis?.processing ||
+    (!analysis && (hasTranscript || hasMessages))
   const isAnalysisUnavailable = !analysis && !isAnalysisLoadingInline
 
   return (
@@ -650,132 +659,116 @@ const AdminInterviewReview = () => {
                 </Card>
               ) : (
                 <>
-                   {/* Combined Assessment Card */}
-                   {isAnalysisLoadingInline ? (
-                     <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-                       <div className="flex flex-col items-center justify-center py-12">
-                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500 mb-4"></div>
-                         <h3 className="text-base font-bold mb-2 text-neutral-900">Waiting for AI Analysis</h3>
-                         <p className="text-sm text-neutral-600 text-center max-w-md">
-                           Our AI is analyzing the interview responses. This usually takes 10-30 seconds...
-                         </p>
-                       </div>
-                     </Card>
-                   ) : (
+                  {/* Combined Assessment Card */}
+                  {isAnalysisLoadingInline ? (
                     <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-                    {/* Overall Score */}
-                    <div className="mb-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-base font-bold text-neutral-900">
-                            Overall Assessment
-                          </h3>
-                          <p className="text-xs text-neutral-600 mt-0.5">
-                            AI-generated evaluation based on interview responses
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="text-right">
-                            <div className="text-2xl font-bold text-neutral-900">
-                              {analysis?.overall_score || 0}
-                              <span className="text-sm text-neutral-500">
-                                /10
-                              </span>
-                            </div>
-                            <p className="text-xs text-neutral-500">Score</p>
-                          </div>
-                        </div>
+                      <div className="flex flex-col items-center justify-center py-12">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500 mb-4"></div>
+                        <h3 className="text-base font-bold mb-2 text-neutral-900">
+                          Waiting for AI Analysis
+                        </h3>
+                        <p className="text-sm text-neutral-600 text-center max-w-md">
+                          Our AI is analyzing the interview responses. This
+                          usually takes 10-30 seconds...
+                        </p>
                       </div>
-                    </div>
-
-                    {/* Skills Assessment */}
-                    <div className="mb-6 pb-6 border-b border-neutral-200">
-                      <h3 className="text-base font-bold mb-3 text-neutral-900">
-                        Skills Assessment
-                      </h3>
-                      <div className="space-y-3">
-                        {analysis?.skills_breakdown?.map((skill, index) => (
-                          <div key={index}>
-                            <div className="flex items-center justify-between mb-1.5">
-                              <span className="text-sm font-medium text-neutral-900">
-                                {skill.skill}
-                              </span>
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className={`text-xs px-2 py-0.5 rounded-full ${getScoreBadge(skill.score)}`}
-                                >
-                                  {skill.level}
-                                </span>
-                                <span className="text-sm font-bold text-neutral-900">
-                                  {skill.score}/10
+                    </Card>
+                  ) : (
+                    <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+                      {/* Overall Score */}
+                      <div className="mb-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="text-base font-bold text-neutral-900">
+                              Overall Assessment
+                            </h3>
+                            <p className="text-xs text-neutral-600 mt-0.5">
+                              AI-generated evaluation based on interview
+                              responses
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="text-right">
+                              <div className="text-2xl font-bold text-neutral-900">
+                                {analysis?.overall_score || 0}
+                                <span className="text-sm text-neutral-500">
+                                  /10
                                 </span>
                               </div>
-                            </div>
-                            <div className="w-full bg-neutral-100 rounded-full h-1.5">
-                              <div
-                                className="bg-brand-500 h-1.5 rounded-full transition-all"
-                                style={{
-                                  width: `${(skill.score / 10) * 100}%`,
-                                }}
-                              />
+                              <p className="text-xs text-neutral-500">Score</p>
                             </div>
                           </div>
-                        ))}
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Key Insights */}
-                    {analysis?.key_insights &&
-                      analysis.key_insights.length > 0 && (
-                        <div className="mb-6 pb-6 border-b border-neutral-200">
-                          <h3 className="text-base font-bold mb-3 text-neutral-900">
-                            Key Insights
-                          </h3>
-                          <ul className="space-y-2">
-                            {analysis.key_insights.map((insight, index) => (
-                              <li
-                                key={index}
-                                className="flex gap-2 text-sm text-neutral-700"
-                              >
-                                <span className="text-neutral-400 flex-shrink-0">
-                                  •
+                      {/* Skills Assessment */}
+                      <div className="mb-6 pb-6 border-b border-neutral-200">
+                        <h3 className="text-base font-bold mb-3 text-neutral-900">
+                          Skills Assessment
+                        </h3>
+                        <div className="space-y-3">
+                          {analysis?.skills_breakdown?.map((skill, index) => (
+                            <div key={index}>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className="text-sm font-medium text-neutral-900">
+                                  {skill.skill}
                                 </span>
-                                <span>{parseTextWithCitations(insight)}</span>
-                              </li>
-                            ))}
-                          </ul>
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className={`text-xs px-2 py-0.5 rounded-full ${getScoreBadge(skill.score)}`}
+                                  >
+                                    {skill.level}
+                                  </span>
+                                  <span className="text-sm font-bold text-neutral-900">
+                                    {skill.score}/10
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="w-full bg-neutral-100 rounded-full h-1.5">
+                                <div
+                                  className="bg-brand-500 h-1.5 rounded-full transition-all"
+                                  style={{
+                                    width: `${(skill.score / 10) * 100}%`,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      )}
+                      </div>
 
-                    {/* Strengths & Growth Areas */}
-                    <div className="mb-6 pb-6 border-b border-neutral-200">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <h3 className="text-sm font-bold mb-2 text-neutral-900">
-                            Strengths
-                          </h3>
-                          <ul className="space-y-1.5">
-                            {analysis?.strengths?.map((strength, index) => (
-                              <li
-                                key={index}
-                                className="flex gap-2 text-xs text-neutral-700"
-                              >
-                                <span className="text-neutral-400 flex-shrink-0">
-                                  •
-                                </span>
-                                <span>{parseTextWithCitations(strength)}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
+                      {/* Key Insights */}
+                      {analysis?.key_insights &&
+                        analysis.key_insights.length > 0 && (
+                          <div className="mb-6 pb-6 border-b border-neutral-200">
+                            <h3 className="text-base font-bold mb-3 text-neutral-900">
+                              Key Insights
+                            </h3>
+                            <ul className="space-y-2">
+                              {analysis.key_insights.map((insight, index) => (
+                                <li
+                                  key={index}
+                                  className="flex gap-2 text-sm text-neutral-700"
+                                >
+                                  <span className="text-neutral-400 flex-shrink-0">
+                                    •
+                                  </span>
+                                  <span>{parseTextWithCitations(insight)}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
 
-                        <div>
-                          <h3 className="text-sm font-bold mb-2 text-neutral-900">
-                            Growth Areas
-                          </h3>
-                          <ul className="space-y-1.5">
-                            {analysis?.areas_for_improvement?.map(
-                              (area, index) => (
+                      {/* Strengths & Growth Areas */}
+                      <div className="mb-6 pb-6 border-b border-neutral-200">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <h3 className="text-sm font-bold mb-2 text-neutral-900">
+                              Strengths
+                            </h3>
+                            <ul className="space-y-1.5">
+                              {analysis?.strengths?.map((strength, index) => (
                                 <li
                                   key={index}
                                   className="flex gap-2 text-xs text-neutral-700"
@@ -783,167 +776,191 @@ const AdminInterviewReview = () => {
                                   <span className="text-neutral-400 flex-shrink-0">
                                     •
                                   </span>
-                                  <span>{parseTextWithCitations(area)}</span>
+                                  <span>
+                                    {parseTextWithCitations(strength)}
+                                  </span>
                                 </li>
-                              )
+                              ))}
+                            </ul>
+                          </div>
+
+                          <div>
+                            <h3 className="text-sm font-bold mb-2 text-neutral-900">
+                              Growth Areas
+                            </h3>
+                            <ul className="space-y-1.5">
+                              {analysis?.areas_for_improvement?.map(
+                                (area, index) => (
+                                  <li
+                                    key={index}
+                                    className="flex gap-2 text-xs text-neutral-700"
+                                  >
+                                    <span className="text-neutral-400 flex-shrink-0">
+                                      •
+                                    </span>
+                                    <span>{parseTextWithCitations(area)}</span>
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Detailed Assessment */}
+                      {(analysis?.communication_assessment ||
+                        analysis?.technical_depth ||
+                        analysis?.problem_solving) && (
+                        <div>
+                          <h3 className="text-base font-bold mb-3 text-neutral-900">
+                            Detailed Assessment
+                          </h3>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {analysis?.communication_assessment && (
+                              <div>
+                                <p className="text-sm font-semibold text-neutral-900 mb-2">
+                                  Communication
+                                </p>
+                                <div className="space-y-1 text-xs">
+                                  <div className="flex justify-between">
+                                    <span className="text-neutral-600">
+                                      Clarity
+                                    </span>
+                                    <span className="font-medium text-neutral-900">
+                                      {
+                                        analysis.communication_assessment
+                                          .clarity_score
+                                      }
+                                      /10
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-neutral-600">
+                                      Articulation
+                                    </span>
+                                    <span className="font-medium text-neutral-900">
+                                      {
+                                        analysis.communication_assessment
+                                          .articulation_score
+                                      }
+                                      /10
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-neutral-600">
+                                      Confidence
+                                    </span>
+                                    <span className="font-medium text-neutral-900">
+                                      {
+                                        analysis.communication_assessment
+                                          .confidence_score
+                                      }
+                                      /10
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
                             )}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
 
-                    {/* Detailed Assessment */}
-                    {(analysis?.communication_assessment ||
-                      analysis?.technical_depth ||
-                      analysis?.problem_solving) && (
-                      <div>
-                        <h3 className="text-base font-bold mb-3 text-neutral-900">
-                          Detailed Assessment
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          {analysis?.communication_assessment && (
-                            <div>
-                              <p className="text-sm font-semibold text-neutral-900 mb-2">
-                                Communication
-                              </p>
-                              <div className="space-y-1 text-xs">
-                                <div className="flex justify-between">
-                                  <span className="text-neutral-600">
-                                    Clarity
-                                  </span>
-                                  <span className="font-medium text-neutral-900">
-                                    {
-                                      analysis.communication_assessment
-                                        .clarity_score
-                                    }
-                                    /10
-                                  </span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-neutral-600">
-                                    Articulation
-                                  </span>
-                                  <span className="font-medium text-neutral-900">
-                                    {
-                                      analysis.communication_assessment
-                                        .articulation_score
-                                    }
-                                    /10
-                                  </span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-neutral-600">
-                                    Confidence
-                                  </span>
-                                  <span className="font-medium text-neutral-900">
-                                    {
-                                      analysis.communication_assessment
-                                        .confidence_score
-                                    }
-                                    /10
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {analysis?.technical_depth && (
-                            <div>
-                              <p className="text-sm font-semibold text-neutral-900 mb-2">
-                                Technical Depth
-                              </p>
-                              <div className="text-xs">
-                                <div className="flex justify-between mb-1">
-                                  <span className="text-neutral-600">
-                                    Score
-                                  </span>
-                                  <span className="font-medium text-neutral-900">
-                                    {analysis.technical_depth.score}/10
-                                  </span>
-                                </div>
-                                <p className="text-neutral-600 leading-relaxed">
-                                  {analysis.technical_depth.notes}
+                            {analysis?.technical_depth && (
+                              <div>
+                                <p className="text-sm font-semibold text-neutral-900 mb-2">
+                                  Technical Depth
                                 </p>
-                              </div>
-                            </div>
-                          )}
-
-                          {analysis?.problem_solving && (
-                            <div>
-                              <p className="text-sm font-semibold text-neutral-900 mb-2">
-                                Problem Solving
-                              </p>
-                              <div className="text-xs">
-                                <div className="flex justify-between mb-1">
-                                  <span className="text-neutral-600">
-                                    Score
-                                  </span>
-                                  <span className="font-medium text-neutral-900">
-                                    {analysis.problem_solving.score}/10
-                                  </span>
+                                <div className="text-xs">
+                                  <div className="flex justify-between mb-1">
+                                    <span className="text-neutral-600">
+                                      Score
+                                    </span>
+                                    <span className="font-medium text-neutral-900">
+                                      {analysis.technical_depth.score}/10
+                                    </span>
+                                  </div>
+                                  <p className="text-neutral-600 leading-relaxed">
+                                    {analysis.technical_depth.notes}
+                                  </p>
                                 </div>
-                                <p className="text-neutral-600 leading-relaxed">
-                                  {analysis.problem_solving.approach}
-                                </p>
                               </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </Card>
-                 )}
+                            )}
 
-                 {/* Hiring Recommendation */}
-                 {isAnalysisLoadingInline ? (
-                   <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-                     <div className="flex flex-col items-center justify-center py-8">
-                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-500 mb-3"></div>
-                       <p className="text-sm text-neutral-600">Generating recommendation...</p>
-                     </div>
-                   </Card>
-                 ) : (
-                   <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-                     <h3 className="text-base font-bold mb-3 text-neutral-900">
-                       Hiring Recommendation
-                     </h3>
-                    <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg border border-neutral-200 mb-3">
-                      <div>
-                        <p className="text-lg font-bold text-neutral-900">
-                          {analysis?.recommendation}
-                        </p>
-                        <p className="text-xs text-neutral-600">
-                          Confidence: {analysis?.confidence}%
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-neutral-900">
-                          {analysis?.confidence}%
-                        </div>
-                      </div>
-                    </div>
-
-                    {analysis?.recommendations &&
-                      analysis.recommendations.length > 0 && (
-                        <div className="pt-3 border-t border-neutral-200">
-                          <p className="text-sm font-semibold text-neutral-900 mb-2">
-                            Recommendations
-                          </p>
-                          <ul className="space-y-1">
-                            {analysis.recommendations.map((rec, index) => (
-                              <li
-                                key={index}
-                                className="text-xs text-neutral-700 flex gap-2"
-                              >
-                                <span className="text-neutral-400">•</span>
-                                <span>{rec}</span>
-                              </li>
-                            ))}
-                          </ul>
+                            {analysis?.problem_solving && (
+                              <div>
+                                <p className="text-sm font-semibold text-neutral-900 mb-2">
+                                  Problem Solving
+                                </p>
+                                <div className="text-xs">
+                                  <div className="flex justify-between mb-1">
+                                    <span className="text-neutral-600">
+                                      Score
+                                    </span>
+                                    <span className="font-medium text-neutral-900">
+                                      {analysis.problem_solving.score}/10
+                                    </span>
+                                  </div>
+                                  <p className="text-neutral-600 leading-relaxed">
+                                    {analysis.problem_solving.approach}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
-                   </Card>
-                 )}
+                    </Card>
+                  )}
+
+                  {/* Hiring Recommendation */}
+                  {isAnalysisLoadingInline ? (
+                    <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+                      <div className="flex flex-col items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-500 mb-3"></div>
+                        <p className="text-sm text-neutral-600">
+                          Generating recommendation...
+                        </p>
+                      </div>
+                    </Card>
+                  ) : (
+                    <Card className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+                      <h3 className="text-base font-bold mb-3 text-neutral-900">
+                        Hiring Recommendation
+                      </h3>
+                      <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg border border-neutral-200 mb-3">
+                        <div>
+                          <p className="text-lg font-bold text-neutral-900">
+                            {analysis?.recommendation}
+                          </p>
+                          <p className="text-xs text-neutral-600">
+                            Confidence: {analysis?.confidence}%
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-neutral-900">
+                            {analysis?.confidence}%
+                          </div>
+                        </div>
+                      </div>
+
+                      {analysis?.recommendations &&
+                        analysis.recommendations.length > 0 && (
+                          <div className="pt-3 border-t border-neutral-200">
+                            <p className="text-sm font-semibold text-neutral-900 mb-2">
+                              Recommendations
+                            </p>
+                            <ul className="space-y-1">
+                              {analysis.recommendations.map((rec, index) => (
+                                <li
+                                  key={index}
+                                  className="text-xs text-neutral-700 flex gap-2"
+                                >
+                                  <span className="text-neutral-400">•</span>
+                                  <span>{rec}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                    </Card>
+                  )}
 
                   {/* Interview Transcript */}
                   {interview.transcript && interview.transcript.length > 0 ? (

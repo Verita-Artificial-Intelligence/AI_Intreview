@@ -42,9 +42,7 @@ EVALUATION_FRAMEWORKS = {
 }
 
 # Realtime API Configuration
-OPENAI_REALTIME_MODEL = os.environ.get(
-    "OPENAI_REALTIME_MODEL", "gpt-realtime"
-)
+OPENAI_REALTIME_MODEL = os.environ.get("OPENAI_REALTIME_MODEL", "gpt-realtime")
 OPENAI_REALTIME_VOICE = os.environ.get("OPENAI_REALTIME_VOICE", "nova")
 OPENAI_REALTIME_AUTO_GREET = (
     os.environ.get("OPENAI_REALTIME_AUTO_GREET", "true").lower() == "true"
@@ -79,7 +77,9 @@ ENABLE_LATENCY_LOGGING = (
 
 # Mock Services Configuration (for development/testing without API costs)
 USE_MOCK_SERVICES = os.environ.get("USE_MOCK_SERVICES", "false").lower() == "true"
-MOCK_OPENAI_REALTIME = os.environ.get("MOCK_OPENAI_REALTIME", str(USE_MOCK_SERVICES)).lower() == "true"
+MOCK_OPENAI_REALTIME = (
+    os.environ.get("MOCK_OPENAI_REALTIME", str(USE_MOCK_SERVICES)).lower() == "true"
+)
 
 
 # Settings class for easy access

@@ -61,7 +61,9 @@ class Interview(BaseModel):
     video_processing_status: Optional[VideoProcessingStatus] = None
     video_filesize: Optional[int] = None
     audio_path: Optional[str] = None  # Legacy support for single audio file
-    audio_paths: Optional[Dict[str, str]] = None  # For separate mic, AI, and mixed audio
+    audio_paths: Optional[Dict[str, str]] = (
+        None  # For separate mic, AI, and mixed audio
+    )
     interview_type: InterviewType = "standard"
     skills: Optional[List[SkillDefinition]] = None
     custom_questions: Optional[List[str]] = None
@@ -70,7 +72,7 @@ class Interview(BaseModel):
     acceptance_status: AcceptanceStatus = "pending"
     availability_confirmed: Optional[bool] = None  # Per-job availability confirmation
 
-    @field_validator('interview_type', mode='before')
+    @field_validator("interview_type", mode="before")
     @classmethod
     def migrate_old_interview_types(cls, v):
         """Migrate deprecated interview types using centralized config"""

@@ -28,7 +28,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { Slider } from '@/components/ui/slider'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -59,7 +63,9 @@ import {
 import { cn } from '@/lib/utils'
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API_BASE = BACKEND_URL ? `${BACKEND_URL}/api` : 'http://localhost:8000/api'
+const API_BASE = BACKEND_URL
+  ? `${BACKEND_URL}/api`
+  : 'http://localhost:8000/api'
 
 const PAGE_SIZE = 25
 const STATUS_OPTIONS = [
@@ -314,12 +320,14 @@ const AdminDataExplorer = () => {
         responseType: 'blob',
       })
 
-      const contentType = response.headers['content-type'] || 'application/octet-stream'
+      const contentType =
+        response.headers['content-type'] || 'application/octet-stream'
       const blob = new Blob([response.data], { type: contentType })
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.download = format === 'json' ? 'admin-data-export.json' : 'admin-data-export.csv'
+      link.download =
+        format === 'json' ? 'admin-data-export.json' : 'admin-data-export.csv'
       document.body.appendChild(link)
       link.click()
       link.remove()
@@ -343,7 +351,10 @@ const AdminDataExplorer = () => {
     const chips = []
     if (filters.jobId !== 'all') {
       const job = jobs.find((entry) => entry.id === filters.jobId)
-      chips.push({ label: job?.title || 'Selected job', onRemove: () => handleJobChange('all') })
+      chips.push({
+        label: job?.title || 'Selected job',
+        onRemove: () => handleJobChange('all'),
+      })
     }
     if (filters.annotator) {
       chips.push({
@@ -371,7 +382,9 @@ const AdminDataExplorer = () => {
     }
     if (filters.createdRange.from || filters.createdRange.to) {
       const label = `Created ${filters.createdRange.from ? format(filters.createdRange.from, 'MMM d, yyyy') : 'start'} → ${
-        filters.createdRange.to ? format(filters.createdRange.to, 'MMM d, yyyy') : 'now'
+        filters.createdRange.to
+          ? format(filters.createdRange.to, 'MMM d, yyyy')
+          : 'now'
       }`
       chips.push({
         label,
@@ -398,7 +411,8 @@ const AdminDataExplorer = () => {
                 Admin Data Explorer
               </h1>
               <p className="text-lg text-neutral-600 font-light max-w-2xl">
-                Inspect annotation tasks, project datasets, and quality trends with powerful filters and exports.
+                Inspect annotation tasks, project datasets, and quality trends
+                with powerful filters and exports.
               </p>
             </div>
             <div className="flex gap-3">
@@ -474,7 +488,12 @@ const AdminDataExplorer = () => {
                   </SelectContent>
                 </Select>
 
-                <Popover open={activePopover === 'annotator'} onOpenChange={(open) => setActivePopover(open ? 'annotator' : null)}>
+                <Popover
+                  open={activePopover === 'annotator'}
+                  onOpenChange={(open) =>
+                    setActivePopover(open ? 'annotator' : null)
+                  }
+                >
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="justify-between">
                       <span className="truncate">{currentAnnotatorLabel}</span>
@@ -501,7 +520,9 @@ const AdminDataExplorer = () => {
                               className="justify-between"
                             >
                               <span className="truncate">{annotator.name}</span>
-                              {filters.annotator?.id === annotator.id && <Checkmark />}
+                              {filters.annotator?.id === annotator.id && (
+                                <Checkmark />
+                              )}
                             </CommandItem>
                           ))}
                         </CommandGroup>
@@ -512,7 +533,12 @@ const AdminDataExplorer = () => {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                <Popover open={activePopover === 'tags'} onOpenChange={(open) => setActivePopover(open ? 'tags' : null)}>
+                <Popover
+                  open={activePopover === 'tags'}
+                  onOpenChange={(open) =>
+                    setActivePopover(open ? 'tags' : null)
+                  }
+                >
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="justify-between">
                       <span className="truncate">
@@ -523,10 +549,15 @@ const AdminDataExplorer = () => {
                       <ArrowUpDown className="w-4 h-4 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent align="start" className="max-h-72 overflow-y-auto">
+                  <PopoverContent
+                    align="start"
+                    className="max-h-72 overflow-y-auto"
+                  >
                     <div className="space-y-2">
                       {availableTags.length === 0 && (
-                        <p className="text-sm text-neutral-500">No tags discovered yet</p>
+                        <p className="text-sm text-neutral-500">
+                          No tags discovered yet
+                        </p>
                       )}
                       {availableTags.map((tag) => {
                         const checked = filters.tags.includes(tag)
@@ -547,7 +578,12 @@ const AdminDataExplorer = () => {
                   </PopoverContent>
                 </Popover>
 
-                <Popover open={activePopover === 'dates'} onOpenChange={(open) => setActivePopover(open ? 'dates' : null)}>
+                <Popover
+                  open={activePopover === 'dates'}
+                  onOpenChange={(open) =>
+                    setActivePopover(open ? 'dates' : null)
+                  }
+                >
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="justify-between">
                       <span>
@@ -582,7 +618,9 @@ const AdminDataExplorer = () => {
                     max={5}
                     step={1}
                     value={filters.ratingRange}
-                    onValueChange={(value) => setFilters((prev) => ({ ...prev, ratingRange: value }))}
+                    onValueChange={(value) =>
+                      setFilters((prev) => ({ ...prev, ratingRange: value }))
+                    }
                     onValueCommit={handleRatingCommit}
                   />
                 </div>
@@ -633,10 +671,13 @@ const AdminDataExplorer = () => {
           <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
             <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 bg-neutral-50">
               <div>
-                <h2 className="text-lg font-semibold text-neutral-900">Data overview</h2>
+                <h2 className="text-lg font-semibold text-neutral-900">
+                  Data overview
+                </h2>
                 <p className="text-sm text-neutral-500">
                   Showing {(page - 1) * PAGE_SIZE + 1}–
-                  {Math.min(page * PAGE_SIZE, totalItems)} of {totalItems} records
+                  {Math.min(page * PAGE_SIZE, totalItems)} of {totalItems}{' '}
+                  records
                 </p>
               </div>
             </div>
@@ -650,11 +691,14 @@ const AdminDataExplorer = () => {
                       const icon = !isActive
                         ? ArrowUpDown
                         : sort.direction === 'asc'
-                        ? ArrowUp
-                        : ArrowDown
+                          ? ArrowUp
+                          : ArrowDown
                       const Icon = icon
                       return (
-                        <TableHead key={column.key} className="whitespace-nowrap">
+                        <TableHead
+                          key={column.key}
+                          className="whitespace-nowrap"
+                        >
                           <button
                             type="button"
                             className="flex items-center gap-2 text-sm font-medium text-neutral-600 hover:text-neutral-900"
@@ -672,14 +716,20 @@ const AdminDataExplorer = () => {
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="py-20 text-center text-neutral-500">
+                      <TableCell
+                        colSpan={7}
+                        className="py-20 text-center text-neutral-500"
+                      >
                         <Loader2 className="w-5 h-5 mr-2 inline-block animate-spin" />
                         Loading data…
                       </TableCell>
                     </TableRow>
                   ) : records.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="py-16 text-center text-neutral-500">
+                      <TableCell
+                        colSpan={7}
+                        className="py-16 text-center text-neutral-500"
+                      >
                         No records match the current filters.
                       </TableCell>
                     </TableRow>
@@ -699,7 +749,9 @@ const AdminDataExplorer = () => {
                             <span className="font-medium text-neutral-800">
                               {record.job_title || '—'}
                             </span>
-                            <span className="text-xs text-neutral-500">{record.job_status || '—'}</span>
+                            <span className="text-xs text-neutral-500">
+                              {record.job_status || '—'}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -707,7 +759,11 @@ const AdminDataExplorer = () => {
                             <span className="font-medium text-neutral-800">
                               {record.annotator_name || '—'}
                             </span>
-                            <span className="text-xs text-neutral-500">{record.annotator_email || record.annotator_id || '—'}</span>
+                            <span className="text-xs text-neutral-500">
+                              {record.annotator_email ||
+                                record.annotator_id ||
+                                '—'}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -717,7 +773,10 @@ const AdminDataExplorer = () => {
                               return '—'
                             }
                             return (
-                              <Badge variant="outline" className="border-green-200 text-green-700">
+                              <Badge
+                                variant="outline"
+                                className="border-green-200 text-green-700"
+                              >
                                 {numericRating.toFixed(1)}
                               </Badge>
                             )
@@ -731,8 +790,8 @@ const AdminDataExplorer = () => {
                               record.status === 'completed'
                                 ? 'border-green-200 text-green-700'
                                 : record.status === 'in_progress'
-                                ? 'border-blue-200 text-blue-700'
-                                : 'border-neutral-200 text-neutral-700'
+                                  ? 'border-blue-200 text-blue-700'
+                                  : 'border-neutral-200 text-neutral-700'
                             )}
                           >
                             {record.status?.replace('_', ' ') || 'N/A'}
@@ -747,7 +806,11 @@ const AdminDataExplorer = () => {
                             </span>
                             <div className="flex flex-wrap gap-1">
                               {(record.dataset_tags || []).map((tag) => (
-                                <Badge key={tag} variant="outline" className="text-xs">
+                                <Badge
+                                  key={tag}
+                                  variant="outline"
+                                  className="text-xs"
+                                >
                                   {tag}
                                 </Badge>
                               ))}
@@ -774,7 +837,9 @@ const AdminDataExplorer = () => {
                         event.preventDefault()
                         if (page > 1) setPage(page - 1)
                       }}
-                      className={cn({ 'pointer-events-none opacity-50': page === 1 })}
+                      className={cn({
+                        'pointer-events-none opacity-50': page === 1,
+                      })}
                     />
                   </PaginationItem>
                   <PaginationItem>
@@ -789,7 +854,9 @@ const AdminDataExplorer = () => {
                         event.preventDefault()
                         if (page < totalPages) setPage(page + 1)
                       }}
-                      className={cn({ 'pointer-events-none opacity-50': page === totalPages })}
+                      className={cn({
+                        'pointer-events-none opacity-50': page === totalPages,
+                      })}
                     />
                   </PaginationItem>
                 </PaginationContent>

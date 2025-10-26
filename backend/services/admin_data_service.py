@@ -154,7 +154,9 @@ class AdminDataExplorerService:
             await annotation_tasks.create_index([("created_at", DESCENDING)])
             await annotation_tasks.create_index([("completed_at", DESCENDING)])
             await annotation_tasks.create_index([("assigned_at", DESCENDING)])
-            await annotation_tasks.create_index([("data_to_annotate.annotation_data_id", ASCENDING)])
+            await annotation_tasks.create_index(
+                [("data_to_annotate.annotation_data_id", ASCENDING)]
+            )
 
             await annotation_data.create_index([("metadata.tags", ASCENDING)])
             await annotation_data.create_index([("job_id", ASCENDING)])
@@ -181,11 +183,7 @@ class AdminDataExplorerService:
 
     @classmethod
     def _latest_timestamp(cls, *values: Optional[str]) -> Optional[str]:
-        timestamps = [
-            _parse_datetime(value)
-            for value in values
-            if value is not None
-        ]
+        timestamps = [_parse_datetime(value) for value in values if value is not None]
         timestamps = [ts for ts in timestamps if ts is not None]
         if not timestamps:
             return None
@@ -228,7 +226,9 @@ class AdminDataExplorerService:
         }
 
     @classmethod
-    def _resolve_sort(cls, sort_by: Optional[str], sort_dir: Optional[str]) -> Tuple[str, int]:
+    def _resolve_sort(
+        cls, sort_by: Optional[str], sort_dir: Optional[str]
+    ) -> Tuple[str, int]:
         field = cls.SORT_FIELD_MAP.get(sort_by or "created_at", "created_at_dt")
         direction = DESCENDING if (sort_dir or "desc").lower() == "desc" else ASCENDING
         return field, direction
@@ -253,7 +253,9 @@ class AdminDataExplorerService:
         if rating_filter:
             match_stage["quality_rating"] = rating_filter
 
-        def apply_date_range(field: str, start: Optional[str], end: Optional[str]) -> None:
+        def apply_date_range(
+            field: str, start: Optional[str], end: Optional[str]
+        ) -> None:
             range_filter: Dict[str, Any] = {}
             if start:
                 range_filter["$gte"] = start
@@ -269,197 +271,212 @@ class AdminDataExplorerService:
         if match_stage:
             pipeline.append({"$match": match_stage})
 
-        pipeline.extend([
-            {
-                "$lookup": {
-                    "from": "annotation_data",
-                    "let": {"annotation_data_id": "$data_to_annotate.annotation_data_id"},
-                    "pipeline": [
-                        {
-                            "$match": {
-                                "$expr": {
-                                    "$eq": ["$id", "$$annotation_data_id"]
+        pipeline.extend(
+            [
+                {
+                    "$lookup": {
+                        "from": "annotation_data",
+                        "let": {
+                            "annotation_data_id": "$data_to_annotate.annotation_data_id"
+                        },
+                        "pipeline": [
+                            {
+                                "$match": {
+                                    "$expr": {"$eq": ["$id", "$$annotation_data_id"]}
                                 }
-                            }
-                        },
-                        {
-                            "$project": {
-                                "_id": 0,
-                                "id": 1,
-                                "job_id": 1,
-                                "title": 1,
-                                "description": 1,
-                                "data_type": 1,
-                                "metadata": 1,
-                                "created_at": 1,
-                            }
-                        },
-                    ],
-                    "as": "dataset_doc",
-                }
-            },
-            {
-                "$lookup": {
-                    "from": "jobs",
-                    "localField": "job_id",
-                    "foreignField": "id",
-                    "as": "job_doc",
-                }
-            },
-            {
-                "$lookup": {
-                    "from": "candidates",
-                    "localField": "annotator_id",
-                    "foreignField": "id",
-                    "as": "candidate_doc",
-                }
-            },
-            {
-                "$lookup": {
-                    "from": "interviews",
-                    "let": {"annotator_id": "$annotator_id", "job_id": "$job_id"},
-                    "pipeline": [
-                        {
-                            "$match": {
-                                "$expr": {
-                                    "$and": [
-                                        {"$eq": ["$candidate_id", "$$annotator_id"]},
-                                        {"$eq": ["$job_id", "$$job_id"]},
-                                    ]
-                                }
-                            }
-                        },
-                        {
-                            "$project": {
-                                "_id": 0,
-                                "candidate_name": 1,
-                                "candidate_id": 1,
-                                "id": 1,
-                            }
-                        },
-                    ],
-                    "as": "interview_doc",
-                }
-            },
-            {
-                "$unwind": {
-                    "path": "$dataset_doc",
-                    "preserveNullAndEmptyArrays": True,
-                }
-            },
-            {
-                "$unwind": {
-                    "path": "$job_doc",
-                    "preserveNullAndEmptyArrays": True,
-                }
-            },
-            {
-                "$unwind": {
-                    "path": "$candidate_doc",
-                    "preserveNullAndEmptyArrays": True,
-                }
-            },
-            {
-                "$unwind": {
-                    "path": "$interview_doc",
-                    "preserveNullAndEmptyArrays": True,
-                }
-            },
-            {
-                "$addFields": {
-                    "dataset_tags": {
-                        "$let": {
-                            "vars": {"tags": "$dataset_doc.metadata.tags"},
-                            "in": {
-                                "$cond": [
-                                    {"$eq": [{"$type": "$$tags"}, "array"]},
-                                    "$$tags",
-                                    {
-                                        "$cond": [
-                                            {"$or": [
-                                                {"$eq": ["$$tags", None]},
-                                                {"$eq": ["$$tags", ""]},
-                                            ]},
-                                            [],
-                                            ["$$tags"],
-                                        ]
-                                    },
-                                ]
                             },
-                        }
-                    },
-                    "dataset_id": {
-                        "$ifNull": [
-                            "$dataset_doc.id",
-                            "$data_to_annotate.annotation_data_id",
-                        ]
-                    },
-                    "dataset_title": {
-                        "$ifNull": [
-                            "$dataset_doc.title",
-                            "$task_name",
-                        ]
-                    },
-                    "dataset_description": {
-                        "$ifNull": [
-                            "$dataset_doc.description",
-                            "$task_description",
-                        ]
-                    },
-                    "dataset_type": {
-                        "$ifNull": [
-                            "$dataset_doc.data_type",
-                            "$data_to_annotate.data_type",
-                        ]
-                    },
-                    "job_title": "$job_doc.title",
-                    "job_status": "$job_doc.status",
-                    "annotator_name": {
-                        "$ifNull": [
-                            "$candidate_doc.name",
-                            "$interview_doc.candidate_name",
-                        ]
-                    },
-                    "annotator_email": "$candidate_doc.email",
-                }
-            },
-        ])
+                            {
+                                "$project": {
+                                    "_id": 0,
+                                    "id": 1,
+                                    "job_id": 1,
+                                    "title": 1,
+                                    "description": 1,
+                                    "data_type": 1,
+                                    "metadata": 1,
+                                    "created_at": 1,
+                                }
+                            },
+                        ],
+                        "as": "dataset_doc",
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "jobs",
+                        "localField": "job_id",
+                        "foreignField": "id",
+                        "as": "job_doc",
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "candidates",
+                        "localField": "annotator_id",
+                        "foreignField": "id",
+                        "as": "candidate_doc",
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "interviews",
+                        "let": {"annotator_id": "$annotator_id", "job_id": "$job_id"},
+                        "pipeline": [
+                            {
+                                "$match": {
+                                    "$expr": {
+                                        "$and": [
+                                            {
+                                                "$eq": [
+                                                    "$candidate_id",
+                                                    "$$annotator_id",
+                                                ]
+                                            },
+                                            {"$eq": ["$job_id", "$$job_id"]},
+                                        ]
+                                    }
+                                }
+                            },
+                            {
+                                "$project": {
+                                    "_id": 0,
+                                    "candidate_name": 1,
+                                    "candidate_id": 1,
+                                    "id": 1,
+                                }
+                            },
+                        ],
+                        "as": "interview_doc",
+                    }
+                },
+                {
+                    "$unwind": {
+                        "path": "$dataset_doc",
+                        "preserveNullAndEmptyArrays": True,
+                    }
+                },
+                {
+                    "$unwind": {
+                        "path": "$job_doc",
+                        "preserveNullAndEmptyArrays": True,
+                    }
+                },
+                {
+                    "$unwind": {
+                        "path": "$candidate_doc",
+                        "preserveNullAndEmptyArrays": True,
+                    }
+                },
+                {
+                    "$unwind": {
+                        "path": "$interview_doc",
+                        "preserveNullAndEmptyArrays": True,
+                    }
+                },
+                {
+                    "$addFields": {
+                        "dataset_tags": {
+                            "$let": {
+                                "vars": {"tags": "$dataset_doc.metadata.tags"},
+                                "in": {
+                                    "$cond": [
+                                        {"$eq": [{"$type": "$$tags"}, "array"]},
+                                        "$$tags",
+                                        {
+                                            "$cond": [
+                                                {
+                                                    "$or": [
+                                                        {"$eq": ["$$tags", None]},
+                                                        {"$eq": ["$$tags", ""]},
+                                                    ]
+                                                },
+                                                [],
+                                                ["$$tags"],
+                                            ]
+                                        },
+                                    ]
+                                },
+                            }
+                        },
+                        "dataset_id": {
+                            "$ifNull": [
+                                "$dataset_doc.id",
+                                "$data_to_annotate.annotation_data_id",
+                            ]
+                        },
+                        "dataset_title": {
+                            "$ifNull": [
+                                "$dataset_doc.title",
+                                "$task_name",
+                            ]
+                        },
+                        "dataset_description": {
+                            "$ifNull": [
+                                "$dataset_doc.description",
+                                "$task_description",
+                            ]
+                        },
+                        "dataset_type": {
+                            "$ifNull": [
+                                "$dataset_doc.data_type",
+                                "$data_to_annotate.data_type",
+                            ]
+                        },
+                        "job_title": "$job_doc.title",
+                        "job_status": "$job_doc.status",
+                        "annotator_name": {
+                            "$ifNull": [
+                                "$candidate_doc.name",
+                                "$interview_doc.candidate_name",
+                            ]
+                        },
+                        "annotator_email": "$candidate_doc.email",
+                    }
+                },
+            ]
+        )
 
         cleaned_tags = cls._clean_list(filters.tags)
         if cleaned_tags:
-            pipeline.append({
-                "$match": {
-                    "$expr": {
-                        "$setIsSubset": [
-                            cleaned_tags,
-                            {"$ifNull": ["$dataset_tags", []]},
-                        ]
+            pipeline.append(
+                {
+                    "$match": {
+                        "$expr": {
+                            "$setIsSubset": [
+                                cleaned_tags,
+                                {"$ifNull": ["$dataset_tags", []]},
+                            ]
+                        }
                     }
                 }
-            })
+            )
 
         if filters.search:
             regex = {"$regex": filters.search, "$options": "i"}
-            pipeline.append({
-                "$match": {
-                    "$or": [
-                        {"job_title": regex},
-                        {"dataset_title": regex},
-                        {"dataset_description": regex},
-                        {"annotator_name": regex},
-                        {"task_name": regex},
-                    ]
+            pipeline.append(
+                {
+                    "$match": {
+                        "$or": [
+                            {"job_title": regex},
+                            {"dataset_title": regex},
+                            {"dataset_description": regex},
+                            {"annotator_name": regex},
+                            {"task_name": regex},
+                        ]
+                    }
                 }
-            })
+            )
 
-        pipeline.append({
-            "$addFields": {
-                "created_at_dt": cls._to_date_expr("$created_at"),
-                "completed_at_dt": cls._to_date_expr("$completed_at"),
-                "assigned_at_dt": cls._to_date_expr("$assigned_at"),
-                "started_at_dt": cls._to_date_expr("$started_at"),
+        pipeline.append(
+            {
+                "$addFields": {
+                    "created_at_dt": cls._to_date_expr("$created_at"),
+                    "completed_at_dt": cls._to_date_expr("$completed_at"),
+                    "assigned_at_dt": cls._to_date_expr("$assigned_at"),
+                    "started_at_dt": cls._to_date_expr("$started_at"),
+                }
             }
-        })
+        )
 
         return pipeline
 
@@ -503,7 +520,9 @@ class AdminDataExplorerService:
     @classmethod
     def _normalize_record(cls, raw: Dict[str, Any]) -> AdminDataRecord:
         record_payload = dict(raw)
-        record_payload["dataset_tags"] = cls._clean_list(record_payload.get("dataset_tags"))
+        record_payload["dataset_tags"] = cls._clean_list(
+            record_payload.get("dataset_tags")
+        )
 
         for field in ("created_at", "assigned_at", "started_at", "completed_at"):
             record_payload[field] = cls._iso_from_datetime(record_payload.get(field))
@@ -601,11 +620,17 @@ class AdminDataExplorerService:
         cursor = await cls.build_export_cursor(filters, sort_by, sort_dir)
 
         if export_format == "json":
-            return cls._stream_json(cursor), "application/json", "admin-data-export.json"
+            return (
+                cls._stream_json(cursor),
+                "application/json",
+                "admin-data-export.json",
+            )
         return cls._stream_csv(cursor), "text/csv", "admin-data-export.csv"
 
     @classmethod
-    async def _iter_records(cls, cursor: AsyncIOMotorCursor) -> AsyncIterator[Dict[str, Any]]:
+    async def _iter_records(
+        cls, cursor: AsyncIOMotorCursor
+    ) -> AsyncIterator[Dict[str, Any]]:
         async for doc in cursor:
             record = cls._normalize_record(doc)
             yield record.model_dump()

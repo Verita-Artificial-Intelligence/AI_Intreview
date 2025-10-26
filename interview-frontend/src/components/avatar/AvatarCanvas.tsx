@@ -3,15 +3,15 @@
  * Subtle idle breathing when inactive, dynamic pulsing when speaking.
  */
 
-import React from 'react';
-import { useIsAIPlaying } from '../../store/interviewStore.ts';
+import React from 'react'
+import { useIsAIPlaying } from '../../store/interviewStore.ts'
 
 interface AvatarCanvasProps {
-  className?: string;
+  className?: string
 }
 
 export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({ className }) => {
-  const isAIPlaying = useIsAIPlaying();
+  const isAIPlaying = useIsAIPlaying()
 
   return (
     <div
@@ -61,11 +61,14 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({ className }) => {
           width: '200px',
           height: '200px',
           borderRadius: '50%',
-          background: 'linear-gradient(135deg, #ec4899 0%, #db2777 50%, #be185d 100%)',
+          background:
+            'linear-gradient(135deg, #ec4899 0%, #db2777 50%, #be185d 100%)',
           boxShadow: isAIPlaying
             ? '0 0 80px rgba(236, 72, 153, 0.8), 0 0 150px rgba(190, 24, 93, 0.5)'
             : '0 8px 32px rgba(236, 72, 153, 0.25)',
-          animation: isAIPlaying ? 'speakingPulse 1.2s ease-in-out infinite' : 'none',
+          animation: isAIPlaying
+            ? 'speakingPulse 1.2s ease-in-out infinite'
+            : 'none',
         }}
       />
 
@@ -82,5 +85,5 @@ export const AvatarCanvas: React.FC<AvatarCanvasProps> = ({ className }) => {
         }
       `}</style>
     </div>
-  );
-};
+  )
+}

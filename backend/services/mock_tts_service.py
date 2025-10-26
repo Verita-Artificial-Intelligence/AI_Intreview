@@ -89,10 +89,12 @@ class MockTTSService:
                 self._text_buffer = ""
 
             # Send final message
-            await self._audio_queue.put({
-                "isFinal": True,
-                "audio": "",
-            })
+            await self._audio_queue.put(
+                {
+                    "isFinal": True,
+                    "audio": "",
+                }
+            )
 
             logger.debug("[MOCK] Sent flush signal to ElevenLabs")
 
@@ -115,10 +117,12 @@ class MockTTSService:
             audio_b64 = self._generate_silent_audio(chunk_duration)
 
             # Queue chunk
-            await self._audio_queue.put({
-                "audio": audio_b64,
-                "isFinal": False,
-            })
+            await self._audio_queue.put(
+                {
+                    "audio": audio_b64,
+                    "isFinal": False,
+                }
+            )
 
             # Simulate streaming delay
             await asyncio.sleep(0.05)
@@ -155,9 +159,7 @@ class MockTTSService:
         """
         while self.connected or not self._audio_queue.empty():
             try:
-                data = await asyncio.wait_for(
-                    self._audio_queue.get(), timeout=0.1
-                )
+                data = await asyncio.wait_for(self._audio_queue.get(), timeout=0.1)
 
                 audio_b64 = data.get("audio", "")
                 is_final = data.get("isFinal", False)

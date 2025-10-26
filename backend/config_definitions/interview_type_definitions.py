@@ -14,6 +14,7 @@ from typing import TypedDict
 
 class InterviewTypeMetadata(TypedDict):
     """Metadata for an interview type"""
+
     id: str
     title: str
     description: str

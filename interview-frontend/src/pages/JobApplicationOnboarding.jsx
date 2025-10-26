@@ -471,7 +471,8 @@ export default function JobApplicationOnboarding() {
             ></div>
           </div>
           <p className="text-xs text-neutral-600 mt-2 font-medium">
-            Step {currentStep} of {stepsNeeded.length}: {stepsNeeded[currentStep - 1]?.title}
+            Step {currentStep} of {stepsNeeded.length}:{' '}
+            {stepsNeeded[currentStep - 1]?.title}
           </p>
         </div>
       </div>

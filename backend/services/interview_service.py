@@ -38,7 +38,7 @@ class InterviewService:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a helpful assistant that summarizes job descriptions concisely."
+                        "content": "You are a helpful assistant that summarizes job descriptions concisely.",
                     },
                     {
                         "role": "user",
@@ -47,9 +47,9 @@ class InterviewService:
 Job Description:
 {job_description}
 
-Summary:"""
-                    }
-                ]
+Summary:""",
+                    },
+                ],
             )
 
             summary = completion.choices[0].message.content.strip()
@@ -72,11 +72,15 @@ Summary:"""
 
         # Prevent duplicate interviews for the same job once a candidate has progressed
         if interview_data.job_id:
-            existing_interview = await db.interviews.find_one({
-                "candidate_id": interview_data.candidate_id,
-                "job_id": interview_data.job_id,
-                "status": {"$in": ["in_progress", "completed", "under_review", "approved"]},
-            })
+            existing_interview = await db.interviews.find_one(
+                {
+                    "candidate_id": interview_data.candidate_id,
+                    "job_id": interview_data.job_id,
+                    "status": {
+                        "$in": ["in_progress", "completed", "under_review", "approved"]
+                    },
+                }
+            )
             if existing_interview:
                 raise HTTPException(
                     status_code=400,
@@ -108,7 +112,11 @@ Summary:"""
 
                 # Generate summary of job description for efficient prompt usage
                 if job_description:
-                    job_description_summary = await InterviewService.summarize_job_description(job_description)
+                    job_description_summary = (
+                        await InterviewService.summarize_job_description(
+                            job_description
+                        )
+                    )
             else:
                 logger.warning(
                     "Job %s not found when creating interview for candidate %s",
@@ -148,8 +156,10 @@ Summary:"""
 
         # Create initial AI message using type-specific greeting
         # Convert skills to dict format for prompt generation
-        skills_dict = [skill.dict() if isinstance(skill, SkillDefinition) else skill
-                      for skill in (skills or [])]
+        skills_dict = [
+            skill.dict() if isinstance(skill, SkillDefinition) else skill
+            for skill in (skills or [])
+        ]
 
         greeting_config = get_interview_type_config(
             interview_type=interview_type,
@@ -159,7 +169,7 @@ Summary:"""
             resume_text=interview_data.resume_text,
             custom_questions=custom_questions,
             custom_exercise_prompt=custom_exercise_prompt,
-            role_description=job_description_summary or job_description
+            role_description=job_description_summary or job_description,
         )
 
         system_msg = ChatMessage(
@@ -179,27 +189,35 @@ Summary:"""
         job_description_summary = interview.job_description_summary
 
         if not job_description_summary and interview.job_id:
-            logger.info(f"Auto-generating job description summary for interview {interview.id}")
+            logger.info(
+                f"Auto-generating job description summary for interview {interview.id}"
+            )
             try:
                 jobs_collection = get_jobs_collection()
                 job = await jobs_collection.find_one(
                     {"id": interview.job_id}, {"_id": 0}
                 )
                 if job and job.get("description"):
-                    job_description_summary = await InterviewService.summarize_job_description(
-                        job.get("description")
+                    job_description_summary = (
+                        await InterviewService.summarize_job_description(
+                            job.get("description")
+                        )
                     )
                     # Save the summary back to the interview record
                     await db.interviews.update_one(
                         {"id": interview.id},
-                        {"$set": {"job_description_summary": job_description_summary}}
+                        {"$set": {"job_description_summary": job_description_summary}},
                     )
-                    logger.info(f"Successfully saved job description summary for interview {interview.id}")
+                    logger.info(
+                        f"Successfully saved job description summary for interview {interview.id}"
+                    )
             except Exception as e:
                 logger.error(f"Failed to auto-generate job description summary: {e}")
 
-        skills_dict = [skill.dict() if isinstance(skill, SkillDefinition) else skill
-                      for skill in (interview.skills or [])]
+        skills_dict = [
+            skill.dict() if isinstance(skill, SkillDefinition) else skill
+            for skill in (interview.skills or [])
+        ]
 
         config = get_interview_type_config(
             interview_type=interview.interview_type,
@@ -209,13 +227,15 @@ Summary:"""
             resume_text=interview.resume_text,
             custom_questions=interview.custom_questions,
             custom_exercise_prompt=interview.custom_exercise_prompt,
-            role_description=job_description_summary
+            role_description=job_description_summary,
         )
 
         return config["system_instructions"]
 
     @staticmethod
-    async def get_interviews(candidate_id: str = None, job_id: str = None) -> List[Interview]:
+    async def get_interviews(
+        candidate_id: str = None, job_id: str = None
+    ) -> List[Interview]:
         """Get all interviews sorted by creation date with optional filtering"""
         # Build filter query
         filter_query = {}
@@ -225,7 +245,9 @@ Summary:"""
             filter_query["job_id"] = job_id
 
         interviews = (
-            await db.interviews.find(filter_query, {"_id": 0}).sort("created_at", -1).to_list(100)
+            await db.interviews.find(filter_query, {"_id": 0})
+            .sort("created_at", -1)
+            .to_list(100)
         )
         return [Interview(**parse_from_mongo(i)) for i in interviews]
 
@@ -260,21 +282,23 @@ Summary:"""
         return {"message": "Interview completed", "status": "completed"}
 
     @staticmethod
-    async def analyze_interview(interview_id: str, framework: str = "behavioral") -> Dict[str, Any]:
+    async def analyze_interview(
+        interview_id: str, framework: str = "behavioral"
+    ) -> Dict[str, Any]:
         """Generate AI analysis of interview and save to database"""
         try:
             # Mark analysis as processing
             await db.interviews.update_one(
-                {"id": interview_id},
-                {"$set": {"analysis_status": "processing"}}
+                {"id": interview_id}, {"$set": {"analysis_status": "processing"}}
             )
 
             # Get interview
-            interview_doc = await db.interviews.find_one({"id": interview_id}, {"_id": 0})
+            interview_doc = await db.interviews.find_one(
+                {"id": interview_id}, {"_id": 0}
+            )
             if not interview_doc:
                 await db.interviews.update_one(
-                    {"id": interview_id},
-                    {"$set": {"analysis_status": "failed"}}
+                    {"id": interview_id}, {"$set": {"analysis_status": "failed"}}
                 )
                 raise HTTPException(status_code=404, detail="Interview not found")
 
@@ -293,29 +317,34 @@ Summary:"""
                         "clarity_score": 0,
                         "articulation_score": 0,
                         "confidence_score": 0,
-                        "notes": "Insufficient data"
+                        "notes": "Insufficient data",
                     },
                     "technical_depth": {"score": 0, "notes": "Insufficient data"},
-                    "problem_solving": {"score": 0, "approach": "Not assessed", "example": "N/A"},
+                    "problem_solving": {
+                        "score": 0,
+                        "approach": "Not assessed",
+                        "example": "N/A",
+                    },
                     "recommendation": "Incomplete Interview",
                     "confidence": 0,
                     "recommendations": ["Complete the full interview process"],
-                    "next_steps": []
+                    "next_steps": [],
                 }
                 await db.interviews.update_one(
                     {"id": interview_id},
-                    {"$set": {
-                        "analysis_status": "completed",
-                        "analysis_result": default_analysis
-                    }}
+                    {
+                        "$set": {
+                            "analysis_status": "completed",
+                            "analysis_result": default_analysis,
+                        }
+                    },
                 )
                 return default_analysis
 
             # Get candidate info
             candidates_collection = get_candidates_collection()
             candidate = await candidates_collection.find_one(
-                {"id": interview_doc["candidate_id"]},
-                {"_id": 0}
+                {"id": interview_doc["candidate_id"]}, {"_id": 0}
             )
 
             if not candidate:
@@ -324,7 +353,7 @@ Summary:"""
                     "name": interview_doc.get("candidate_name", "Candidate"),
                     "position": interview_doc.get("position", "Unknown"),
                     "skills": [],
-                    "experience_years": 0
+                    "experience_years": 0,
                 }
 
             # Build conversation from transcript
@@ -343,18 +372,20 @@ Summary:"""
             analysis_prompt = get_analysis_prompt(
                 framework_name=framework_name,
                 candidate_name=candidate["name"],
-                candidate_position=interview_doc.get("job_title", "Creative Professional"),
+                candidate_position=interview_doc.get(
+                    "job_title", "Creative Professional"
+                ),
                 candidate_skills=candidate.get("skills", []),
                 candidate_experience_years=candidate.get("experience_years", 0),
-                conversation=conversation
+                conversation=conversation,
             )
 
             completion = await openai_client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": analysis_prompt}
-                ]
+                    {"role": "user", "content": analysis_prompt},
+                ],
             )
 
             response = completion.choices[0].message.content
@@ -381,10 +412,12 @@ Summary:"""
                 # Save analysis to database
                 await db.interviews.update_one(
                     {"id": interview_id},
-                    {"$set": {
-                        "analysis_status": "completed",
-                        "analysis_result": analysis
-                    }}
+                    {
+                        "$set": {
+                            "analysis_status": "completed",
+                            "analysis_result": analysis,
+                        }
+                    },
                 )
 
                 return analysis
@@ -396,7 +429,11 @@ Summary:"""
                     "overall_score": 7,
                     "skills_breakdown": [
                         {"skill": "Communication", "score": 7, "level": "Proficient"},
-                        {"skill": "Creative Process", "score": 7, "level": "Proficient"}
+                        {
+                            "skill": "Creative Process",
+                            "score": 7,
+                            "level": "Proficient",
+                        },
                     ],
                     "key_insights": ["Creative approach demonstrated"],
                     "strengths": ["Shows creative thinking"],
@@ -404,16 +441,18 @@ Summary:"""
                     "recommendation": "Hire",
                     "confidence": 75,
                     "recommendations": [],
-                    "next_steps": []
+                    "next_steps": [],
                 }
 
                 # Save basic analysis to database
                 await db.interviews.update_one(
                     {"id": interview_id},
-                    {"$set": {
-                        "analysis_status": "completed",
-                        "analysis_result": basic_analysis
-                    }}
+                    {
+                        "$set": {
+                            "analysis_status": "completed",
+                            "analysis_result": basic_analysis,
+                        }
+                    },
                 )
 
                 return basic_analysis
@@ -424,7 +463,6 @@ Summary:"""
             logger.error(f"Error analyzing interview: {e}")
             # Mark as failed
             await db.interviews.update_one(
-                {"id": interview_id},
-                {"$set": {"analysis_status": "failed"}}
+                {"id": interview_id}, {"$set": {"analysis_status": "failed"}}
             )
             raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")

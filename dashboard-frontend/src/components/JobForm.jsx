@@ -220,7 +220,10 @@ const JobForm = ({ open, onClose, onSubmit, job = null }) => {
       setStep(1)
       onClose()
     } catch (error) {
-      console.error(isEditMode ? 'Error updating job:' : 'Error creating job:', error)
+      console.error(
+        isEditMode ? 'Error updating job:' : 'Error creating job:',
+        error
+      )
     } finally {
       setLoading(false)
     }
@@ -561,8 +564,12 @@ const JobForm = ({ open, onClose, onSubmit, job = null }) => {
           className="rounded-lg bg-brand-500 hover:bg-brand-600 text-white"
         >
           {loading
-            ? (isEditMode ? 'Updating...' : 'Creating...')
-            : (isEditMode ? 'Update Job' : 'Create Job')}
+            ? isEditMode
+              ? 'Updating...'
+              : 'Creating...'
+            : isEditMode
+              ? 'Update Job'
+              : 'Create Job'}
         </Button>
       </DialogFooter>
     </>
@@ -574,7 +581,9 @@ const JobForm = ({ open, onClose, onSubmit, job = null }) => {
         <DialogHeader>
           <DialogTitle className="text-xl font-display font-bold">
             {step === 1
-              ? (isEditMode ? 'Edit Job' : 'Create New Job')
+              ? isEditMode
+                ? 'Edit Job'
+                : 'Create New Job'
               : step === 2
                 ? 'Select Interview Type'
                 : 'Configure Interview'}

@@ -36,20 +36,20 @@ class Job(BaseModel):
     custom_questions: Optional[List[str]] = None
     custom_exercise_prompt: Optional[str] = None
 
-    @field_validator('interview_type', mode='before')
+    @field_validator("interview_type", mode="before")
     @classmethod
     def migrate_old_interview_types(cls, v):
         """Migrate deprecated interview types using centralized config"""
         return DEPRECATED_INTERVIEW_TYPES.get(v, v)
 
-    @field_validator('status', mode='before')
+    @field_validator("status", mode="before")
     @classmethod
     def migrate_old_statuses(cls, v):
         """Migrate old status values to new workflow statuses"""
         # Map old statuses to new statuses
         migration_map = {
-            'open': 'pending',
-            'closed': 'archived',
+            "open": "pending",
+            "closed": "archived",
         }
         return migration_map.get(v, v)
 

@@ -5,7 +5,11 @@ import { useAuth } from '../contexts/AuthContext'
  * Protected Route Component
  * Ensures user is authenticated and optionally checks for role and profile completion
  */
-const ProtectedRoute = ({ children, requireRole = null, requireProfile = false }) => {
+const ProtectedRoute = ({
+  children,
+  requireRole = null,
+  requireProfile = false,
+}) => {
   const { isAuthenticated, role, isProfileComplete, loading } = useAuth()
 
   // Show nothing while loading (prevents flash of login page)
@@ -19,7 +23,8 @@ const ProtectedRoute = ({ children, requireRole = null, requireProfile = false }
 
   // Not authenticated - redirect to appropriate login
   if (!isAuthenticated) {
-    const loginPath = requireRole === 'admin' ? '/admin/login' : '/candidate/login'
+    const loginPath =
+      requireRole === 'admin' ? '/admin/login' : '/candidate/login'
     return <Navigate to={loginPath} replace />
   }
 

@@ -75,7 +75,9 @@ def _collect_video_sources(interview_doc: dict) -> List[str]:
     candidates: List[Union[str, dict]] = []
 
     if isinstance(interview_doc.get("video_recordings"), list):
-        candidates.extend(cast(List[Union[str, dict]], interview_doc["video_recordings"]))
+        candidates.extend(
+            cast(List[Union[str, dict]], interview_doc["video_recordings"])
+        )
 
     if isinstance(interview_doc.get("video_urls"), list):
         candidates.extend(cast(List[Union[str, dict]], interview_doc["video_urls"]))
@@ -182,9 +184,7 @@ async def export_admin_data(
         export_format=export_format,
     )
 
-    headers = {
-        "Content-Disposition": f'attachment; filename="{filename}"'
-    }
+    headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
     return StreamingResponse(stream, media_type=media_type, headers=headers)
 
 

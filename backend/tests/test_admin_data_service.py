@@ -25,7 +25,9 @@ def test_build_pipeline_applies_filters():
     assert match_stage["status"]["$in"] == ["completed", "reviewed"]
     assert match_stage["quality_rating"] == {"$gte": 3, "$lte": 5}
 
-    tag_stage = next(stage for stage in pipeline if "$match" in stage and "$expr" in stage["$match"])
+    tag_stage = next(
+        stage for stage in pipeline if "$match" in stage and "$expr" in stage["$match"]
+    )
     assert "$setIsSubset" in tag_stage["$match"]["$expr"]
 
 
@@ -50,7 +52,9 @@ def test_pagination_meta_handles_edges():
     assert meta["has_next"] is True
     assert meta["has_previous"] is True
 
-    first_page_meta = AdminDataExplorerService._pagination_meta(total=5, page=1, page_size=25)
+    first_page_meta = AdminDataExplorerService._pagination_meta(
+        total=5, page=1, page_size=25
+    )
     assert first_page_meta["total_pages"] == 1
     assert first_page_meta["has_next"] is False
     assert first_page_meta["has_previous"] is False

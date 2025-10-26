@@ -35,8 +35,7 @@ async def update_candidate_education(candidate_id: str, data: dict = Body(...)):
 
         candidates_collection = get_candidates_collection()
         result = await candidates_collection.update_one(
-            {"id": candidate_id},
-            {"$set": {"education": education}}
+            {"id": candidate_id}, {"$set": {"education": education}}
         )
 
         if result.modified_count == 0:
@@ -61,7 +60,10 @@ async def delete_candidate(candidate_id: str):
         # Delete the candidate
         await db.candidates.delete_one({"id": candidate_id})
 
-        return {"success": True, "message": "Candidate and associated interviews deleted successfully"}
+        return {
+            "success": True,
+            "message": "Candidate and associated interviews deleted successfully",
+        }
     except Exception as e:
         logger.error(f"Error deleting candidate: {e}")
         return {"success": False, "error": str(e)}

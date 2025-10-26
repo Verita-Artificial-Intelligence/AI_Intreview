@@ -51,12 +51,16 @@ class CandidateService:
 
         # Experience years coerced to int.
         try:
-            normalised["experience_years"] = int(normalised.get("experience_years", 0) or 0)
+            normalised["experience_years"] = int(
+                normalised.get("experience_years", 0) or 0
+            )
         except (TypeError, ValueError):
             normalised["experience_years"] = 0
 
         # Education must be list[dict]
-        education_entries = CandidateService._build_education_entries(normalised.get("education"))
+        education_entries = CandidateService._build_education_entries(
+            normalised.get("education")
+        )
         if education_entries:
             normalised["education"] = education_entries
         else:
@@ -70,7 +74,9 @@ class CandidateService:
         users_collection = get_users_collection()
         candidate = Candidate(**candidate_data.model_dump())
 
-        education_entries = CandidateService._build_education_entries(candidate_data.education)
+        education_entries = CandidateService._build_education_entries(
+            candidate_data.education
+        )
 
         # Build the user profile document ensuring required fields exist for dashboard
         profile_doc: Dict[str, Any] = {
@@ -93,13 +99,17 @@ class CandidateService:
         if existing:
             existing = parse_from_mongo(existing)
             profile_doc["id"] = existing.get("id", profile_doc["id"])
-            profile_doc["created_at"] = existing.get("created_at", profile_doc["created_at"])
+            profile_doc["created_at"] = existing.get(
+                "created_at", profile_doc["created_at"]
+            )
 
         profile_doc = CandidateService._normalise_user_doc(profile_doc)
         prepared_doc = prepare_for_mongo(profile_doc.copy())
 
         if existing:
-            await users_collection.update_one({"email": candidate.email}, {"$set": prepared_doc})
+            await users_collection.update_one(
+                {"email": candidate.email}, {"$set": prepared_doc}
+            )
         else:
             await users_collection.insert_one(prepared_doc)
 
@@ -141,7 +151,9 @@ class CandidateService:
             email=stored["email"],
             position=stored.get("position", candidate_data.position),
             skills=skills,
-            experience_years=stored.get("experience_years", candidate_data.experience_years),
+            experience_years=stored.get(
+                "experience_years", candidate_data.experience_years
+            ),
             bio=stored.get("bio", candidate_data.bio),
             education=education_summary or "",
             created_at=stored.get("created_at", candidate.created_at),
@@ -178,7 +190,11 @@ class CandidateService:
             # Only require name and bio (profile_completed already filters for basics)
             if user.name and user.bio:
                 # Use expertise as skills if skills not populated (new profile system)
-                skills_list = normalised_doc.get("skills") or normalised_doc.get("expertise") or []
+                skills_list = (
+                    normalised_doc.get("skills")
+                    or normalised_doc.get("expertise")
+                    or []
+                )
                 if not isinstance(skills_list, list):
                     skills_list = [skills_list] if skills_list else []
 
@@ -212,7 +228,9 @@ class CandidateService:
                     email=user.email,
                     position=user.position or "Creative Professional",
                     skills=skills_list,
-                    experience_years=normalised_doc.get("experience_years", user.experience_years or 0),
+                    experience_years=normalised_doc.get(
+                        "experience_years", user.experience_years or 0
+                    ),
                     bio=user.bio,
                     education=education_summary,
                     created_at=user.created_at,

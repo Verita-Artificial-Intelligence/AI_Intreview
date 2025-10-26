@@ -2,15 +2,15 @@
  * Interview controls component - Video call style controls.
  */
 
-import React from 'react';
-import { Mic, MicOff, PhoneOff } from 'lucide-react';
-import { useInterviewStore } from '../../store/interviewStore.ts';
+import React from 'react'
+import { Mic, MicOff, PhoneOff } from 'lucide-react'
+import { useInterviewStore } from '../../store/interviewStore.ts'
 
 interface InterviewControlsProps {
-  onEndInterview: () => void;
-  onInterrupt: () => void;
-  onToggleMic: () => void;
-  onEndTurn?: () => void;
+  onEndInterview: () => void
+  onInterrupt: () => void
+  onToggleMic: () => void
+  onEndTurn?: () => void
 }
 
 export const InterviewControls: React.FC<InterviewControlsProps> = ({
@@ -18,14 +18,14 @@ export const InterviewControls: React.FC<InterviewControlsProps> = ({
   onToggleMic,
   onEndTurn,
 }) => {
-  const status = useInterviewStore((state) => state.status);
-  const isMicActive = useInterviewStore((state) => state.isMicActive);
-  const isAIPlaying = useInterviewStore((state) => state.isAIPlaying);
-  const userAudioLevel = useInterviewStore((state) => state.userAudioLevel);
+  const status = useInterviewStore((state) => state.status)
+  const isMicActive = useInterviewStore((state) => state.isMicActive)
+  const isAIPlaying = useInterviewStore((state) => state.isAIPlaying)
+  const userAudioLevel = useInterviewStore((state) => state.userAudioLevel)
 
   // User is speaking when mic is active, audio level exceeds threshold, AND AI is not speaking
   // AI has precedence - we don't show user activity when AI is speaking (system isn't listening)
-  const isUserSpeaking = isMicActive && userAudioLevel > 0.02 && !isAIPlaying;
+  const isUserSpeaking = isMicActive && userAudioLevel > 0.02 && !isAIPlaying
 
   return (
     <>
@@ -62,22 +62,22 @@ export const InterviewControls: React.FC<InterviewControlsProps> = ({
               <div
                 className="absolute inset-0 w-14 h-14 rounded-full bg-sky-400/40"
                 style={{
-                  animation: 'micPulseOuter 0.8s ease-out infinite'
+                  animation: 'micPulseOuter 0.8s ease-out infinite',
                 }}
               />
               <div
                 className="absolute inset-0 w-14 h-14 rounded-full bg-sky-400/30"
                 style={{
-                  animation: 'micPulseInner 0.8s ease-out infinite 0.1s'
+                  animation: 'micPulseInner 0.8s ease-out infinite 0.1s',
                 }}
               />
             </>
           )}
 
-        <button
-          onClick={onToggleMic}
-          disabled={status === 'ended'}
-          className={`
+          <button
+            onClick={onToggleMic}
+            disabled={status === 'ended'}
+            className={`
             relative z-10
             flex items-center justify-center
             w-14 h-14 rounded-full
@@ -91,21 +91,21 @@ export const InterviewControls: React.FC<InterviewControlsProps> = ({
                   : 'bg-gradient-to-br from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white'
             }
           `}
-          title={isMicActive ? 'Mute' : 'Unmute'}
-          aria-label={isMicActive ? 'Mute microphone' : 'Unmute microphone'}
-        >
-          {isMicActive && status !== 'ended' ? (
-            <Mic className="w-6 h-6" />
-          ) : (
-            <MicOff className="w-6 h-6" />
-          )}
-        </button>
-      </div>
+            title={isMicActive ? 'Mute' : 'Unmute'}
+            aria-label={isMicActive ? 'Mute microphone' : 'Unmute microphone'}
+          >
+            {isMicActive && status !== 'ended' ? (
+              <Mic className="w-6 h-6" />
+            ) : (
+              <MicOff className="w-6 h-6" />
+            )}
+          </button>
+        </div>
 
-      {/* End Call - Destructive action */}
-      <button
-        onClick={onEndInterview}
-        className="
+        {/* End Call - Destructive action */}
+        <button
+          onClick={onEndInterview}
+          className="
           flex items-center justify-center
           w-14 h-14 rounded-full
           bg-gradient-to-br from-red-600 to-red-700 hover:from-red-500 hover:to-red-600
@@ -113,36 +113,36 @@ export const InterviewControls: React.FC<InterviewControlsProps> = ({
           transition-all duration-300 ease-out
           shadow-lg hover:shadow-xl
         "
-        title="End Interview"
-        aria-label="End interview"
-      >
-        <PhoneOff className="w-6 h-6" />
-      </button>
+          title="End Interview"
+          aria-label="End interview"
+        >
+          <PhoneOff className="w-6 h-6" />
+        </button>
 
-      {/* Status Text */}
-      {status === 'connecting' && (
-        <div className="absolute left-6 text-gray-600 text-sm font-medium animate-pulse">
-          Connecting...
-        </div>
-      )}
-      {status === 'ended' && (
-        <div className="absolute left-6 text-gray-600 text-sm font-medium">
-          Ended
-        </div>
-      )}
-    </div>
+        {/* Status Text */}
+        {status === 'connecting' && (
+          <div className="absolute left-6 text-gray-600 text-sm font-medium animate-pulse">
+            Connecting...
+          </div>
+        )}
+        {status === 'ended' && (
+          <div className="absolute left-6 text-gray-600 text-sm font-medium">
+            Ended
+          </div>
+        )}
+      </div>
     </>
-  );
-};
+  )
+}
 
 /**
  * Status indicator component - Centered beneath AI presence.
  * Provides real-time feedback on interview state with smooth transitions.
  */
 export const StatusIndicator: React.FC = () => {
-  const status = useInterviewStore((state) => state.status);
-  const isMicActive = useInterviewStore((state) => state.isMicActive);
-  const isAIPlaying = useInterviewStore((state) => state.isAIPlaying);
+  const status = useInterviewStore((state) => state.status)
+  const isMicActive = useInterviewStore((state) => state.isMicActive)
+  const isAIPlaying = useInterviewStore((state) => state.isAIPlaying)
 
   const getStatusInfo = () => {
     if (status === 'listening' && isMicActive) {
@@ -150,7 +150,7 @@ export const StatusIndicator: React.FC = () => {
         label: 'Listening',
         color: 'bg-emerald-500',
         pulse: true,
-      };
+      }
     }
 
     if (status === 'processing') {
@@ -158,7 +158,7 @@ export const StatusIndicator: React.FC = () => {
         label: 'Thinking',
         color: 'bg-amber-500',
         pulse: true,
-      };
+      }
     }
 
     if (status === 'speaking' || isAIPlaying) {
@@ -166,7 +166,7 @@ export const StatusIndicator: React.FC = () => {
         label: 'Speaking',
         color: 'bg-pink-500',
         pulse: true,
-      };
+      }
     }
 
     if (status === 'error') {
@@ -174,15 +174,15 @@ export const StatusIndicator: React.FC = () => {
         label: 'Error',
         color: 'bg-red-500',
         pulse: false,
-      };
+      }
     }
 
-    return null;
-  };
+    return null
+  }
 
-  const statusInfo = getStatusInfo();
+  const statusInfo = getStatusInfo()
 
-  if (!statusInfo) return null;
+  if (!statusInfo) return null
 
   return (
     <div className="flex items-center gap-2.5 px-4 py-2.5 bg-white/60 backdrop-blur-md rounded-full border border-gray-300/50 shadow-lg transition-all duration-300 ease-out">
@@ -191,7 +191,9 @@ export const StatusIndicator: React.FC = () => {
           statusInfo.pulse ? 'animate-pulse' : ''
         } transition-colors duration-300`}
       />
-      <span className="text-xs font-medium text-gray-700 tracking-wide">{statusInfo.label}</span>
+      <span className="text-xs font-medium text-gray-700 tracking-wide">
+        {statusInfo.label}
+      </span>
     </div>
-  );
-};
+  )
+}

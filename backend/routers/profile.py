@@ -39,19 +39,19 @@ async def scrape_linkedin(
     """Scrape LinkedIn profile to auto-fill profile data"""
     try:
         profile_data = await scrape_linkedin_profile(request.linkedin_url)
-        
+
         if not profile_data:
             raise HTTPException(
-                status_code=400, 
-                detail="Failed to scrape LinkedIn profile. Please check the URL and try again, or fill in your information manually."
+                status_code=400,
+                detail="Failed to scrape LinkedIn profile. Please check the URL and try again, or fill in your information manually.",
             )
-        
+
         return profile_data
     except ValueError as e:
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         print(f"Unexpected error in scrape_linkedin endpoint: {e}")
         raise HTTPException(
-            status_code=500, 
-            detail="An error occurred while scraping the LinkedIn profile. Please try again or fill in your information manually."
+            status_code=500,
+            detail="An error occurred while scraping the LinkedIn profile. Please try again or fill in your information manually.",
         )

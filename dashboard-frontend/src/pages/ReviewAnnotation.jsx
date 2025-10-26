@@ -8,7 +8,9 @@ import { ArrowLeft, Star } from 'lucide-react'
 import { toast } from 'sonner'
 import Sidebar from '../components/Sidebar'
 
-const API = process.env.REACT_APP_BACKEND_URL ? `${process.env.REACT_APP_BACKEND_URL}/api` : 'http://localhost:8000/api'
+const API = process.env.REACT_APP_BACKEND_URL
+  ? `${process.env.REACT_APP_BACKEND_URL}/api`
+  : 'http://localhost:8000/api'
 
 export default function ReviewAnnotation() {
   const { taskId } = useParams()
@@ -51,7 +53,9 @@ export default function ReviewAnnotation() {
           <Star
             key={i}
             className={`w-5 h-5 ${
-              i <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-neutral-300'
+              i <= rating
+                ? 'fill-yellow-400 text-yellow-400'
+                : 'text-neutral-300'
             }`}
           />
         ))}
@@ -60,11 +64,19 @@ export default function ReviewAnnotation() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Loading...
+      </div>
+    )
   }
 
   if (!task) {
-    return <div className="flex items-center justify-center min-h-screen">Task not found</div>
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Task not found
+      </div>
+    )
   }
 
   return (
@@ -89,29 +101,43 @@ export default function ReviewAnnotation() {
               <div className="flex justify-between items-start">
                 <div>
                   <CardTitle>Task Review</CardTitle>
-                  <p className="text-sm text-neutral-600 mt-2 font-mono">{task.id}</p>
+                  <p className="text-sm text-neutral-600 mt-2 font-mono">
+                    {task.id}
+                  </p>
                 </div>
-                <Badge className={getStatusColor(task.status)}>{task.status}</Badge>
+                <Badge className={getStatusColor(task.status)}>
+                  {task.status}
+                </Badge>
               </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <p className="text-sm text-neutral-600 mb-1">Job ID</p>
-                  <p className="font-mono text-sm">{task.job_id.slice(0, 8)}...</p>
+                  <p className="font-mono text-sm">
+                    {task.job_id.slice(0, 8)}...
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-neutral-600 mb-1">Annotator</p>
-                  <p className="font-mono text-sm">{task.annotator_id ? task.annotator_id.slice(0, 8) + '...' : '-'}</p>
+                  <p className="font-mono text-sm">
+                    {task.annotator_id
+                      ? task.annotator_id.slice(0, 8) + '...'
+                      : '-'}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-neutral-600 mb-1">Created</p>
-                  <p className="text-sm">{new Date(task.created_at).toLocaleDateString()}</p>
+                  <p className="text-sm">
+                    {new Date(task.created_at).toLocaleDateString()}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-neutral-600 mb-1">Completed</p>
                   <p className="text-sm">
-                    {task.completed_at ? new Date(task.completed_at).toLocaleDateString() : '-'}
+                    {task.completed_at
+                      ? new Date(task.completed_at).toLocaleDateString()
+                      : '-'}
                   </p>
                 </div>
               </div>
@@ -127,7 +153,9 @@ export default function ReviewAnnotation() {
               <div className="space-y-4">
                 {task.data_to_annotate?.transcript && (
                   <div>
-                    <h4 className="font-semibold text-neutral-900 mb-2">Transcript</h4>
+                    <h4 className="font-semibold text-neutral-900 mb-2">
+                      Transcript
+                    </h4>
                     <div className="bg-neutral-50 p-4 rounded-lg max-h-48 overflow-y-auto">
                       <p className="text-sm text-neutral-700 whitespace-pre-wrap">
                         {task.data_to_annotate.transcript}
@@ -137,8 +165,12 @@ export default function ReviewAnnotation() {
                 )}
                 {task.data_to_annotate?.video_url && (
                   <div>
-                    <h4 className="font-semibold text-neutral-900 mb-2">Video</h4>
-                    <p className="text-sm text-neutral-600 font-mono break-all">{task.data_to_annotate.video_url}</p>
+                    <h4 className="font-semibold text-neutral-900 mb-2">
+                      Video
+                    </h4>
+                    <p className="text-sm text-neutral-600 font-mono break-all">
+                      {task.data_to_annotate.video_url}
+                    </p>
                   </div>
                 )}
               </div>
@@ -153,12 +185,16 @@ export default function ReviewAnnotation() {
             <CardContent>
               <div className="space-y-6">
                 <div>
-                  <p className="text-sm text-neutral-600 mb-3">Quality Rating</p>
+                  <p className="text-sm text-neutral-600 mb-3">
+                    Quality Rating
+                  </p>
                   <div className="flex items-center gap-4">
                     {task.quality_rating ? (
                       <>
                         {renderStars(task.quality_rating)}
-                        <span className="text-lg font-bold text-neutral-900">{task.quality_rating}/5</span>
+                        <span className="text-lg font-bold text-neutral-900">
+                          {task.quality_rating}/5
+                        </span>
                       </>
                     ) : (
                       <p className="text-neutral-600">No rating submitted</p>
@@ -168,9 +204,13 @@ export default function ReviewAnnotation() {
 
                 {task.feedback_notes && (
                   <div>
-                    <p className="text-sm text-neutral-600 mb-2">Feedback Notes</p>
+                    <p className="text-sm text-neutral-600 mb-2">
+                      Feedback Notes
+                    </p>
                     <div className="bg-neutral-50 p-4 rounded-lg">
-                      <p className="text-sm text-neutral-700">{task.feedback_notes}</p>
+                      <p className="text-sm text-neutral-700">
+                        {task.feedback_notes}
+                      </p>
                     </div>
                   </div>
                 )}

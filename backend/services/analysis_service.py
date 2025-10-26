@@ -21,19 +21,21 @@ class AnalysisService:
 
             # Get candidate and transcript
             candidate = await db.candidates.find_one({"id": interview["candidate_id"]})
-            
+
             # If candidate not found, create fallback from interview data
             if not candidate:
                 candidate = {
                     "name": interview.get("candidate_name", "Candidate"),
-                    "skills": [skill.get("name", skill) if isinstance(skill, dict) else skill 
-                              for skill in interview.get("skills", [])],
-                    "experience_years": 0
+                    "skills": [
+                        skill.get("name", skill) if isinstance(skill, dict) else skill
+                        for skill in interview.get("skills", [])
+                    ],
+                    "experience_years": 0,
                 }
-            
+
             # Use transcript from interview document (new format)
             transcript = interview.get("transcript", [])
-            
+
             # Check for insufficient data
             if len(transcript) < 2:
                 return AnalysisService._create_insufficient_data_response()
@@ -44,9 +46,7 @@ class AnalysisService:
                 timestamp = f"[{i+1}]"
                 speaker = entry.get("speaker", "unknown").upper()
                 text = entry.get("text", "")
-                conversation_with_timestamps.append(
-                    f"{timestamp} {speaker}: {text}"
-                )
+                conversation_with_timestamps.append(f"{timestamp} {speaker}: {text}")
 
             conversation = "\n".join(conversation_with_timestamps)
             framework_name = EVALUATION_FRAMEWORKS.get(

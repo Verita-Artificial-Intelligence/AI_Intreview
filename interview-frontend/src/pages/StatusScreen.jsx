@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { CheckCircle, Clock, XCircle, Loader2, ArrowLeft, Briefcase } from 'lucide-react'
+import {
+  CheckCircle,
+  Clock,
+  XCircle,
+  Loader2,
+  ArrowLeft,
+  Briefcase,
+} from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -31,7 +38,7 @@ const StatusScreen = () => {
   useEffect(() => {
     // If there's a selected interview ID, show that one
     if (selectedInterviewId && interviews.length > 0) {
-      const interview = interviews.find(i => i.id === selectedInterviewId)
+      const interview = interviews.find((i) => i.id === selectedInterviewId)
       if (interview) {
         setSelectedInterview(interview)
         setStatus(interview.status)
@@ -43,7 +50,7 @@ const StatusScreen = () => {
     try {
       // Fetch user's interviews
       const response = await axios.get(`${API}/interviews`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       })
       const userInterviews = response.data.filter(
         (interview) => interview.candidate_id === user?.id
@@ -56,7 +63,9 @@ const StatusScreen = () => {
         setSelectedInterview(mostRecent)
         setStatus(mostRecent.status)
       } else if (selectedInterviewId) {
-        const interview = userInterviews.find(i => i.id === selectedInterviewId)
+        const interview = userInterviews.find(
+          (i) => i.id === selectedInterviewId
+        )
         if (interview) {
           setSelectedInterview(interview)
           setStatus(interview.status)
@@ -293,34 +302,38 @@ const StatusScreen = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <h3 className="font-semibold text-sm text-neutral-900 truncate">
-                          {interview.job_title || interview.position || 'General Interview'}
+                          {interview.job_title ||
+                            interview.position ||
+                            'General Interview'}
                         </h3>
                         <Badge
                           className={`text-[10px] ${
-                            interview.status === 'completed' || interview.status === 'under_review'
+                            interview.status === 'completed' ||
+                            interview.status === 'under_review'
                               ? 'bg-brand-50 text-brand-600 border-brand-200'
                               : interview.status === 'approved'
-                              ? 'bg-green-50 text-green-600 border-green-200'
-                              : interview.status === 'rejected'
-                              ? 'bg-red-50 text-red-600 border-red-200'
-                              : 'bg-neutral-100 text-neutral-600 border-neutral-200'
+                                ? 'bg-green-50 text-green-600 border-green-200'
+                                : interview.status === 'rejected'
+                                  ? 'bg-red-50 text-red-600 border-red-200'
+                                  : 'bg-neutral-100 text-neutral-600 border-neutral-200'
                           }`}
                         >
                           {interview.status === 'in_progress'
                             ? 'In Progress'
                             : interview.status === 'completed'
-                            ? 'Under Review'
-                            : interview.status === 'under_review'
-                            ? 'Under Review'
-                            : interview.status === 'approved'
-                            ? 'Approved'
-                            : interview.status === 'rejected'
-                            ? 'Not Selected'
-                            : 'Pending'}
+                              ? 'Under Review'
+                              : interview.status === 'under_review'
+                                ? 'Under Review'
+                                : interview.status === 'approved'
+                                  ? 'Approved'
+                                  : interview.status === 'rejected'
+                                    ? 'Not Selected'
+                                    : 'Pending'}
                         </Badge>
                       </div>
                       <p className="text-xs text-neutral-500">
-                        Interviewed {new Date(interview.created_at).toLocaleDateString()}
+                        Interviewed{' '}
+                        {new Date(interview.created_at).toLocaleDateString()}
                       </p>
                     </div>
                   </div>

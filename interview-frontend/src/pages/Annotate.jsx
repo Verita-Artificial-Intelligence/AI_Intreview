@@ -49,7 +49,7 @@ export default function Annotate() {
     try {
       setLoading(true)
       const response = await axios.get(`${API}/annotations/${taskId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       })
       setTask(response.data)
 
@@ -60,23 +60,34 @@ export default function Annotate() {
       // Check if job is in correct status
       if (jobResponse.data.status === 'pending') {
         // Job is still pending, show message and redirect
-        alert('This task is not yet available. Tasks can only be started when the project enters the active phase.')
+        alert(
+          'This task is not yet available. Tasks can only be started when the project enters the active phase.'
+        )
         navigate('/jobs')
         return
       }
 
-      if (jobResponse.data.status === 'completed' || jobResponse.data.status === 'archived') {
+      if (
+        jobResponse.data.status === 'completed' ||
+        jobResponse.data.status === 'archived'
+      ) {
         // Job has ended
-        alert(`This project has ${jobResponse.data.status === 'completed' ? 'ended' : 'been archived'}.`)
+        alert(
+          `This project has ${jobResponse.data.status === 'completed' ? 'ended' : 'been archived'}.`
+        )
         navigate('/jobs')
         return
       }
 
       // Mark as started if not already (job must be in_progress here)
       if (response.data.status === 'assigned') {
-        await axios.post(`${API}/annotations/${taskId}/start`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        await axios.post(
+          `${API}/annotations/${taskId}/start`,
+          {},
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        )
       }
     } catch (error) {
       console.error('Failed to fetch task:', error)
@@ -109,7 +120,7 @@ export default function Annotate() {
           feedback_notes: notes,
         },
         {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         }
       )
       navigate('/jobs')
@@ -221,7 +232,9 @@ export default function Annotate() {
                       </p>
                     )}
                     <div className="inline-block">
-                      <span className="text-sm font-medium text-neutral-600">Type:</span>
+                      <span className="text-sm font-medium text-neutral-600">
+                        Type:
+                      </span>
                       <span className="text-sm font-bold text-neutral-900 ml-2 capitalize">
                         {dataType}
                       </span>
@@ -249,11 +262,18 @@ export default function Annotate() {
                 {dataType === 'image' && data.data_url && (
                   <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200">
                     <img
-                      src={data.data_url.startsWith('http') ? data.data_url : `${BACKEND_URL}${data.data_url}`}
+                      src={
+                        data.data_url.startsWith('http')
+                          ? data.data_url
+                          : `${BACKEND_URL}${data.data_url}`
+                      }
                       alt="Annotation data"
                       className="max-w-full h-auto rounded max-h-96 object-contain"
                       onError={(e) => {
-                        console.error('Failed to load image from:', data.data_url)
+                        console.error(
+                          'Failed to load image from:',
+                          data.data_url
+                        )
                         console.error('Attempted URL:', e.target.src)
                         e.target.style.display = 'none'
                         const errorMsg = document.createElement('div')
@@ -275,7 +295,11 @@ export default function Annotate() {
                 {dataType === 'video' && data.data_url && (
                   <div className="bg-neutral-50 p-4 rounded-lg border border-neutral-200">
                     <video
-                      src={data.data_url.startsWith('http') ? data.data_url : `${BACKEND_URL}${data.data_url}`}
+                      src={
+                        data.data_url.startsWith('http')
+                          ? data.data_url
+                          : `${BACKEND_URL}${data.data_url}`
+                      }
                       controls
                       className="max-w-full h-auto rounded max-h-96"
                     />
@@ -286,7 +310,11 @@ export default function Annotate() {
                 {dataType === 'audio' && data.data_url && (
                   <div className="bg-neutral-50 p-6 rounded-lg border border-neutral-200">
                     <audio
-                      src={data.data_url.startsWith('http') ? data.data_url : `${BACKEND_URL}${data.data_url}`}
+                      src={
+                        data.data_url.startsWith('http')
+                          ? data.data_url
+                          : `${BACKEND_URL}${data.data_url}`
+                      }
                       controls
                       className="w-full"
                     />
@@ -298,7 +326,11 @@ export default function Annotate() {
                   <div className="bg-neutral-50 p-6 rounded-lg border border-neutral-200 text-center">
                     <FileIcon className="w-12 h-12 text-neutral-400 mx-auto mb-3" />
                     <a
-                      href={data.data_url.startsWith('http') ? data.data_url : `${BACKEND_URL}${data.data_url}`}
+                      href={
+                        data.data_url.startsWith('http')
+                          ? data.data_url
+                          : `${BACKEND_URL}${data.data_url}`
+                      }
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-500 hover:text-blue-600 font-medium break-all"
@@ -313,7 +345,9 @@ export default function Annotate() {
                   <div className="bg-neutral-50 p-6 rounded-lg border border-neutral-200 max-h-96 overflow-y-auto">
                     <p className="text-neutral-700 whitespace-pre-wrap leading-relaxed text-sm">
                       {Array.isArray(data.transcript)
-                        ? data.transcript.map(t => `${t.speaker}: ${t.text}`).join('\n\n')
+                        ? data.transcript
+                            .map((t) => `${t.speaker}: ${t.text}`)
+                            .join('\n\n')
                         : data.transcript}
                     </p>
                   </div>
@@ -416,29 +450,44 @@ export default function Annotate() {
 
                     {/* Rating Display */}
                     {rating > 0 && (
-                      <div className={`p-4 rounded-lg border-2 transition-all ${
-                        rating <= 2 ? 'bg-red-50 border-red-200' :
-                        rating === 3 ? 'bg-yellow-50 border-yellow-200' :
-                        rating === 4 ? 'bg-blue-50 border-blue-200' :
-                        'bg-green-50 border-green-200'
-                      }`}>
+                      <div
+                        className={`p-4 rounded-lg border-2 transition-all ${
+                          rating <= 2
+                            ? 'bg-red-50 border-red-200'
+                            : rating === 3
+                              ? 'bg-yellow-50 border-yellow-200'
+                              : rating === 4
+                                ? 'bg-blue-50 border-blue-200'
+                                : 'bg-green-50 border-green-200'
+                        }`}
+                      >
                         <div className="flex items-baseline gap-2 mb-2">
-                          <p className={`text-3xl font-bold ${
-                            rating <= 2 ? 'text-red-600' :
-                            rating === 3 ? 'text-yellow-600' :
-                            rating === 4 ? 'text-blue-600' :
-                            'text-green-600'
-                          }`}>
+                          <p
+                            className={`text-3xl font-bold ${
+                              rating <= 2
+                                ? 'text-red-600'
+                                : rating === 3
+                                  ? 'text-yellow-600'
+                                  : rating === 4
+                                    ? 'text-blue-600'
+                                    : 'text-green-600'
+                            }`}
+                          >
                             {rating}
                           </p>
                           <span className="text-xl text-neutral-400">/5</span>
                         </div>
-                        <p className={`text-sm font-medium ${
-                          rating <= 2 ? 'text-red-700' :
-                          rating === 3 ? 'text-yellow-700' :
-                          rating === 4 ? 'text-blue-700' :
-                          'text-green-700'
-                        }`}>
+                        <p
+                          className={`text-sm font-medium ${
+                            rating <= 2
+                              ? 'text-red-700'
+                              : rating === 3
+                                ? 'text-yellow-700'
+                                : rating === 4
+                                  ? 'text-blue-700'
+                                  : 'text-green-700'
+                          }`}
+                        >
                           {rating === 1 && 'Poor Quality'}
                           {rating === 2 && 'Needs Improvement'}
                           {rating === 3 && 'Good Foundation'}
@@ -472,7 +521,12 @@ export default function Annotate() {
                 <div className="border-t border-neutral-200 pt-8 space-y-3">
                   <Button
                     onClick={() => setShowConfirm(true)}
-                    disabled={submitting || rating === 0 || !notes || notes.trim().length === 0}
+                    disabled={
+                      submitting ||
+                      rating === 0 ||
+                      !notes ||
+                      notes.trim().length === 0
+                    }
                     className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 h-auto text-base disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Check className="w-5 h-5 mr-2" />
@@ -498,34 +552,52 @@ export default function Annotate() {
           <AlertDialogHeader>
             <AlertDialogTitle>Submit Your Feedback?</AlertDialogTitle>
             <AlertDialogDescription>
-              You're about to submit your creative feedback. You won't be able to edit it after submission.
+              You're about to submit your creative feedback. You won't be able
+              to edit it after submission.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
           <div className="bg-neutral-50 p-4 rounded-lg my-4 space-y-3">
             <div>
-              <span className="text-sm font-medium text-neutral-700 mb-2 block">Creative Rating:</span>
-              <div className={`inline-flex items-baseline gap-2 px-4 py-2 rounded-lg ${
-                rating <= 2 ? 'bg-red-100' :
-                rating === 3 ? 'bg-yellow-100' :
-                rating === 4 ? 'bg-blue-100' :
-                'bg-green-100'
-              }`}>
-                <p className={`text-2xl font-bold ${
-                  rating <= 2 ? 'text-red-600' :
-                  rating === 3 ? 'text-yellow-600' :
-                  rating === 4 ? 'text-blue-600' :
-                  'text-green-600'
-                }`}>
+              <span className="text-sm font-medium text-neutral-700 mb-2 block">
+                Creative Rating:
+              </span>
+              <div
+                className={`inline-flex items-baseline gap-2 px-4 py-2 rounded-lg ${
+                  rating <= 2
+                    ? 'bg-red-100'
+                    : rating === 3
+                      ? 'bg-yellow-100'
+                      : rating === 4
+                        ? 'bg-blue-100'
+                        : 'bg-green-100'
+                }`}
+              >
+                <p
+                  className={`text-2xl font-bold ${
+                    rating <= 2
+                      ? 'text-red-600'
+                      : rating === 3
+                        ? 'text-yellow-600'
+                        : rating === 4
+                          ? 'text-blue-600'
+                          : 'text-green-600'
+                  }`}
+                >
                   {rating}
                 </p>
                 <span className="text-lg text-neutral-400">/5</span>
-                <span className={`text-sm font-medium ml-2 ${
-                  rating <= 2 ? 'text-red-700' :
-                  rating === 3 ? 'text-yellow-700' :
-                  rating === 4 ? 'text-blue-700' :
-                  'text-green-700'
-                }`}>
+                <span
+                  className={`text-sm font-medium ml-2 ${
+                    rating <= 2
+                      ? 'text-red-700'
+                      : rating === 3
+                        ? 'text-yellow-700'
+                        : rating === 4
+                          ? 'text-blue-700'
+                          : 'text-green-700'
+                  }`}
+                >
                   {rating === 1 && 'Poor Quality'}
                   {rating === 2 && 'Needs Improvement'}
                   {rating === 3 && 'Good Foundation'}
@@ -537,7 +609,9 @@ export default function Annotate() {
             {notes && (
               <div>
                 <p className="text-xs text-neutral-600 mb-1">Your Notes:</p>
-                <p className="text-sm text-neutral-700 whitespace-pre-wrap">{notes}</p>
+                <p className="text-sm text-neutral-700 whitespace-pre-wrap">
+                  {notes}
+                </p>
               </div>
             )}
           </div>

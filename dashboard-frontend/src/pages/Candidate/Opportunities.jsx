@@ -3,14 +3,21 @@ import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { Button } from '../../components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '../../components/ui/card'
 import { Badge } from '../../components/ui/badge'
 import { Input } from '../../components/ui/input'
 import { Search, DollarSign, MapPin, Clock } from 'lucide-react'
 import CandidateSidebar from '../../components/CandidateSidebar'
 import { toast } from 'sonner'
 
-const API = process.env.REACT_APP_BACKEND_URL ? `${process.env.REACT_APP_BACKEND_URL}/api` : 'http://localhost:8000/api'
+const API = process.env.REACT_APP_BACKEND_URL
+  ? `${process.env.REACT_APP_BACKEND_URL}/api`
+  : 'http://localhost:8000/api'
 
 export default function Opportunities() {
   const navigate = useNavigate()
@@ -33,7 +40,7 @@ export default function Opportunities() {
     try {
       const response = await axios.get(`${API}/jobs`)
       // Filter to only show open jobs
-      const openJobs = response.data.filter(job => job.status === 'open')
+      const openJobs = response.data.filter((job) => job.status === 'open')
       setJobs(openJobs)
     } catch (error) {
       console.error('Failed to fetch jobs:', error)
@@ -55,7 +62,7 @@ export default function Opportunities() {
   const fetchAppliedJobs = async () => {
     try {
       const response = await axios.get(`${API}/interviews/candidate/${user.id}`)
-      const jobIds = new Set(response.data.map(interview => interview.job_id))
+      const jobIds = new Set(response.data.map((interview) => interview.job_id))
       setAppliedJobs(jobIds)
     } catch (error) {
       console.error('Failed to fetch applied jobs:', error)
@@ -73,8 +80,10 @@ export default function Opportunities() {
         status: 'scheduled',
       })
 
-      toast.success('Successfully applied! Check Active Jobs for your interview.')
-      setAppliedJobs(prev => new Set([...prev, jobId]))
+      toast.success(
+        'Successfully applied! Check Active Jobs for your interview.'
+      )
+      setAppliedJobs((prev) => new Set([...prev, jobId]))
       fetchAppliedJobs()
     } catch (error) {
       console.error('Failed to apply:', error)
@@ -82,7 +91,7 @@ export default function Opportunities() {
     }
   }
 
-  const filteredJobs = jobs.filter(job => {
+  const filteredJobs = jobs.filter((job) => {
     if (!searchTerm) return true
     const search = searchTerm.toLowerCase()
     return (
@@ -133,7 +142,9 @@ export default function Opportunities() {
                 <Search className="w-12 h-12 text-neutral-400 mx-auto mb-3" />
                 <p className="text-neutral-600">No opportunities found</p>
                 <p className="text-sm text-neutral-500 mt-1">
-                  {searchTerm ? 'Try adjusting your search terms' : 'Check back later for new positions'}
+                  {searchTerm
+                    ? 'Try adjusting your search terms'
+                    : 'Check back later for new positions'}
                 </p>
               </CardContent>
             </Card>
@@ -144,16 +155,25 @@ export default function Opportunities() {
                 const isAnnotationJob = job.interview_type === 'human_data'
 
                 return (
-                  <Card key={job.id} className="hover:shadow-lg transition-shadow">
+                  <Card
+                    key={job.id}
+                    className="hover:shadow-lg transition-shadow"
+                  >
                     <CardHeader>
                       <div className="flex justify-between items-start gap-3">
                         <div className="flex-1 min-w-0">
-                          <CardTitle className="text-lg mb-2">{job.title || job.position}</CardTitle>
+                          <CardTitle className="text-lg mb-2">
+                            {job.title || job.position}
+                          </CardTitle>
                           {isAnnotationJob && (
-                            <Badge className="bg-purple-100 text-purple-700 mb-2">Creative Project</Badge>
+                            <Badge className="bg-purple-100 text-purple-700 mb-2">
+                              Creative Project
+                            </Badge>
                           )}
                         </div>
-                        <Badge className="bg-green-100 text-green-700 flex-shrink-0">Open</Badge>
+                        <Badge className="bg-green-100 text-green-700 flex-shrink-0">
+                          Open
+                        </Badge>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -177,7 +197,10 @@ export default function Opportunities() {
                           )}
                           <div className="flex items-center gap-2 text-sm text-neutral-600">
                             <Clock className="w-4 h-4" />
-                            <span>Posted {new Date(job.created_at).toLocaleDateString()}</span>
+                            <span>
+                              Posted{' '}
+                              {new Date(job.created_at).toLocaleDateString()}
+                            </span>
                           </div>
                         </div>
 

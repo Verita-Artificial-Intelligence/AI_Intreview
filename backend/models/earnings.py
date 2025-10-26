@@ -20,6 +20,7 @@ class Earning(BaseModel):
 
 class EarningsSummary(BaseModel):
     """Summary of earnings for a user"""
+
     total_earnings: float
     pending_payout: float
     available_balance: float

@@ -256,192 +256,192 @@ const AudioInterviewPage = () => {
       <main className="flex-1 flex flex-col">
         {/* Header */}
         <div className={pageHeader.wrapper}>
-        <div className={`${containers.md} ${pageHeader.container}`}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                onClick={() => navigate('/')}
-                variant="outline"
-                size="sm"
-                className="rounded-lg"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
+          <div className={`${containers.md} ${pageHeader.container}`}>
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                {persona && (
-                  <div className="flex items-center gap-3 pr-4 border-r border-neutral-300">
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg bg-gradient-to-br from-purple-500 to-indigo-600">
-                      {persona.name
-                        .split(' ')
-                        .map((n) => n[0])
-                        .join('')}
+                <Button
+                  onClick={() => navigate('/')}
+                  variant="outline"
+                  size="sm"
+                  className="rounded-lg"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back
+                </Button>
+                <div className="flex items-center gap-4">
+                  {persona && (
+                    <div className="flex items-center gap-3 pr-4 border-r border-neutral-300">
+                      <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg bg-gradient-to-br from-purple-500 to-indigo-600">
+                        {persona.name
+                          .split(' ')
+                          .map((n) => n[0])
+                          .join('')}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-neutral-900">
+                          {persona.name}
+                        </p>
+                        <p className="text-xs text-neutral-600">
+                          {persona.title}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-neutral-900">
-                        {persona.name}
-                      </p>
-                      <p className="text-xs text-neutral-600">
-                        {persona.title}
-                      </p>
-                    </div>
+                  )}
+                  <div>
+                    <h1 className="text-xl font-bold text-neutral-900">
+                      Voice Interview with {interview.candidate_name}
+                    </h1>
+                    <p className={pageHeader.subtitle}>{interview.position}</p>
                   </div>
-                )}
-                <div>
-                  <h1 className="text-xl font-bold text-neutral-900">
-                    Voice Interview with {interview.candidate_name}
-                  </h1>
-                  <p className={pageHeader.subtitle}>{interview.position}</p>
                 </div>
               </div>
-            </div>
-            {interview.status !== 'completed' && (
-              <Button
-                onClick={handleCompleteInterview}
-                data-testid="complete-interview-button"
-                disabled={completing}
-                className="rounded-lg font-medium"
-                style={{ background: cssGradients.info }}
-              >
-                <CheckCircle className="w-4 h-4 mr-2" />
-                {completing ? 'Completing...' : 'Complete Interview'}
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto">
-        <div className={`${containers.md} mx-auto px-6 py-6 space-y-4`}>
-          {messages.map((message, index) => (
-            <div
-              key={message.id || index}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-[70%] rounded-2xl px-5 py-3 ${
-                  message.role === 'user'
-                    ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white'
-                    : 'bg-surface text-neutral-800 shadow-md border border-neutral-100'
-                }`}
-              >
-                {message.role === 'assistant' && (
-                  <div className="flex items-center gap-2 mb-1">
-                    <Volume2 className="w-4 h-4 text-purple-500" />
-                    <p className="text-xs font-medium text-purple-500">
-                      AI Interviewer
-                    </p>
-                  </div>
-                )}
-                {message.role === 'user' && (
-                  <div className="flex items-center gap-2 mb-1">
-                    <Mic className="w-4 h-4" />
-                    <p className="text-xs font-medium">You</p>
-                  </div>
-                )}
-                <p className="text-base leading-relaxed whitespace-pre-wrap">
-                  {message.content}
-                </p>
-                <p
-                  className={`text-xs mt-2 ${message.role === 'user' ? 'text-white/70' : 'text-neutral-500'}`}
+              {interview.status !== 'completed' && (
+                <Button
+                  onClick={handleCompleteInterview}
+                  data-testid="complete-interview-button"
+                  disabled={completing}
+                  className="rounded-lg font-medium"
+                  style={{ background: cssGradients.info }}
                 >
-                  {new Date(message.timestamp).toLocaleTimeString()}
-                </p>
-              </div>
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  {completing ? 'Completing...' : 'Complete Interview'}
+                </Button>
+              )}
             </div>
-          ))}
-          <div ref={messagesEndRef} />
+          </div>
         </div>
-      </div>
 
-      {/* Recording Controls */}
-      {interview.status !== 'completed' && (
-        <div className="bg-surface border-t border-neutral-200 shadow-lg">
-          <div className={`${containers.md} mx-auto px-6 py-6`}>
-            <Card
-              className={`p-6 bg-gradient-to-br from-neutral-50 to-surface border-0 shadow-lg`}
-            >
-              <div className="flex flex-col items-center gap-4">
-                {isProcessing ? (
-                  <div className="text-center">
-                    <Loader2 className="w-12 h-12 mx-auto mb-3 animate-spin text-purple-500" />
-                    <p className="text-lg font-medium text-neutral-900">
-                      Processing your response...
-                    </p>
-                    <p className="text-sm text-neutral-600">
-                      Transcribing and generating AI response
-                    </p>
-                  </div>
-                ) : isPlaying ? (
-                  <div className="text-center">
-                    <Volume2 className="w-12 h-12 mx-auto mb-3 animate-pulse text-purple-500" />
-                    <p className="text-lg font-medium text-neutral-900">
-                      AI is speaking...
-                    </p>
-                    <p className="text-sm text-neutral-600">
-                      Please listen carefully
-                    </p>
-                  </div>
-                ) : (
-                  <div className="text-center w-full">
-                    <Button
-                      onClick={isRecording ? stopRecording : startRecording}
-                      data-testid={
-                        isRecording
-                          ? 'stop-recording-button'
-                          : 'start-recording-button'
-                      }
-                      className={`w-32 h-32 rounded-full font-medium text-lg shadow-2xl ${
-                        isRecording ? 'animate-pulse' : ''
-                      }`}
-                      style={{
-                        background: isRecording
-                          ? 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)'
-                          : cssGradients.purple,
-                      }}
-                    >
-                      {isRecording ? (
-                        <>
-                          <MicOff className="w-12 h-12" />
-                        </>
-                      ) : (
-                        <>
-                          <Mic className="w-12 h-12" />
-                        </>
-                      )}
-                    </Button>
-                    <p className="text-lg font-semibold mt-4 text-neutral-900">
-                      {isRecording
-                        ? 'Tap to stop recording'
-                        : 'Tap to start speaking'}
-                    </p>
-                    <p className="text-sm text-neutral-600 mt-1">
-                      {isRecording
-                        ? 'Recording your answer...'
-                        : 'Press the button and answer the question'}
-                    </p>
-                  </div>
-                )}
+        {/* Chat Messages */}
+        <div className="flex-1 overflow-y-auto">
+          <div className={`${containers.md} mx-auto px-6 py-6 space-y-4`}>
+            {messages.map((message, index) => (
+              <div
+                key={message.id || index}
+                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[70%] rounded-2xl px-5 py-3 ${
+                    message.role === 'user'
+                      ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white'
+                      : 'bg-surface text-neutral-800 shadow-md border border-neutral-100'
+                  }`}
+                >
+                  {message.role === 'assistant' && (
+                    <div className="flex items-center gap-2 mb-1">
+                      <Volume2 className="w-4 h-4 text-purple-500" />
+                      <p className="text-xs font-medium text-purple-500">
+                        AI Interviewer
+                      </p>
+                    </div>
+                  )}
+                  {message.role === 'user' && (
+                    <div className="flex items-center gap-2 mb-1">
+                      <Mic className="w-4 h-4" />
+                      <p className="text-xs font-medium">You</p>
+                    </div>
+                  )}
+                  <p className="text-base leading-relaxed whitespace-pre-wrap">
+                    {message.content}
+                  </p>
+                  <p
+                    className={`text-xs mt-2 ${message.role === 'user' ? 'text-white/70' : 'text-neutral-500'}`}
+                  >
+                    {new Date(message.timestamp).toLocaleTimeString()}
+                  </p>
+                </div>
               </div>
-            </Card>
+            ))}
+            <div ref={messagesEndRef} />
           </div>
         </div>
-      )}
 
-      {interview.status === 'completed' && (
-        <div className="bg-surface border-t border-neutral-200 shadow-lg">
-          <div className={`${containers.md} mx-auto px-6 py-6 text-center`}>
-            <CheckCircle className="w-12 h-12 mx-auto mb-3 text-blue-400" />
-            <p className="text-lg font-semibold mb-2 text-neutral-900">
-              Interview Completed
-            </p>
-            <p className="text-neutral-600">
-              This voice interview has been completed.
-            </p>
+        {/* Recording Controls */}
+        {interview.status !== 'completed' && (
+          <div className="bg-surface border-t border-neutral-200 shadow-lg">
+            <div className={`${containers.md} mx-auto px-6 py-6`}>
+              <Card
+                className={`p-6 bg-gradient-to-br from-neutral-50 to-surface border-0 shadow-lg`}
+              >
+                <div className="flex flex-col items-center gap-4">
+                  {isProcessing ? (
+                    <div className="text-center">
+                      <Loader2 className="w-12 h-12 mx-auto mb-3 animate-spin text-purple-500" />
+                      <p className="text-lg font-medium text-neutral-900">
+                        Processing your response...
+                      </p>
+                      <p className="text-sm text-neutral-600">
+                        Transcribing and generating AI response
+                      </p>
+                    </div>
+                  ) : isPlaying ? (
+                    <div className="text-center">
+                      <Volume2 className="w-12 h-12 mx-auto mb-3 animate-pulse text-purple-500" />
+                      <p className="text-lg font-medium text-neutral-900">
+                        AI is speaking...
+                      </p>
+                      <p className="text-sm text-neutral-600">
+                        Please listen carefully
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="text-center w-full">
+                      <Button
+                        onClick={isRecording ? stopRecording : startRecording}
+                        data-testid={
+                          isRecording
+                            ? 'stop-recording-button'
+                            : 'start-recording-button'
+                        }
+                        className={`w-32 h-32 rounded-full font-medium text-lg shadow-2xl ${
+                          isRecording ? 'animate-pulse' : ''
+                        }`}
+                        style={{
+                          background: isRecording
+                            ? 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)'
+                            : cssGradients.purple,
+                        }}
+                      >
+                        {isRecording ? (
+                          <>
+                            <MicOff className="w-12 h-12" />
+                          </>
+                        ) : (
+                          <>
+                            <Mic className="w-12 h-12" />
+                          </>
+                        )}
+                      </Button>
+                      <p className="text-lg font-semibold mt-4 text-neutral-900">
+                        {isRecording
+                          ? 'Tap to stop recording'
+                          : 'Tap to start speaking'}
+                      </p>
+                      <p className="text-sm text-neutral-600 mt-1">
+                        {isRecording
+                          ? 'Recording your answer...'
+                          : 'Press the button and answer the question'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {interview.status === 'completed' && (
+          <div className="bg-surface border-t border-neutral-200 shadow-lg">
+            <div className={`${containers.md} mx-auto px-6 py-6 text-center`}>
+              <CheckCircle className="w-12 h-12 mx-auto mb-3 text-blue-400" />
+              <p className="text-lg font-semibold mb-2 text-neutral-900">
+                Interview Completed
+              </p>
+              <p className="text-neutral-600">
+                This voice interview has been completed.
+              </p>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )

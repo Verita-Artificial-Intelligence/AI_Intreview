@@ -56,50 +56,50 @@ export default function Sidebar() {
         </div>
 
         <nav className="px-3 flex-1">
-        {navItems.map((item) => {
-          const Icon = item.icon
-          const active = isActive(item.path)
+          {navItems.map((item) => {
+            const Icon = item.icon
+            const active = isActive(item.path)
 
-          return (
-            <button
-              key={item.path}
-              onClick={() => navigate(item.path)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors mb-1 ${
-                active
-                  ? 'bg-brand-50 text-brand-600 font-medium'
-                  : 'text-neutral-600 hover:bg-neutral-50'
-              }`}
-            >
-              <Icon className="w-4 h-4 flex-shrink-0" />
-              <span className="flex-1 text-left">{item.label}</span>
-              {active && <ChevronRight className="w-4 h-4" />}
-            </button>
-          )
-        })}
+            return (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors mb-1 ${
+                  active
+                    ? 'bg-brand-50 text-brand-600 font-medium'
+                    : 'text-neutral-600 hover:bg-neutral-50'
+                }`}
+              >
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                <span className="flex-1 text-left">{item.label}</span>
+                {active && <ChevronRight className="w-4 h-4" />}
+              </button>
+            )
+          })}
 
-        <div className="border-t border-neutral-200 my-3" />
+          <div className="border-t border-neutral-200 my-3" />
 
-        {annotationItems.map((item) => {
-          const Icon = item.icon
-          const active = isActive(item.path)
+          {annotationItems.map((item) => {
+            const Icon = item.icon
+            const active = isActive(item.path)
 
-          return (
-            <button
-              key={item.path}
-              onClick={() => navigate(item.path)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors mb-1 ${
-                active
-                  ? 'bg-brand-50 text-brand-600 font-medium'
-                  : 'text-neutral-600 hover:bg-neutral-50'
-              }`}
-            >
-              <Icon className="w-4 h-4 flex-shrink-0" />
-              <span className="flex-1 text-left">{item.label}</span>
-              {active && <ChevronRight className="w-4 h-4" />}
-            </button>
-          )
-        })}
-      </nav>
+            return (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors mb-1 ${
+                  active
+                    ? 'bg-brand-50 text-brand-600 font-medium'
+                    : 'text-neutral-600 hover:bg-neutral-50'
+                }`}
+              >
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                <span className="flex-1 text-left">{item.label}</span>
+                {active && <ChevronRight className="w-4 h-4" />}
+              </button>
+            )
+          })}
+        </nav>
 
         <div className="p-4 border-t border-neutral-200">
           <button
@@ -127,9 +127,7 @@ export default function Sidebar() {
                 key={item.path}
                 onClick={() => navigate(item.path)}
                 className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
-                  active
-                    ? 'text-brand-600'
-                    : 'text-neutral-600'
+                  active ? 'text-brand-600' : 'text-neutral-600'
                 }`}
               >
                 <Icon className={`w-5 h-5 ${active ? 'stroke-2' : ''}`} />

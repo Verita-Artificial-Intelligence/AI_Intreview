@@ -31,10 +31,11 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["*"],  # Allow all origins for development
+    allow_origins=CORS_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # Event handlers for database connection
 @app.on_event("startup")
@@ -65,7 +66,9 @@ app.include_router(candidates.router, prefix="/api/candidates", tags=["Candidate
 app.include_router(chat.router, prefix="/api", tags=["Chat"])
 app.include_router(jobs.router, prefix="/api/jobs", tags=["Jobs"])
 app.include_router(annotations.router, prefix="/api/annotations", tags=["Annotations"])
-app.include_router(annotation_data.router, prefix="/api/annotation-data", tags=["Annotation Data"])
+app.include_router(
+    annotation_data.router, prefix="/api/annotation-data", tags=["Annotation Data"]
+)
 app.include_router(earnings.router, prefix="/api/earnings", tags=["Earnings"])
 app.include_router(audio.router, prefix="/api/audio", tags=["Audio"])
 app.include_router(uploads.router, prefix="/api", tags=["Uploads"])

@@ -28,7 +28,9 @@ const Login = () => {
       <Card className="w-full max-w-xs p-6 bg-surface shadow-xl rounded-xl border-0">
         <div className="text-center mb-6">
           <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mx-auto mb-4">
-            <span className="text-xl font-bold text-white tracking-wider">V</span>
+            <span className="text-xl font-bold text-white tracking-wider">
+              V
+            </span>
           </div>
           <h1 className="text-2xl font-display font-bold mb-1 text-neutral-900">
             Admin Login

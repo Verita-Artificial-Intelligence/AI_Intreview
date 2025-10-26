@@ -124,7 +124,7 @@ module "ecs" {
     MONGO_URL      = var.enable_documentdb ? "mongodb://${var.documentdb_username}:${var.documentdb_password}@${module.documentdb[0].cluster_endpoint}:27017/?tls=true&tlsCAFile=rds-combined-ca-bundle.pem&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false" : coalesce(var.mongodb_uri, "mongodb://localhost:27017")
     DB_NAME        = "verita_ai_interview"
     LOG_LEVEL      = var.environment == "prod" ? "INFO" : "DEBUG"
-    CORS_ORIGINS   = var.environment == "prod" ? "https://interview.verita-ai.com,https://dashboard.verita-ai.com" : "https://staging.interview.verita-ai.com,https://staging.dashboard.verita-ai.com"
+    CORS_ORIGINS   = "http://localhost:3000,http://localhost:8000,https://staging.interview.verita-ai.com,https://interview.verita-ai.com,https://staging.dashboard.verita-ai.com,https://dashboard.verita-ai.com"
   }
 
   # Scaling configuration

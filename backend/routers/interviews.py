@@ -35,10 +35,12 @@ async def create_interview(interview_data: InterviewCreate):
 @router.get("", response_model=List[Interview])
 async def get_interviews(
     candidate_id: Optional[str] = Query(None, description="Filter by candidate ID"),
-    job_id: Optional[str] = Query(None, description="Filter by job ID")
+    job_id: Optional[str] = Query(None, description="Filter by job ID"),
 ):
     """Get all interviews with optional filtering by candidate_id and/or job_id"""
-    return await InterviewService.get_interviews(candidate_id=candidate_id, job_id=job_id)
+    return await InterviewService.get_interviews(
+        candidate_id=candidate_id, job_id=job_id
+    )
 
 
 @router.get("/{interview_id}", response_model=Interview)
@@ -77,21 +79,22 @@ async def accept_candidate(interview_id: str):
         # Update acceptance status
         interviews_collection = get_interviews_collection()
         result = await interviews_collection.update_one(
-            {"id": interview_id},
-            {"$set": {"acceptance_status": "accepted"}}
+            {"id": interview_id}, {"$set": {"acceptance_status": "accepted"}}
         )
 
         if result.modified_count == 0:
             logger.warning(f"Interview {interview_id} acceptance_status not updated")
 
-        logger.info(f"Accepted candidate {interview.candidate_id} for interview {interview_id}")
+        logger.info(
+            f"Accepted candidate {interview.candidate_id} for interview {interview_id}"
+        )
 
         # Return updated interview
         updated_interview = await InterviewService.get_interview(interview_id)
         return {
             "success": True,
             "message": "Candidate accepted. You can now create annotation tasks for them.",
-            "interview": updated_interview.model_dump()
+            "interview": updated_interview.model_dump(),
         }
 
     except Exception as e:
@@ -114,21 +117,22 @@ async def reject_candidate(interview_id: str):
         # Update acceptance status
         interviews_collection = get_interviews_collection()
         result = await interviews_collection.update_one(
-            {"id": interview_id},
-            {"$set": {"acceptance_status": "rejected"}}
+            {"id": interview_id}, {"$set": {"acceptance_status": "rejected"}}
         )
 
         if result.modified_count == 0:
             return {"success": False, "error": "Failed to update interview"}
 
-        logger.info(f"Rejected candidate {interview.candidate_id} for interview {interview_id}")
+        logger.info(
+            f"Rejected candidate {interview.candidate_id} for interview {interview_id}"
+        )
 
         # Return updated interview
         updated_interview = await InterviewService.get_interview(interview_id)
         return {
             "success": True,
             "message": "Candidate rejected",
-            "interview": updated_interview.model_dump()
+            "interview": updated_interview.model_dump(),
         }
 
     except Exception as e:
@@ -146,12 +150,14 @@ async def update_interview_resume(interview_id: str, data: dict = Body(...)):
 
         interviews_collection = get_interviews_collection()
         result = await interviews_collection.update_one(
-            {"id": interview_id},
-            {"$set": {"resume_text": resume_text}}
+            {"id": interview_id}, {"$set": {"resume_text": resume_text}}
         )
 
         if result.modified_count == 0:
-            return {"success": False, "error": "Interview not found or no update needed"}
+            return {
+                "success": False,
+                "error": "Interview not found or no update needed",
+            }
 
         logger.info(f"Updated interview {interview_id} with resume text")
         return {"success": True, "message": "Resume updated successfully"}
@@ -178,9 +184,15 @@ async def get_interview_messages(interview_id: str):
         raise HTTPException(status_code=404, detail="Interview has no transcript data")
 
     # Log transcript details for debugging
-    user_entries = [entry for entry in interview.transcript if entry.get("speaker") == "user"]
-    ai_entries = [entry for entry in interview.transcript if entry.get("speaker") == "assistant"]
-    logger.info(f"📋 Retrieving transcript for interview {interview_id}: {len(interview.transcript)} total entries ({len(user_entries)} user, {len(ai_entries)} AI)")
+    user_entries = [
+        entry for entry in interview.transcript if entry.get("speaker") == "user"
+    ]
+    ai_entries = [
+        entry for entry in interview.transcript if entry.get("speaker") == "assistant"
+    ]
+    logger.info(
+        f"📋 Retrieving transcript for interview {interview_id}: {len(interview.transcript)} total entries ({len(user_entries)} user, {len(ai_entries)} AI)"
+    )
 
     # Convert transcript format: {speaker: "user"/"assistant", text: "...", timestamp: ...}
     # to message format: {role: "user"/"assistant", content: "...", timestamp: ...}
@@ -193,11 +205,13 @@ async def get_interview_messages(interview_id: str):
             # Increment by 1 second for each message
             timestamp = (interview.created_at + timedelta(seconds=i)).isoformat()
 
-        messages.append({
-            "role": entry.get("speaker", "user"),
-            "content": entry.get("text", ""),
-            "timestamp": timestamp
-        })
+        messages.append(
+            {
+                "role": entry.get("speaker", "user"),
+                "content": entry.get("text", ""),
+                "timestamp": timestamp,
+            }
+        )
 
     return messages
 
@@ -230,7 +244,7 @@ async def upload_resume(resume: UploadFile = File(...)):
         if not resume_text:
             return {
                 "success": False,
-                "error": "Failed to extract text from resume. Please check the file format and try again."
+                "error": "Failed to extract text from resume. Please check the file format and try again.",
             }
 
         # Sanitize and truncate if needed
@@ -240,14 +254,14 @@ async def upload_resume(resume: UploadFile = File(...)):
             "success": True,
             "resume_text": sanitized_text,
             "filename": resume.filename,
-            "length": len(sanitized_text)
+            "length": len(sanitized_text),
         }
 
     except Exception as e:
         logger.error(f"Error processing resume upload: {e}", exc_info=True)
         return {
             "success": False,
-            "error": "An unexpected error occurred while processing the resume."
+            "error": "An unexpected error occurred while processing the resume.",
         }
 
 
@@ -282,27 +296,39 @@ async def upload_interview_video(
                 max_attempts = 20
                 attempt = 0
                 while attempt < max_attempts:
-                    interview_doc = await interviews_collection.find_one({"id": interview_id})
+                    interview_doc = await interviews_collection.find_one(
+                        {"id": interview_id}
+                    )
                     if interview_doc:
                         audio_s3_key = interview_doc.get("audio_path")
                         if audio_s3_key:
                             logger.info(f"Mixed audio S3 key found: {audio_s3_key}")
                             audio_local_path = temp_path / "mixed_audio.wav"
-                            success = await s3_service.download_file_to_path(audio_s3_key, audio_local_path)
+                            success = await s3_service.download_file_to_path(
+                                audio_s3_key, audio_local_path
+                            )
                             if success:
-                                logger.info(f"Mixed audio downloaded from S3 to: {audio_local_path}")
+                                logger.info(
+                                    f"Mixed audio downloaded from S3 to: {audio_local_path}"
+                                )
                                 break
                             else:
-                                logger.warning(f"Failed to download audio from S3: {audio_s3_key}")
+                                logger.warning(
+                                    f"Failed to download audio from S3: {audio_s3_key}"
+                                )
                                 audio_s3_key = None
 
                     attempt += 1
                     if attempt < max_attempts:
-                        logger.info(f"Waiting for mixed audio... attempt {attempt}/{max_attempts}")
+                        logger.info(
+                            f"Waiting for mixed audio... attempt {attempt}/{max_attempts}"
+                        )
                         await asyncio.sleep(0.5)
 
                 if not audio_s3_key:
-                    logger.warning(f"Mixed audio not ready after {max_attempts * 0.5}s, proceeding with video-only")
+                    logger.warning(
+                        f"Mixed audio not ready after {max_attempts * 0.5}s, proceeding with video-only"
+                    )
 
             # If mixed audio exists, combine it with video
             final_filename = f"{session_id}.mp4"
@@ -330,23 +356,31 @@ async def upload_interview_video(
                     combine_succeeded = False
             else:
                 # No audio available, use video-only file as final
-                logger.warning(f"No mixed audio found for interview {interview_id}, saving video-only")
+                logger.warning(
+                    f"No mixed audio found for interview {interview_id}, saving video-only"
+                )
                 final_video_path = temp_video_path
                 final_filename = temp_video_filename
                 combine_succeeded = False
 
-            s3_key = s3_service.generate_s3_key(f"videos/{interview_id if interview_id else session_id}", final_filename)
+            s3_key = s3_service.generate_s3_key(
+                f"videos/{interview_id if interview_id else session_id}", final_filename
+            )
             with open(final_video_path, "rb") as f:
                 final_content = f.read()
                 uploaded_key = await s3_service.upload_file(
                     file_content=final_content,
                     s3_key=s3_key,
-                    content_type="video/mp4" if final_filename.endswith(".mp4") else "video/webm",
-                    is_temp=False
+                    content_type=(
+                        "video/mp4" if final_filename.endswith(".mp4") else "video/webm"
+                    ),
+                    is_temp=False,
                 )
 
             if not uploaded_key:
-                raise HTTPException(status_code=500, detail="Failed to upload video to S3")
+                raise HTTPException(
+                    status_code=500, detail="Failed to upload video to S3"
+                )
 
             logger.info(f"Video uploaded to S3: {uploaded_key}")
 
@@ -360,7 +394,11 @@ async def upload_interview_video(
                 existing = await interviews_collection.find_one(
                     {"id": interview_id}, {"_id": 0, "video_url": 1}
                 )
-                if existing and existing.get("video_url") and ".mp4" in existing["video_url"]:
+                if (
+                    existing
+                    and existing.get("video_url")
+                    and ".mp4" in existing["video_url"]
+                ):
                     logger.info(
                         "Skipping video_url update because existing MP4 should be retained: %s",
                         existing["video_url"],
@@ -370,12 +408,12 @@ async def upload_interview_video(
                         "filename": final_filename,
                         "size": len(video_content),
                         "s3_key": s3_key,
-                        "url": video_url
+                        "url": video_url,
                     }
 
             await interviews_collection.update_one(
                 {"id": interview_id},
-                {"$set": {"video_url": s3_key, "video_processing_status": "completed"}}
+                {"$set": {"video_url": s3_key, "video_processing_status": "completed"}},
             )
             logger.info(f"Updated interview {interview_id} with video S3 key: {s3_key}")
 
@@ -384,7 +422,7 @@ async def upload_interview_video(
             "filename": final_filename,
             "size": len(video_content),
             "s3_key": s3_key,
-            "url": f"/uploads/{s3_key}"
+            "url": f"/uploads/{s3_key}",
         }
 
     except Exception as e:
@@ -392,7 +430,9 @@ async def upload_interview_video(
         return {"success": False, "error": str(e)}
 
 
-async def combine_video_and_audio(video_path: Path, audio_path: Path, output_path: Path) -> bool:
+async def combine_video_and_audio(
+    video_path: Path, audio_path: Path, output_path: Path
+) -> bool:
     """
     Combine video-only file with mixed audio file using MoviePy.
 
@@ -424,17 +464,28 @@ async def combine_video_and_audio(video_path: Path, audio_path: Path, output_pat
         ffmpeg_cmd = [
             "ffmpeg",
             "-y",  # overwrite output
-            "-i", str(video_path),
-            "-i", str(audio_path),
-            "-map", "0:v:0",  # use video from original recording
-            "-map", "1:a:0",  # replace audio with mixed track
-            "-c:v", "libx264",
-            "-preset", FFMPEG_VIDEO_PRESET,
-            "-crf", FFMPEG_CRF,
-            "-c:a", "aac",
-            "-b:a", FFMPEG_AUDIO_BITRATE,
-            "-movflags", "+faststart",
-            "-pix_fmt", "yuv420p",
+            "-i",
+            str(video_path),
+            "-i",
+            str(audio_path),
+            "-map",
+            "0:v:0",  # use video from original recording
+            "-map",
+            "1:a:0",  # replace audio with mixed track
+            "-c:v",
+            "libx264",
+            "-preset",
+            FFMPEG_VIDEO_PRESET,
+            "-crf",
+            FFMPEG_CRF,
+            "-c:a",
+            "aac",
+            "-b:a",
+            FFMPEG_AUDIO_BITRATE,
+            "-movflags",
+            "+faststart",
+            "-pix_fmt",
+            "yuv420p",
         ]
 
         if FFMPEG_THREAD_OVERRIDE:
@@ -460,7 +511,9 @@ async def combine_video_and_audio(video_path: Path, audio_path: Path, output_pat
         return True
 
     except FileNotFoundError:
-        logger.error("FFmpeg executable not found. Ensure ffmpeg is installed and in PATH.")
+        logger.error(
+            "FFmpeg executable not found. Ensure ffmpeg is installed and in PATH."
+        )
         return False
     except RuntimeError as e:
         logger.warning(f"FFmpeg failed to merge audio with video: {e}")

@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class AudioChunk:
     """Represents a single audio chunk with metadata."""
+
     data: bytes  # PCM16 audio data
     timestamp: float  # Relative timestamp in seconds since session start
     source: str  # "mic" or "ai"
@@ -84,7 +85,9 @@ class AudioBuffer:
                 self.client_reference = client_timestamp
 
             # Decode audio data (use provided bytes when available to avoid duplicate work)
-            audio_data = audio_bytes if audio_bytes is not None else base64.b64decode(audio_b64)
+            audio_data = (
+                audio_bytes if audio_bytes is not None else base64.b64decode(audio_b64)
+            )
 
             # Calculate timestamp relative to session start
             if client_timestamp is not None and self.client_reference is not None:
@@ -152,7 +155,9 @@ class AudioBuffer:
 
             self.ai_chunks.append(chunk)
 
-            logger.debug(f"Buffered AI chunk: seq={seq}, size={len(audio_data)} bytes, ts={timestamp:.3f}s")
+            logger.debug(
+                f"Buffered AI chunk: seq={seq}, size={len(audio_data)} bytes, ts={timestamp:.3f}s"
+            )
 
     async def update_ai_timestamp(self, seq: int, client_timestamp: float) -> None:
         """
@@ -198,7 +203,7 @@ class AudioBuffer:
                 "ai_bytes": ai_bytes,
                 "duration_seconds": duration,
                 "sample_rate": self.sample_rate,
-                "channels": self.channels
+                "channels": self.channels,
             }
 
     async def flush(self) -> Tuple[List[AudioChunk], List[AudioChunk]]:
@@ -212,7 +217,7 @@ class AudioBuffer:
             # Sort chunks by timestamp before returning
             mic_sorted = sorted(self.mic_chunks, key=lambda c: c.timestamp)
             ai_sorted = sorted(self.ai_chunks, key=lambda c: c.timestamp)
-            
+
             # Clear the buffer after copying the data
             self.mic_chunks.clear()
             self.ai_chunks.clear()

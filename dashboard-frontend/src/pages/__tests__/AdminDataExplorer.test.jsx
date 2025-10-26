@@ -39,7 +39,9 @@ const renderComponent = () =>
 const setupDefaultMock = () => {
   axios.get.mockImplementation((url) => {
     if (url.endsWith('/jobs')) {
-      return Promise.resolve({ data: [{ id: 'job-1', title: 'Creative Project' }] })
+      return Promise.resolve({
+        data: [{ id: 'job-1', title: 'Creative Project' }],
+      })
     }
 
     if (url.endsWith('/admin/data')) {
@@ -74,14 +76,18 @@ describe('AdminDataExplorer', () => {
 
     expect(screen.getByText(/loading data/i)).toBeInTheDocument()
 
-    await waitFor(() => expect(screen.getByText('QA Review')).toBeInTheDocument())
+    await waitFor(() =>
+      expect(screen.getByText('QA Review')).toBeInTheDocument()
+    )
     expect(screen.getByText('Creative Project')).toBeInTheDocument()
     expect(screen.getByText('Alex Doe')).toBeInTheDocument()
   })
 
   it('applies sorting when table header clicked', async () => {
     renderComponent()
-    await waitFor(() => expect(screen.getByText('QA Review')).toBeInTheDocument())
+    await waitFor(() =>
+      expect(screen.getByText('QA Review')).toBeInTheDocument()
+    )
 
     axios.get.mockClear()
     setupDefaultMock()
@@ -100,11 +106,19 @@ describe('AdminDataExplorer', () => {
 
   it('requests CSV export with current filters', async () => {
     renderComponent()
-    await waitFor(() => expect(screen.getByText('QA Review')).toBeInTheDocument())
+    await waitFor(() =>
+      expect(screen.getByText('QA Review')).toBeInTheDocument()
+    )
 
-    const createObjectURLSpy = jest.spyOn(window.URL, 'createObjectURL').mockReturnValue('blob:url')
-    const revokeSpy = jest.spyOn(window.URL, 'revokeObjectURL').mockImplementation(() => {})
-    const clickSpy = jest.spyOn(window.HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    const createObjectURLSpy = jest
+      .spyOn(window.URL, 'createObjectURL')
+      .mockReturnValue('blob:url')
+    const revokeSpy = jest
+      .spyOn(window.URL, 'revokeObjectURL')
+      .mockImplementation(() => {})
+    const clickSpy = jest
+      .spyOn(window.HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => {})
 
     axios.get.mockClear()
     setupDefaultMock()

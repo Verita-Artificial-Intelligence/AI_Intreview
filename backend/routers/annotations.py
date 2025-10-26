@@ -1,6 +1,12 @@
 from fastapi import APIRouter, Query
 from typing import List, Optional
-from models import AnnotationTask, AnnotationTaskCreate, AnnotationTaskUpdate, AnnotationTaskAssign, AnnotatorStats
+from models import (
+    AnnotationTask,
+    AnnotationTaskCreate,
+    AnnotationTaskUpdate,
+    AnnotationTaskAssign,
+    AnnotatorStats,
+)
 from services.annotation_service import AnnotationService
 
 router = APIRouter()
@@ -61,11 +67,17 @@ async def submit_annotation(task_id: str, update_data: AnnotationTaskUpdate):
 @router.get("/annotators/stats", response_model=List[AnnotatorStats])
 async def get_annotator_stats(
     search: Optional[str] = Query(None, description="Search by annotator name"),
-    completion_filter: Optional[str] = Query(None, description="Filter by completion rate: all, 100, 75, 50, 0"),
-    performance_filter: Optional[str] = Query(None, description="Filter by performance: all, excellent, good, fair, poor"),
+    completion_filter: Optional[str] = Query(
+        None, description="Filter by completion rate: all, 100, 75, 50, 0"
+    ),
+    performance_filter: Optional[str] = Query(
+        None, description="Filter by performance: all, excellent, good, fair, poor"
+    ),
 ):
     """Get aggregated statistics for all annotators with optional filters"""
-    return await AnnotationService.get_annotator_stats(search, completion_filter, performance_filter)
+    return await AnnotationService.get_annotator_stats(
+        search, completion_filter, performance_filter
+    )
 
 
 @router.delete("/{task_id}")

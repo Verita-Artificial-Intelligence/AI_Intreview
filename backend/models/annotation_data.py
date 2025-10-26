@@ -5,8 +5,10 @@ import uuid
 
 DataType = Literal["text", "image", "video", "audio", "document"]
 
+
 class AnnotationData(BaseModel):
     """Data uploaded by enterprises that needs to be annotated"""
+
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     job_id: str

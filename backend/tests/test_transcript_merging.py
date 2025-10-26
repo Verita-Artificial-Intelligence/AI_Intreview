@@ -39,8 +39,12 @@ def test_merge_transcript_chunk_replaces_on_final(chunks, final_text):
 
 def test_merge_transcript_chunk_handles_new_speakers():
     transcript = []
-    _merge_transcript_chunk(transcript, "user", "Candidate speaks", final=True, replace_on_final=True)
-    _merge_transcript_chunk(transcript, "assistant", "AI replies", final=False, replace_on_final=False)
+    _merge_transcript_chunk(
+        transcript, "user", "Candidate speaks", final=True, replace_on_final=True
+    )
+    _merge_transcript_chunk(
+        transcript, "assistant", "AI replies", final=False, replace_on_final=False
+    )
 
     assert len(transcript) == 2
     assert transcript[0]["speaker"] == "user"
@@ -49,8 +53,11 @@ def test_merge_transcript_chunk_handles_new_speakers():
 
 def test_merge_transcript_chunk_appends_non_final_user_delta():
     transcript = []
-    _merge_transcript_chunk(transcript, "user", "Hello", final=False, replace_on_final=True)
-    _merge_transcript_chunk(transcript, "user", " world", final=False, replace_on_final=True)
+    _merge_transcript_chunk(
+        transcript, "user", "Hello", final=False, replace_on_final=True
+    )
+    _merge_transcript_chunk(
+        transcript, "user", " world", final=False, replace_on_final=True
+    )
 
     assert transcript == [{"speaker": "user", "text": "Hello world"}]
-

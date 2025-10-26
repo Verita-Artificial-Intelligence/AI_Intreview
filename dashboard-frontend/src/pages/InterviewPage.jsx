@@ -137,118 +137,118 @@ const InterviewPage = () => {
       <main className="flex-1 flex flex-col">
         {/* Header */}
         <div className={pageHeader.wrapper}>
-        <div className={`${containers.md} ${pageHeader.container}`}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                onClick={() => navigate('/')}
-                variant="outline"
-                size="sm"
-                className="rounded-lg"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-              <div>
-                <h1 className="text-xl font-bold text-neutral-900">
-                  Interview with {interview.candidate_name}
-                </h1>
-                <p className={pageHeader.subtitle}>{interview.position}</p>
-              </div>
-            </div>
-            {interview.status !== 'completed' && (
-              <Button
-                onClick={handleCompleteInterview}
-                data-testid="complete-interview-button"
-                disabled={completing}
-                className="rounded-lg font-medium"
-                style={{ background: cssGradients.info }}
-              >
-                <CheckCircle className="w-4 h-4 mr-2" />
-                {completing ? 'Completing...' : 'Complete Interview'}
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto">
-        <div className={`${containers.md} mx-auto px-6 py-6 space-y-4`}>
-          {messages.map((message, index) => (
-            <div
-              key={message.id || index}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-[70%] rounded-2xl px-5 py-3 ${
-                  message.role === 'user'
-                    ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white'
-                    : 'bg-surface text-neutral-800 shadow-md border border-neutral-100'
-                }`}
-              >
-                {message.role === 'assistant' && (
-                  <p className="text-xs font-medium mb-1 text-purple-500">
-                    AI Interviewer
-                  </p>
-                )}
-                <p className="text-base leading-relaxed whitespace-pre-wrap">
-                  {message.content}
-                </p>
-                <p
-                  className={`text-xs mt-2 ${message.role === 'user' ? 'text-white/70' : 'text-neutral-500'}`}
+          <div className={`${containers.md} ${pageHeader.container}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button
+                  onClick={() => navigate('/')}
+                  variant="outline"
+                  size="sm"
+                  className="rounded-lg"
                 >
-                  {new Date(message.timestamp).toLocaleTimeString()}
-                </p>
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back
+                </Button>
+                <div>
+                  <h1 className="text-xl font-bold text-neutral-900">
+                    Interview with {interview.candidate_name}
+                  </h1>
+                  <p className={pageHeader.subtitle}>{interview.position}</p>
+                </div>
               </div>
+              {interview.status !== 'completed' && (
+                <Button
+                  onClick={handleCompleteInterview}
+                  data-testid="complete-interview-button"
+                  disabled={completing}
+                  className="rounded-lg font-medium"
+                  style={{ background: cssGradients.info }}
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  {completing ? 'Completing...' : 'Complete Interview'}
+                </Button>
+              )}
             </div>
-          ))}
-          <div ref={messagesEndRef} />
+          </div>
         </div>
-      </div>
 
-      {/* Input Area */}
-      {interview.status !== 'completed' && (
-        <div className="bg-surface border-t border-neutral-200 shadow-lg">
-          <div className={`${containers.md} mx-auto px-6 py-4`}>
-            <form onSubmit={handleSendMessage} className="flex gap-3">
-              <Input
-                type="text"
-                data-testid="chat-message-input"
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Type your response..."
-                disabled={sending}
-                className="flex-1 h-12 rounded-lg border-neutral-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-base"
-              />
-              <Button
-                type="submit"
-                data-testid="send-message-button"
-                disabled={sending || !inputMessage.trim()}
-                className="h-12 px-6 rounded-lg font-medium"
-                style={{ background: cssGradients.purple }}
+        {/* Chat Messages */}
+        <div className="flex-1 overflow-y-auto">
+          <div className={`${containers.md} mx-auto px-6 py-6 space-y-4`}>
+            {messages.map((message, index) => (
+              <div
+                key={message.id || index}
+                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <Send className="w-5 h-5" />
-              </Button>
-            </form>
+                <div
+                  className={`max-w-[70%] rounded-2xl px-5 py-3 ${
+                    message.role === 'user'
+                      ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white'
+                      : 'bg-surface text-neutral-800 shadow-md border border-neutral-100'
+                  }`}
+                >
+                  {message.role === 'assistant' && (
+                    <p className="text-xs font-medium mb-1 text-purple-500">
+                      AI Interviewer
+                    </p>
+                  )}
+                  <p className="text-base leading-relaxed whitespace-pre-wrap">
+                    {message.content}
+                  </p>
+                  <p
+                    className={`text-xs mt-2 ${message.role === 'user' ? 'text-white/70' : 'text-neutral-500'}`}
+                  >
+                    {new Date(message.timestamp).toLocaleTimeString()}
+                  </p>
+                </div>
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
           </div>
         </div>
-      )}
 
-      {interview.status === 'completed' && (
-        <div className="bg-surface border-t border-neutral-200 shadow-lg">
-          <div className={`${containers.md} mx-auto px-6 py-6 text-center`}>
-            <CheckCircle className="w-12 h-12 mx-auto mb-3 text-blue-400" />
-            <p className="text-lg font-semibold mb-2 text-neutral-900">
-              Interview Completed
-            </p>
-            <p className="text-neutral-600">
-              This interview has been completed and can no longer accept
-              messages.
-            </p>
+        {/* Input Area */}
+        {interview.status !== 'completed' && (
+          <div className="bg-surface border-t border-neutral-200 shadow-lg">
+            <div className={`${containers.md} mx-auto px-6 py-4`}>
+              <form onSubmit={handleSendMessage} className="flex gap-3">
+                <Input
+                  type="text"
+                  data-testid="chat-message-input"
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  placeholder="Type your response..."
+                  disabled={sending}
+                  className="flex-1 h-12 rounded-lg border-neutral-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-base"
+                />
+                <Button
+                  type="submit"
+                  data-testid="send-message-button"
+                  disabled={sending || !inputMessage.trim()}
+                  className="h-12 px-6 rounded-lg font-medium"
+                  style={{ background: cssGradients.purple }}
+                >
+                  <Send className="w-5 h-5" />
+                </Button>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {interview.status === 'completed' && (
+          <div className="bg-surface border-t border-neutral-200 shadow-lg">
+            <div className={`${containers.md} mx-auto px-6 py-6 text-center`}>
+              <CheckCircle className="w-12 h-12 mx-auto mb-3 text-blue-400" />
+              <p className="text-lg font-semibold mb-2 text-neutral-900">
+                Interview Completed
+              </p>
+              <p className="text-neutral-600">
+                This interview has been completed and can no longer accept
+                messages.
+              </p>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )

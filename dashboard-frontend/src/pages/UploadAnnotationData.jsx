@@ -1,11 +1,27 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Upload, X, FileText, Image, Video, Music, File, AlertTriangle } from 'lucide-react'
+import {
+  ArrowLeft,
+  Upload,
+  X,
+  FileText,
+  Image,
+  Video,
+  Music,
+  File,
+  AlertTriangle,
+} from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import {
   AlertDialog,
@@ -70,13 +86,13 @@ const UploadAnnotationData = () => {
 
     const validExtensions = getValidExtensions(dataType)
     const fileName = file.name.toLowerCase()
-    const isValid = validExtensions.some(ext => fileName.endsWith(ext))
+    const isValid = validExtensions.some((ext) => fileName.endsWith(ext))
 
     return {
       valid: isValid,
       file: file,
       expectedType: dataType,
-      actualExtension: fileName.substring(fileName.lastIndexOf('.'))
+      actualExtension: fileName.substring(fileName.lastIndexOf('.')),
     }
   }
 
@@ -85,8 +101,10 @@ const UploadAnnotationData = () => {
     if (files.length === 0) return
 
     // Validate all files
-    const validationResults = files.map(file => validateFile(file, formData.data_type))
-    const invalid = validationResults.filter(r => !r.valid)
+    const validationResults = files.map((file) =>
+      validateFile(file, formData.data_type)
+    )
+    const invalid = validationResults.filter((r) => !r.valid)
 
     if (invalid.length > 0) {
       setInvalidFiles(invalid)
@@ -98,9 +116,15 @@ const UploadAnnotationData = () => {
 
     // Auto-fill title with filename if empty and only one file
     if (!formData.title && files.length === 1) {
-      setFormData({ ...formData, title: files[0].name.replace(/\.[^/.]+$/, '') })
+      setFormData({
+        ...formData,
+        title: files[0].name.replace(/\.[^/.]+$/, ''),
+      })
     } else if (!formData.title && files.length > 1) {
-      setFormData({ ...formData, title: `Batch upload - ${files.length} files` })
+      setFormData({
+        ...formData,
+        title: `Batch upload - ${files.length} files`,
+      })
     }
   }
 
@@ -113,9 +137,11 @@ const UploadAnnotationData = () => {
     }
 
     // Check job status - can only upload data for pending jobs
-    const selectedJob = jobs.find(j => j.id === formData.job_id)
+    const selectedJob = jobs.find((j) => j.id === formData.job_id)
     if (selectedJob && selectedJob.status !== 'pending') {
-      toast.error(`Cannot add annotation data. Job is in '${selectedJob.status}' status. Data can only be added when job is 'pending'.`)
+      toast.error(
+        `Cannot add annotation data. Job is in '${selectedJob.status}' status. Data can only be added when job is 'pending'.`
+      )
       return
     }
 
@@ -152,11 +178,15 @@ const UploadAnnotationData = () => {
 
             let dataUrl
             try {
-              const uploadResponse = await axios.post(`${API}/annotation-data/upload`, formDataUpload, {
-                headers: {
-                  'Content-Type': 'multipart/form-data',
-                },
-              })
+              const uploadResponse = await axios.post(
+                `${API}/annotation-data/upload`,
+                formDataUpload,
+                {
+                  headers: {
+                    'Content-Type': 'multipart/form-data',
+                  },
+                }
+              )
               dataUrl = uploadResponse.data.url
             } catch (uploadError) {
               console.error('File upload error:', uploadError)
@@ -167,7 +197,10 @@ const UploadAnnotationData = () => {
             // Create annotation data entry
             const payload = {
               job_id: formData.job_id,
-              title: selectedFiles.length === 1 ? formData.title : file.name.replace(/\.[^/.]+$/, ''),
+              title:
+                selectedFiles.length === 1
+                  ? formData.title
+                  : file.name.replace(/\.[^/.]+$/, ''),
               description: formData.description,
               instructions: formData.instructions,
               data_type: formData.data_type,
@@ -183,7 +216,9 @@ const UploadAnnotationData = () => {
         }
 
         if (successCount > 0) {
-          toast.success(`Successfully uploaded ${successCount} file(s)${failCount > 0 ? `, ${failCount} failed` : ''}`)
+          toast.success(
+            `Successfully uploaded ${successCount} file(s)${failCount > 0 ? `, ${failCount} failed` : ''}`
+          )
           navigate('/annotation-data')
         } else {
           toast.error('Failed to upload any files')
@@ -240,7 +275,9 @@ const UploadAnnotationData = () => {
             <ArrowLeft className="w-5 h-5" />
             Back to Annotation Data
           </button>
-          <h1 className="text-xl font-display font-bold text-neutral-900">Upload Data</h1>
+          <h1 className="text-xl font-display font-bold text-neutral-900">
+            Upload Data
+          </h1>
           <div className="w-32" />
         </div>
       </header>
@@ -251,7 +288,8 @@ const UploadAnnotationData = () => {
           <CardHeader>
             <CardTitle>Upload Annotation Data</CardTitle>
             <p className="text-sm text-neutral-600 mt-2">
-              Upload content that annotators will review and rate. This can be text, images, videos, audio files, or documents.
+              Upload content that annotators will review and rate. This can be
+              text, images, videos, audio files, or documents.
             </p>
           </CardHeader>
           <CardContent>
@@ -263,7 +301,9 @@ const UploadAnnotationData = () => {
                 </label>
                 <Select
                   value={formData.job_id}
-                  onValueChange={(value) => setFormData({ ...formData, job_id: value })}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, job_id: value })
+                  }
                   required
                 >
                   <SelectTrigger>
@@ -290,7 +330,9 @@ const UploadAnnotationData = () => {
                 <Input
                   type="text"
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
                   placeholder="e.g., Product Design Critique #1"
                   required
                 />
@@ -303,7 +345,9 @@ const UploadAnnotationData = () => {
                 </label>
                 <Textarea
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                   placeholder="Provide context about what annotators should focus on..."
                   rows={3}
                 />
@@ -316,13 +360,16 @@ const UploadAnnotationData = () => {
                 </label>
                 <Textarea
                   value={formData.instructions}
-                  onChange={(e) => setFormData({ ...formData, instructions: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, instructions: e.target.value })
+                  }
                   placeholder="Detailed instructions for annotators on how to review and rate this content..."
                   rows={4}
                   required
                 />
                 <p className="text-xs text-neutral-500 mt-1">
-                  These instructions will guide annotators on what to look for and how to evaluate the content
+                  These instructions will guide annotators on what to look for
+                  and how to evaluate the content
                 </p>
               </div>
 
@@ -332,21 +379,32 @@ const UploadAnnotationData = () => {
                   Data Type *
                 </label>
                 <div className="grid grid-cols-5 gap-3">
-                  {['text', 'image', 'video', 'audio', 'document'].map((type) => (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, data_type: type, data_url: '', data_content: '' })}
-                      className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${
-                        formData.data_type === type
-                          ? 'border-brand-500 bg-brand-50 text-brand-700'
-                          : 'border-neutral-200 hover:border-neutral-300'
-                      }`}
-                    >
-                      {getDataTypeIcon(type)}
-                      <span className="text-xs font-medium capitalize">{type}</span>
-                    </button>
-                  ))}
+                  {['text', 'image', 'video', 'audio', 'document'].map(
+                    (type) => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            data_type: type,
+                            data_url: '',
+                            data_content: '',
+                          })
+                        }
+                        className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${
+                          formData.data_type === type
+                            ? 'border-brand-500 bg-brand-50 text-brand-700'
+                            : 'border-neutral-200 hover:border-neutral-300'
+                        }`}
+                      >
+                        {getDataTypeIcon(type)}
+                        <span className="text-xs font-medium capitalize">
+                          {type}
+                        </span>
+                      </button>
+                    )
+                  )}
                 </div>
               </div>
 
@@ -358,7 +416,9 @@ const UploadAnnotationData = () => {
                   </label>
                   <Textarea
                     value={formData.data_content}
-                    onChange={(e) => setFormData({ ...formData, data_content: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, data_content: e.target.value })
+                    }
                     placeholder="Enter the text content to be annotated..."
                     rows={10}
                     required
@@ -389,7 +449,9 @@ const UploadAnnotationData = () => {
                       >
                         <Upload className="w-5 h-5 mx-auto mb-2" />
                         <p className="text-sm font-medium">Upload File</p>
-                        <p className="text-xs text-neutral-600 mt-1">From your computer</p>
+                        <p className="text-xs text-neutral-600 mt-1">
+                          From your computer
+                        </p>
                       </button>
                       <button
                         type="button"
@@ -405,7 +467,9 @@ const UploadAnnotationData = () => {
                       >
                         <FileText className="w-5 h-5 mx-auto mb-2" />
                         <p className="text-sm font-medium">Enter URL</p>
-                        <p className="text-xs text-neutral-600 mt-1">From external source</p>
+                        <p className="text-xs text-neutral-600 mt-1">
+                          From external source
+                        </p>
                       </button>
                     </div>
                   </div>
@@ -423,10 +487,10 @@ const UploadAnnotationData = () => {
                             formData.data_type === 'image'
                               ? 'image/*'
                               : formData.data_type === 'video'
-                              ? 'video/*'
-                              : formData.data_type === 'audio'
-                              ? 'audio/*'
-                              : '.pdf,.doc,.docx'
+                                ? 'video/*'
+                                : formData.data_type === 'audio'
+                                  ? 'audio/*'
+                                  : '.pdf,.doc,.docx'
                           }
                           onChange={handleFileSelect}
                           className="hidden"
@@ -442,19 +506,33 @@ const UploadAnnotationData = () => {
                             {selectedFiles.length > 0 ? (
                               <div>
                                 <p className="text-sm font-medium text-neutral-900">
-                                  {selectedFiles.length} file{selectedFiles.length > 1 ? 's' : ''} selected
+                                  {selectedFiles.length} file
+                                  {selectedFiles.length > 1 ? 's' : ''} selected
                                 </p>
                                 <p className="text-xs text-neutral-600 mt-1">
-                                  {(selectedFiles.reduce((acc, f) => acc + f.size, 0) / 1024 / 1024).toFixed(2)} MB total
+                                  {(
+                                    selectedFiles.reduce(
+                                      (acc, f) => acc + f.size,
+                                      0
+                                    ) /
+                                    1024 /
+                                    1024
+                                  ).toFixed(2)}{' '}
+                                  MB total
                                 </p>
                               </div>
                             ) : (
                               <div>
                                 <p className="text-sm font-medium text-neutral-900">
-                                  Click to select {formData.data_type} file(s) or folder
+                                  Click to select {formData.data_type} file(s)
+                                  or folder
                                 </p>
-                                <p className="text-xs text-neutral-600 mt-1">or drag and drop</p>
-                                <p className="text-xs text-neutral-500 mt-1">Supports multiple files and folders</p>
+                                <p className="text-xs text-neutral-600 mt-1">
+                                  or drag and drop
+                                </p>
+                                <p className="text-xs text-neutral-500 mt-1">
+                                  Supports multiple files and folders
+                                </p>
                               </div>
                             )}
                           </div>
@@ -464,7 +542,10 @@ const UploadAnnotationData = () => {
                         <div className="mt-3 space-y-2">
                           <div className="max-h-32 overflow-y-auto bg-neutral-50 rounded-lg p-3">
                             {selectedFiles.map((file, idx) => (
-                              <div key={idx} className="text-xs text-neutral-700 py-1">
+                              <div
+                                key={idx}
+                                className="text-xs text-neutral-700 py-1"
+                              >
                                 {file.name} ({(file.size / 1024).toFixed(1)} KB)
                               </div>
                             ))}
@@ -489,12 +570,15 @@ const UploadAnnotationData = () => {
                       <Input
                         type="url"
                         value={formData.data_url}
-                        onChange={(e) => setFormData({ ...formData, data_url: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, data_url: e.target.value })
+                        }
                         placeholder={`https://example.com/file.${formData.data_type === 'image' ? 'jpg' : formData.data_type === 'video' ? 'mp4' : formData.data_type === 'audio' ? 'mp3' : 'pdf'}`}
                         required
                       />
                       <p className="text-xs text-neutral-500 mt-1">
-                        Provide a publicly accessible URL to the {formData.data_type} file
+                        Provide a publicly accessible URL to the{' '}
+                        {formData.data_type} file
                       </p>
                     </div>
                   )}
@@ -526,7 +610,10 @@ const UploadAnnotationData = () => {
       </main>
 
       {/* File Type Validation Warning Dialog */}
-      <AlertDialog open={showValidationWarning} onOpenChange={setShowValidationWarning}>
+      <AlertDialog
+        open={showValidationWarning}
+        onOpenChange={setShowValidationWarning}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <div className="flex items-center gap-3 mb-2">
@@ -535,18 +622,24 @@ const UploadAnnotationData = () => {
             </div>
             <AlertDialogDescription>
               <p className="mb-3">
-                The following file(s) do not match the selected data type ({formData.data_type}):
+                The following file(s) do not match the selected data type (
+                {formData.data_type}):
               </p>
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 max-h-48 overflow-y-auto">
                 {invalidFiles.map((invalid, idx) => (
                   <div key={idx} className="text-sm text-yellow-900 py-1">
                     <span className="font-medium">{invalid.file.name}</span>
-                    <span className="text-yellow-700"> - Expected {invalid.expectedType} file, got {invalid.actualExtension}</span>
+                    <span className="text-yellow-700">
+                      {' '}
+                      - Expected {invalid.expectedType} file, got{' '}
+                      {invalid.actualExtension}
+                    </span>
                   </div>
                 ))}
               </div>
               <p className="mt-3 text-sm">
-                Valid {formData.data_type} file extensions: {getValidExtensions(formData.data_type).join(', ')}
+                Valid {formData.data_type} file extensions:{' '}
+                {getValidExtensions(formData.data_type).join(', ')}
               </p>
             </AlertDialogDescription>
           </AlertDialogHeader>

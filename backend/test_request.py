@@ -3,11 +3,7 @@ import json
 
 # First, let's test without auth to see the error
 url = "http://localhost:8001/api/users/profile/complete"
-data = {
-    "name": "Test User",
-    "bio": "Test bio",
-    "expertise": ["UI Design"]
-}
+data = {"name": "Test User", "bio": "Test bio", "expertise": ["UI Design"]}
 
 print("Testing profile completion endpoint...")
 print(f"URL: {url}")

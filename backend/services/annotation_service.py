@@ -1,8 +1,18 @@
 from fastapi import HTTPException
 from typing import List, Optional, Dict, Any
-from models import AnnotationTask, AnnotationTaskCreate, AnnotationTaskUpdate, AnnotationTaskAssign, AnnotatorStats
+from models import (
+    AnnotationTask,
+    AnnotationTaskCreate,
+    AnnotationTaskUpdate,
+    AnnotationTaskAssign,
+    AnnotatorStats,
+)
 from utils import prepare_for_mongo, parse_from_mongo
-from database import get_annotations_collection, get_jobs_collection, get_interviews_collection
+from database import (
+    get_annotations_collection,
+    get_jobs_collection,
+    get_interviews_collection,
+)
 from datetime import datetime, timezone
 
 
@@ -55,7 +65,9 @@ class AnnotationService:
         return AnnotationTask(**task_doc)
 
     @staticmethod
-    async def assign_annotation_task(task_id: str, assign_data: AnnotationTaskAssign) -> AnnotationTask:
+    async def assign_annotation_task(
+        task_id: str, assign_data: AnnotationTaskAssign
+    ) -> AnnotationTask:
         """Assign an annotation task to an annotator"""
         annotations_collection = get_annotations_collection()
 
@@ -70,8 +82,7 @@ class AnnotationService:
         }
 
         await annotations_collection.update_one(
-            {"id": task_id},
-            {"$set": prepare_for_mongo(update_data)}
+            {"id": task_id}, {"$set": prepare_for_mongo(update_data)}
         )
 
         task.annotator_id = assign_data.annotator_id
@@ -93,6 +104,7 @@ class AnnotationService:
 
         # Check job status - can only start tasks when job is in_progress
         from database import get_jobs_collection
+
         jobs_collection = get_jobs_collection()
         job = await jobs_collection.find_one({"id": task.job_id}, {"_id": 0})
 
@@ -102,18 +114,20 @@ class AnnotationService:
         if job.get("status") == "pending":
             raise HTTPException(
                 status_code=400,
-                detail="Cannot start task. Job is in 'pending' status. Tasks can only be started when the job is 'in progress'."
+                detail="Cannot start task. Job is in 'pending' status. Tasks can only be started when the job is 'in progress'.",
             )
 
         if job.get("status") in ["completed", "archived"]:
             raise HTTPException(
                 status_code=400,
-                detail=f"Cannot start task. Job is {job.get('status')}."
+                detail=f"Cannot start task. Job is {job.get('status')}.",
             )
 
         # Only allow starting from pending or assigned status
         if task.status not in ["pending", "assigned"]:
-            raise HTTPException(status_code=400, detail="Task cannot be started in current status")
+            raise HTTPException(
+                status_code=400, detail="Task cannot be started in current status"
+            )
 
         # Update task
         update_data = {
@@ -122,8 +136,7 @@ class AnnotationService:
         }
 
         await annotations_collection.update_one(
-            {"id": task_id},
-            {"$set": prepare_for_mongo(update_data)}
+            {"id": task_id}, {"$set": prepare_for_mongo(update_data)}
         )
 
         task.status = "in_progress"
@@ -131,15 +144,23 @@ class AnnotationService:
         return task
 
     @staticmethod
-    async def submit_annotation(task_id: str, update_data: AnnotationTaskUpdate) -> AnnotationTask:
+    async def submit_annotation(
+        task_id: str, update_data: AnnotationTaskUpdate
+    ) -> AnnotationTask:
         """Submit an annotation with quality rating"""
         annotations_collection = get_annotations_collection()
 
         # Get task
         task = await AnnotationService.get_annotation_task(task_id)
 
-        if not update_data.quality_rating or update_data.quality_rating < 1 or update_data.quality_rating > 5:
-            raise HTTPException(status_code=400, detail="Quality rating must be between 1 and 5")
+        if (
+            not update_data.quality_rating
+            or update_data.quality_rating < 1
+            or update_data.quality_rating > 5
+        ):
+            raise HTTPException(
+                status_code=400, detail="Quality rating must be between 1 and 5"
+            )
 
         # Update task
         update_dict = {
@@ -150,8 +171,7 @@ class AnnotationService:
         }
 
         await annotations_collection.update_one(
-            {"id": task_id},
-            {"$set": prepare_for_mongo(update_dict)}
+            {"id": task_id}, {"$set": prepare_for_mongo(update_dict)}
         )
 
         task.status = "completed"
@@ -162,11 +182,10 @@ class AnnotationService:
         # Create earnings record for completed task
         if task.annotator_id:
             from services.earnings_service import EarningsService
+
             try:
                 await EarningsService.create_earning_record(
-                    user_id=task.annotator_id,
-                    task_id=task.id,
-                    job_id=task.job_id
+                    user_id=task.annotator_id, task_id=task.id, job_id=task.job_id
                 )
             except Exception as e:
                 # Log error but don't fail the task submission
@@ -180,8 +199,7 @@ class AnnotationService:
         annotations_collection = get_annotations_collection()
 
         tasks_docs = await annotations_collection.find(
-            {"status": "pending"},
-            {"_id": 0}
+            {"status": "pending"}, {"_id": 0}
         ).to_list(1000)
         return [AnnotationTask(**doc) for doc in tasks_docs]
 
@@ -191,8 +209,7 @@ class AnnotationService:
         annotations_collection = get_annotations_collection()
 
         tasks_docs = await annotations_collection.find(
-            {"annotator_id": annotator_id},
-            {"_id": 0}
+            {"annotator_id": annotator_id}, {"_id": 0}
         ).to_list(1000)
         return [AnnotationTask(**doc) for doc in tasks_docs]
 
@@ -219,7 +236,6 @@ class AnnotationService:
         pipeline = [
             # Filter out tasks without annotator_id
             {"$match": {"annotator_id": {"$ne": None}}},
-
             # Group by annotator_id and calculate stats
             {
                 "$group": {
@@ -233,13 +249,12 @@ class AnnotationService:
                             "$cond": [
                                 {"$eq": ["$status", "completed"]},
                                 "$quality_rating",
-                                "$$REMOVE"
+                                "$$REMOVE",
                             ]
                         }
                     },
                 }
             },
-
             # Calculate average rating and completion rate
             {
                 "$project": {
@@ -249,14 +264,14 @@ class AnnotationService:
                     "completion_rate": {
                         "$multiply": [
                             {"$divide": ["$completed_tasks", "$total_tasks"]},
-                            100
+                            100,
                         ]
                     },
                     "avg_rating": {
                         "$cond": [
                             {"$gt": [{"$size": "$ratings"}, 0]},
                             {"$avg": "$ratings"},
-                            0
+                            0,
                         ]
                     },
                 }
@@ -268,13 +283,17 @@ class AnnotationService:
         stats_list = await cursor.to_list(length=1000)
 
         # Fetch all interviews to create a candidate name map
-        interviews_cursor = interviews_collection.find({}, {"_id": 0, "candidate_id": 1, "candidate_name": 1})
+        interviews_cursor = interviews_collection.find(
+            {}, {"_id": 0, "candidate_id": 1, "candidate_name": 1}
+        )
         interviews = await interviews_cursor.to_list(length=10000)
 
         candidate_name_map = {}
         for interview in interviews:
             if interview.get("candidate_id") and interview.get("candidate_name"):
-                candidate_name_map[interview["candidate_id"]] = interview["candidate_name"]
+                candidate_name_map[interview["candidate_id"]] = interview[
+                    "candidate_name"
+                ]
 
         # Convert to AnnotatorStats objects and add candidate names
         annotator_stats = []

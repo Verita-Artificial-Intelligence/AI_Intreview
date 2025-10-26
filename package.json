@@ -1,0 +1,23 @@
+{
+  "name": "ai-interview",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.11"
+  },
+  "lint-staged": {
+    "dashboard-frontend/**/*.{js,jsx,ts,tsx,json,css,scss,md}": [
+      "npx prettier --write"
+    ],
+    "interview-frontend/**/*.{js,jsx,ts,tsx,json,css,scss,md}": [
+      "npx prettier --write"
+    ],
+    "backend/**/*.py": [
+      "black"
+    ]
+  }
+}

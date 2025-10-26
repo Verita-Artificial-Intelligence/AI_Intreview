@@ -166,9 +166,7 @@ class TTSService:
         """
         while self.connected or not self._audio_queue.empty():
             try:
-                data = await asyncio.wait_for(
-                    self._audio_queue.get(), timeout=0.1
-                )
+                data = await asyncio.wait_for(self._audio_queue.get(), timeout=0.1)
 
                 # Process the response
                 audio_b64 = data.get("audio")

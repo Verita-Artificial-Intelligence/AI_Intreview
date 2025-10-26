@@ -1,10 +1,30 @@
 import { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { User, FileText, Brain, Code, MessageSquare, Terminal, Wand2, CheckCircle, X, Plus, Trash2, Upload, AlertCircle, Briefcase } from 'lucide-react'
+import {
+  User,
+  FileText,
+  Brain,
+  Code,
+  MessageSquare,
+  Terminal,
+  Wand2,
+  CheckCircle,
+  X,
+  Plus,
+  Trash2,
+  Upload,
+  AlertCircle,
+  Briefcase,
+} from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { cardStyles } from '@/lib/design-system'
 import axios from 'axios'
@@ -18,25 +38,29 @@ const INTERVIEW_TYPES = [
   {
     id: 'standard',
     title: 'Standard interview',
-    description: 'This is a conversational interview to assess for any role (UX designer, filmmaker, art director, copywriter, and more)',
+    description:
+      'This is a conversational interview to assess for any role (UX designer, filmmaker, art director, copywriter, and more)',
     icon: User,
   },
   {
     id: 'human_data',
     title: 'Design critique & feedback exercise',
-    description: 'This is a conversational interview and a design feedback/critique exercise to assess creative direction and feedback skills',
+    description:
+      'This is a conversational interview and a design feedback/critique exercise to assess creative direction and feedback skills',
     icon: Brain,
   },
   {
     id: 'custom_questions',
     title: 'Custom questions only',
-    description: 'In this interview, you get to add/edit up to 20 custom questions tailored to your role',
+    description:
+      'In this interview, you get to add/edit up to 20 custom questions tailored to your role',
     icon: MessageSquare,
   },
   {
     id: 'custom_exercise',
     title: 'Custom Creative Exercise',
-    description: 'Add a custom creative brief and get audio responses—AI evaluates creative thinking and problem-solving.',
+    description:
+      'Add a custom creative brief and get audio responses—AI evaluates creative thinking and problem-solving.',
     icon: Wand2,
   },
 ]
@@ -98,7 +122,9 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
     }
 
     const jobQuestions = Array.isArray(selectedJob.custom_questions)
-      ? selectedJob.custom_questions.filter((q) => typeof q === 'string' && q.trim() !== '')
+      ? selectedJob.custom_questions.filter(
+          (q) => typeof q === 'string' && q.trim() !== ''
+        )
       : []
     setCustomQuestions(jobQuestions.length ? jobQuestions : [''])
 
@@ -185,16 +211,22 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
       const formData = new FormData()
       formData.append('resume', file)
 
-      const response = await axios.post(`${API}/interviews/upload/resume`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      })
+      const response = await axios.post(
+        `${API}/interviews/upload/resume`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      )
 
       if (response.data.success) {
         setResumeText(response.data.resume_text)
       } else {
-        setResumeError(response.data.error || 'Failed to extract text from resume')
+        setResumeError(
+          response.data.error || 'Failed to extract text from resume'
+        )
         setResumeFile(null)
       }
     } catch (error) {
@@ -237,10 +269,12 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
             ? filteredQuestions
             : null,
         custom_exercise_prompt:
-          selectedType === 'custom_exercise' && customExercisePrompt.trim() !== ''
+          selectedType === 'custom_exercise' &&
+          customExercisePrompt.trim() !== ''
             ? customExercisePrompt
             : null,
-        resume_text: selectedType === 'resume_based' && resumeText ? resumeText : null,
+        resume_text:
+          selectedType === 'resume_based' && resumeText ? resumeText : null,
       }
 
       const response = await axios.post(`${API}/interviews`, interviewData)
@@ -270,7 +304,8 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
     <div className="space-y-4">
       <h3 className="text-base font-semibold text-neutral-900">Select a job</h3>
       <p className="text-xs text-neutral-600">
-        Interviews inherit their configuration and title from jobs. Choose an active job so the AI introduces the correct role to the candidate.
+        Interviews inherit their configuration and title from jobs. Choose an
+        active job so the AI introduces the correct role to the candidate.
       </p>
 
       {loadingJobs ? (
@@ -280,7 +315,8 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
       ) : jobs.length === 0 ? (
         <Card className={`p-6 text-center ${cardStyles.default}`}>
           <p className="text-sm text-neutral-600">
-            No active jobs available. Create a job first, then return to schedule the interview.
+            No active jobs available. Create a job first, then return to
+            schedule the interview.
           </p>
         </Card>
       ) : (
@@ -293,25 +329,35 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
                 key={job.id}
                 onClick={() => setSelectedJob(job)}
                 className={`p-4 cursor-pointer transition-all ${cardStyles.default} ${
-                  isSelected ? 'border-2 border-brand-500 bg-brand-50' : 'hover:border-brand-300'
+                  isSelected
+                    ? 'border-2 border-brand-500 bg-brand-50'
+                    : 'hover:border-brand-300'
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-lg ${isSelected ? 'bg-brand-100 text-brand-600' : 'bg-neutral-100 text-neutral-600'}`}>
+                  <div
+                    className={`p-2 rounded-lg ${isSelected ? 'bg-brand-100 text-brand-600' : 'bg-neutral-100 text-neutral-600'}`}
+                  >
                     <Briefcase className="w-5 h-5" />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h4 className="font-semibold text-sm text-neutral-900">{job.title}</h4>
-                        <p className="text-xs text-neutral-600 mt-1 line-clamp-2">{job.description}</p>
+                        <h4 className="font-semibold text-sm text-neutral-900">
+                          {job.title}
+                        </h4>
+                        <p className="text-xs text-neutral-600 mt-1 line-clamp-2">
+                          {job.description}
+                        </p>
                       </div>
                       <Badge variant="outline" className="text-xs capitalize">
                         {job.status.replace('_', ' ')}
                       </Badge>
                     </div>
                     {job.position_type && (
-                      <p className="text-xs text-neutral-500 mt-2">{job.position_type}</p>
+                      <p className="text-xs text-neutral-500 mt-2">
+                        {job.position_type}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -336,7 +382,7 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
     </div>
   )
 
-  const renderJobSummary = () => (
+  const renderJobSummary = () =>
     selectedJob && (
       <div className="p-4 rounded-lg border border-brand-200 bg-brand-50">
         <div className="flex items-start gap-3">
@@ -344,21 +390,26 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
             <Briefcase className="w-5 h-5" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-semibold text-neutral-900">{selectedJob.title}</p>
+            <p className="text-sm font-semibold text-neutral-900">
+              {selectedJob.title}
+            </p>
             {selectedJob.position_type && (
-              <p className="text-xs text-neutral-600">{selectedJob.position_type}</p>
+              <p className="text-xs text-neutral-600">
+                {selectedJob.position_type}
+              </p>
             )}
           </div>
         </div>
       </div>
     )
-  )
 
   const renderTypeSelection = () => (
     <div className="space-y-4">
       {renderJobSummary()}
 
-      <h3 className="text-base font-semibold text-neutral-900">Select the interview type</h3>
+      <h3 className="text-base font-semibold text-neutral-900">
+        Select the interview type
+      </h3>
 
       <div className="space-y-3">
         {INTERVIEW_TYPES.map((type) => {
@@ -370,19 +421,29 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
               key={type.id}
               onClick={() => handleTypeSelect(type.id)}
               className={`p-4 cursor-pointer transition-all ${cardStyles.default} ${
-                isSelected ? 'border-2 border-brand-500 bg-brand-50' : 'hover:border-brand-300'
+                isSelected
+                  ? 'border-2 border-brand-500 bg-brand-50'
+                  : 'hover:border-brand-300'
               }`}
             >
               <div className="flex items-start gap-3">
-                <div className={`p-2 rounded-lg ${isSelected ? 'bg-brand-100 text-brand-600' : 'bg-neutral-100 text-neutral-600'}`}>
+                <div
+                  className={`p-2 rounded-lg ${isSelected ? 'bg-brand-100 text-brand-600' : 'bg-neutral-100 text-neutral-600'}`}
+                >
                   <Icon className="w-5 h-5" />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-start justify-between gap-2">
-                    <h4 className="font-semibold text-sm text-neutral-900">{type.title}</h4>
-                    {isSelected && <CheckCircle className="w-5 h-5 text-brand-500 flex-shrink-0" />}
+                    <h4 className="font-semibold text-sm text-neutral-900">
+                      {type.title}
+                    </h4>
+                    {isSelected && (
+                      <CheckCircle className="w-5 h-5 text-brand-500 flex-shrink-0" />
+                    )}
                   </div>
-                  <p className="text-xs text-neutral-600 mt-1">{type.description}</p>
+                  <p className="text-xs text-neutral-600 mt-1">
+                    {type.description}
+                  </p>
                 </div>
               </div>
             </Card>
@@ -414,63 +475,72 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
       {renderJobSummary()}
 
       <div>
-        <h3 className="text-base font-semibold text-neutral-900 mb-1">Defined skills</h3>
+        <h3 className="text-base font-semibold text-neutral-900 mb-1">
+          Defined skills
+        </h3>
         <p className="text-xs text-neutral-600">
-          Define the skills you want to test candidates on. It can be any skill from sales negotiation to react.js and beyond.
-          The optional description can be used to refine the questions or avoid certain areas within the skill.
+          Define the skills you want to test candidates on. It can be any skill
+          from sales negotiation to react.js and beyond. The optional
+          description can be used to refine the questions or avoid certain areas
+          within the skill.
         </p>
       </div>
 
       {/* Skills */}
-      {selectedType !== 'custom_questions' && selectedType !== 'custom_exercise' && (
-        <div className="space-y-3">
-          {skills.map((skill, index) => (
-            <div key={index} className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="flex-1 relative">
-                  <Target className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-4 h-4" />
-                  <Input
-                    placeholder={`Enter skill #${index + 1}`}
-                    value={skill.name}
-                    onChange={(e) => updateSkill(index, 'name', e.target.value)}
-                    className="pl-10"
+      {selectedType !== 'custom_questions' &&
+        selectedType !== 'custom_exercise' && (
+          <div className="space-y-3">
+            {skills.map((skill, index) => (
+              <div key={index} className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 relative">
+                    <Target className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-4 h-4" />
+                    <Input
+                      placeholder={`Enter skill #${index + 1}`}
+                      value={skill.name}
+                      onChange={(e) =>
+                        updateSkill(index, 'name', e.target.value)
+                      }
+                      className="pl-10"
+                    />
+                  </div>
+                  {skills.length > 1 && (
+                    <Button
+                      onClick={() => removeSkill(index)}
+                      variant="outline"
+                      size="icon"
+                      className="flex-shrink-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+                <div className="relative">
+                  <AlignLeft className="absolute left-3 top-3 text-neutral-400 w-4 h-4" />
+                  <Textarea
+                    placeholder="Feel free to describe the skill in 1-2 sentences to further tailor the questions (optional)"
+                    value={skill.description}
+                    onChange={(e) =>
+                      updateSkill(index, 'description', e.target.value)
+                    }
+                    className="pl-10 min-h-[60px]"
                   />
                 </div>
-                {skills.length > 1 && (
-                  <Button
-                    onClick={() => removeSkill(index)}
-                    variant="outline"
-                    size="icon"
-                    className="flex-shrink-0 text-red-500 hover:text-red-600 hover:bg-red-50"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                )}
               </div>
-              <div className="relative">
-                <AlignLeft className="absolute left-3 top-3 text-neutral-400 w-4 h-4" />
-                <Textarea
-                  placeholder="Feel free to describe the skill in 1-2 sentences to further tailor the questions (optional)"
-                  value={skill.description}
-                  onChange={(e) => updateSkill(index, 'description', e.target.value)}
-                  className="pl-10 min-h-[60px]"
-                />
-              </div>
-            </div>
-          ))}
+            ))}
 
-          {skills.length < 5 && (
-            <Button
-              onClick={addSkill}
-              variant="ghost"
-              className="text-brand-600 hover:text-brand-700 hover:bg-brand-50 text-sm"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Add another skill (up to {5 - skills.length} more)
-            </Button>
-          )}
-        </div>
-      )}
+            {skills.length < 5 && (
+              <Button
+                onClick={addSkill}
+                variant="ghost"
+                className="text-brand-600 hover:text-brand-700 hover:bg-brand-50 text-sm"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Add another skill (up to {5 - skills.length} more)
+              </Button>
+            )}
+          </div>
+        )}
 
       {/* Resume Upload for resume_based type */}
       {selectedType === 'resume_based' && (
@@ -479,7 +549,8 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
             Upload Resume (Required)
           </label>
           <p className="text-xs text-neutral-600 mb-3">
-            Upload the candidate's resume. Supported formats: PDF, TXT, DOC, DOCX
+            Upload the candidate's resume. Supported formats: PDF, TXT, DOC,
+            DOCX
           </p>
 
           {!resumeFile && !resumeText && (
@@ -509,8 +580,12 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-green-500" />
                 <div>
-                  <p className="text-sm font-medium text-neutral-900">{resumeFile.name}</p>
-                  <p className="text-xs text-neutral-600">{resumeText.length} characters extracted</p>
+                  <p className="text-sm font-medium text-neutral-900">
+                    {resumeFile.name}
+                  </p>
+                  <p className="text-xs text-neutral-600">
+                    {resumeText.length} characters extracted
+                  </p>
                 </div>
               </div>
               <Button
@@ -577,7 +652,9 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
       {/* Custom Exercise Prompt */}
       {selectedType === 'custom_exercise' && (
         <div>
-          <label className="block text-sm font-medium text-neutral-900 mb-2">Exercise Prompt</label>
+          <label className="block text-sm font-medium text-neutral-900 mb-2">
+            Exercise Prompt
+          </label>
           <Textarea
             placeholder="Describe the exercise or task for the candidate..."
             value={customExercisePrompt}
@@ -597,7 +674,9 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
           </Button>
           <Button
             onClick={handleCreate}
-            disabled={creating || (selectedType === 'resume_based' && !resumeText)}
+            disabled={
+              creating || (selectedType === 'resume_based' && !resumeText)
+            }
             className="rounded-lg bg-brand-500 hover:bg-brand-600 text-white"
           >
             {creating ? 'Creating...' : 'Create Interview'}
@@ -613,15 +692,17 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
         <DialogHeader>
           <DialogTitle className="text-xl font-display font-bold text-neutral-900">
             Create an interview
-            {candidate && <span className="text-brand-600"> for {candidate.name}</span>}
+            {candidate && (
+              <span className="text-brand-600"> for {candidate.name}</span>
+            )}
           </DialogTitle>
         </DialogHeader>
 
         {step === 1
           ? renderJobSelection()
           : step === 2
-          ? renderTypeSelection()
-          : renderSkillDefinition()}
+            ? renderTypeSelection()
+            : renderSkillDefinition()}
       </DialogContent>
     </Dialog>
   )

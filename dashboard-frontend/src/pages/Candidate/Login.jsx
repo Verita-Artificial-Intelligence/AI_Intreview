@@ -47,13 +47,7 @@ const CandidateLogin = () => {
       setRedirecting(true)
       handleRedirect()
     }
-  }, [
-    isAuthenticated,
-    authLoading,
-    isProfileComplete,
-    role,
-    navigate,
-  ])
+  }, [isAuthenticated, authLoading, isProfileComplete, role, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

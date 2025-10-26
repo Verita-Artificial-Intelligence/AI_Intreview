@@ -1,12 +1,30 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
-import { Upload, Plus, Search, Trash2, FileText, Image, Video, Music, File, ChevronLeft, ChevronRight } from 'lucide-react'
+import {
+  Upload,
+  Plus,
+  Search,
+  Trash2,
+  FileText,
+  Image,
+  Video,
+  Music,
+  File,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import {
   AlertDialog,
@@ -74,18 +92,19 @@ const AnnotationData = () => {
     let filtered = data
 
     if (jobFilter !== 'all') {
-      filtered = filtered.filter(d => d.job_id === jobFilter)
+      filtered = filtered.filter((d) => d.job_id === jobFilter)
     }
 
     if (typeFilter !== 'all') {
-      filtered = filtered.filter(d => d.data_type === typeFilter)
+      filtered = filtered.filter((d) => d.data_type === typeFilter)
     }
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(d =>
-        d.title.toLowerCase().includes(query) ||
-        d.description?.toLowerCase().includes(query)
+      filtered = filtered.filter(
+        (d) =>
+          d.title.toLowerCase().includes(query) ||
+          d.description?.toLowerCase().includes(query)
       )
     }
 
@@ -154,9 +173,17 @@ const AnnotationData = () => {
           {/* Upload Button */}
           <div className="mb-8">
             <Button
-              onClick={() => navigate(jobs.length === 0 ? '/jobs' : '/annotation-data/upload')}
+              onClick={() =>
+                navigate(
+                  jobs.length === 0 ? '/jobs' : '/annotation-data/upload'
+                )
+              }
               className="bg-brand-500 hover:bg-brand-600 text-white rounded-lg h-12 px-6"
-              title={jobs.length === 0 ? 'Create a job first before uploading data' : 'Upload annotation data'}
+              title={
+                jobs.length === 0
+                  ? 'Create a job first before uploading data'
+                  : 'Upload annotation data'
+              }
             >
               <Plus className="w-5 h-5 mr-2" />
               {jobs.length === 0 ? 'Create Job First' : 'Upload Data'}
@@ -217,7 +244,8 @@ const AnnotationData = () => {
                 No jobs available
               </p>
               <p className="text-sm text-neutral-500 mb-4">
-                You need to create at least one creative project before uploading data
+                You need to create at least one creative project before
+                uploading data
               </p>
               <Button
                 onClick={() => navigate('/jobs')}
@@ -250,10 +278,13 @@ const AnnotationData = () => {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-4">
                 {filteredData
-                  .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                  .slice(
+                    (currentPage - 1) * itemsPerPage,
+                    currentPage * itemsPerPage
+                  )
                   .map((item) => {
                     const Icon = getDataTypeIcon(item.data_type)
-                    const job = jobs.find(j => j.id === item.job_id)
+                    const job = jobs.find((j) => j.id === item.job_id)
 
                     return (
                       <Card
@@ -279,7 +310,9 @@ const AnnotationData = () => {
                               <h3 className="font-semibold text-lg text-neutral-900 mb-1 line-clamp-2">
                                 {item.title}
                               </h3>
-                              <Badge className={getDataTypeColor(item.data_type)}>
+                              <Badge
+                                className={getDataTypeColor(item.data_type)}
+                              >
                                 {item.data_type}
                               </Badge>
                             </div>
@@ -293,7 +326,8 @@ const AnnotationData = () => {
 
                           <div className="space-y-2 text-xs text-neutral-600">
                             <div>
-                              <span className="font-medium">Job:</span> {job?.title || 'Unknown'}
+                              <span className="font-medium">Job:</span>{' '}
+                              {job?.title || 'Unknown'}
                             </div>
                             <div>
                               <span className="font-medium">Created:</span>{' '}
@@ -321,7 +355,9 @@ const AnnotationData = () => {
                     </div>
                   </button>
                   <button
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(prev - 1, 1))
+                    }
                     disabled={currentPage === 1}
                     className="p-1 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-100 rounded"
                     title="Previous page"
@@ -330,7 +366,9 @@ const AnnotationData = () => {
                   </button>
 
                   <div className="flex items-center gap-1 px-2">
-                    {Array.from({ length: Math.ceil(filteredData.length / itemsPerPage) }).map((_, i) => (
+                    {Array.from({
+                      length: Math.ceil(filteredData.length / itemsPerPage),
+                    }).map((_, i) => (
                       <button
                         key={i + 1}
                         onClick={() => setCurrentPage(i + 1)}
@@ -346,16 +384,33 @@ const AnnotationData = () => {
                   </div>
 
                   <button
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredData.length / itemsPerPage)))}
-                    disabled={currentPage === Math.ceil(filteredData.length / itemsPerPage)}
+                    onClick={() =>
+                      setCurrentPage((prev) =>
+                        Math.min(
+                          prev + 1,
+                          Math.ceil(filteredData.length / itemsPerPage)
+                        )
+                      )
+                    }
+                    disabled={
+                      currentPage ===
+                      Math.ceil(filteredData.length / itemsPerPage)
+                    }
                     className="p-1 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-100 rounded"
                     title="Next page"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => setCurrentPage(Math.ceil(filteredData.length / itemsPerPage))}
-                    disabled={currentPage === Math.ceil(filteredData.length / itemsPerPage)}
+                    onClick={() =>
+                      setCurrentPage(
+                        Math.ceil(filteredData.length / itemsPerPage)
+                      )
+                    }
+                    disabled={
+                      currentPage ===
+                      Math.ceil(filteredData.length / itemsPerPage)
+                    }
                     className="p-1 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-100 rounded flex items-center"
                     title="Last page"
                   >
@@ -377,11 +432,14 @@ const AnnotationData = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Annotation Data</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{dataToDelete?.title}"? This action cannot be undone.
+              Are you sure you want to delete "{dataToDelete?.title}"? This
+              action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDataToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setDataToDelete(null)}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               className="bg-red-500 hover:bg-red-600"

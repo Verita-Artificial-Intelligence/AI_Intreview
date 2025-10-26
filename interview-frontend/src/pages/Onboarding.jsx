@@ -842,7 +842,8 @@ export default function Onboarding() {
             ></div>
           </div>
           <p className="text-xs text-neutral-600 mt-2 font-medium">
-            Step {currentStep} of {STEPS.length}: {STEPS[currentStep - 1]?.title}
+            Step {currentStep} of {STEPS.length}:{' '}
+            {STEPS[currentStep - 1]?.title}
           </p>
         </div>
       </div>
@@ -1365,7 +1366,10 @@ function StepExperience({
             Education
           </h2>
           {formData.education.map((edu, index) => (
-            <Card key={index} className="p-4 sm:p-6 border border-neutral-200 mb-4">
+            <Card
+              key={index}
+              className="p-4 sm:p-6 border border-neutral-200 mb-4"
+            >
               <div className="flex justify-between items-start mb-4">
                 <p className="text-sm font-semibold text-neutral-700">
                   Education {index + 1}
@@ -1429,7 +1433,10 @@ function StepExperience({
             Work Experience
           </h2>
           {formData.workExperience.map((exp, index) => (
-            <Card key={index} className="p-4 sm:p-6 border border-neutral-200 mb-4">
+            <Card
+              key={index}
+              className="p-4 sm:p-6 border border-neutral-200 mb-4"
+            >
               <div className="flex justify-between items-start mb-4">
                 <p className="text-sm font-semibold text-neutral-700">
                   Experience {index + 1}
@@ -1555,7 +1562,10 @@ function StepExperience({
             Publications
           </h2>
           {formData.publications.map((pub, index) => (
-            <Card key={index} className="p-4 sm:p-6 border border-neutral-200 mb-4">
+            <Card
+              key={index}
+              className="p-4 sm:p-6 border border-neutral-200 mb-4"
+            >
               <div className="flex justify-between items-start mb-4">
                 <p className="text-sm font-semibold text-neutral-700">
                   Publication {index + 1}
@@ -1619,7 +1629,10 @@ function StepExperience({
             Certifications
           </h2>
           {formData.certifications.map((cert, index) => (
-            <Card key={index} className="p-4 sm:p-6 border border-neutral-200 mb-4">
+            <Card
+              key={index}
+              className="p-4 sm:p-6 border border-neutral-200 mb-4"
+            >
               <div className="flex justify-between items-start mb-4">
                 <p className="text-sm font-semibold text-neutral-700">
                   Certification {index + 1}

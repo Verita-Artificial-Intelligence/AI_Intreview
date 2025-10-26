@@ -93,7 +93,10 @@ function App() {
           <Route path="/jobs" element={<Jobs />} />
           <Route path="/admin/data-explorer" element={<AdminDataExplorer />} />
           <Route path="/annotation-data" element={<AnnotationData />} />
-          <Route path="/annotation-data/upload" element={<UploadAnnotationData />} />
+          <Route
+            path="/annotation-data/upload"
+            element={<UploadAnnotationData />}
+          />
           <Route path="/annotators" element={<Annotators />} />
           <Route path="/review/:taskId" element={<ReviewAnnotation />} />
           <Route

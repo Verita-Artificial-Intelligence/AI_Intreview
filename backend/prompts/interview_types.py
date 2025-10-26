@@ -16,7 +16,7 @@ def get_interview_type_config(
     resume_text: Optional[str] = None,
     custom_questions: Optional[List[str]] = None,
     custom_exercise_prompt: Optional[str] = None,
-    role_description: Optional[str] = None
+    role_description: Optional[str] = None,
 ) -> Dict[str, str]:
     """
     Get the system instructions and initial greeting for a specific interview type.
@@ -50,7 +50,7 @@ def get_interview_type_config(
         resume_text=resume_text,
         custom_questions=custom_questions,
         custom_exercise_prompt=custom_exercise_prompt,
-        role_description=role_description
+        role_description=role_description,
     )
 
 
@@ -62,7 +62,7 @@ def _format_skills_section(skills: Optional[List[Dict[str, str]]]) -> str:
     skills_text = "\n\nSKILLS TO ASSESS:\n"
     for skill in skills:
         skills_text += f"- {skill['name']}"
-        if skill.get('description'):
+        if skill.get("description"):
             skills_text += f": {skill['description']}"
         skills_text += "\n"
 
@@ -90,7 +90,13 @@ def _build_base_prompt(
     )
 
 
-def _get_standard_config(candidate_name: str, position: str, skills: Optional[List[Dict[str, str]]] = None, role_description: Optional[str] = None, **kwargs) -> Dict[str, str]:
+def _get_standard_config(
+    candidate_name: str,
+    position: str,
+    skills: Optional[List[Dict[str, str]]] = None,
+    role_description: Optional[str] = None,
+    **kwargs,
+) -> Dict[str, str]:
     """Standard conversational interview configuration."""
 
     skills_section = _format_skills_section(skills)
@@ -126,11 +132,17 @@ def _get_standard_config(candidate_name: str, position: str, skills: Optional[Li
 
     return {
         "system_instructions": system_instructions,
-        "initial_greeting": initial_greeting
+        "initial_greeting": initial_greeting,
     }
 
 
-def _get_human_data_config(candidate_name: str, position: str, skills: Optional[List[Dict[str, str]]] = None, role_description: Optional[str] = None, **kwargs) -> Dict[str, str]:
+def _get_human_data_config(
+    candidate_name: str,
+    position: str,
+    skills: Optional[List[Dict[str, str]]] = None,
+    role_description: Optional[str] = None,
+    **kwargs,
+) -> Dict[str, str]:
     """Design critique and feedback exercise configuration."""
 
     skills_section = _format_skills_section(skills)
@@ -167,18 +179,32 @@ def _get_human_data_config(candidate_name: str, position: str, skills: Optional[
 
     return {
         "system_instructions": system_instructions,
-        "initial_greeting": initial_greeting
+        "initial_greeting": initial_greeting,
     }
 
 
-def _get_custom_questions_config(candidate_name: str, position: str, custom_questions: Optional[List[str]] = None, skills: Optional[List[Dict[str, str]]] = None, **kwargs) -> Dict[str, str]:
+def _get_custom_questions_config(
+    candidate_name: str,
+    position: str,
+    custom_questions: Optional[List[str]] = None,
+    skills: Optional[List[Dict[str, str]]] = None,
+    **kwargs,
+) -> Dict[str, str]:
     """Custom questions interview configuration."""
 
     skills_section = _format_skills_section(skills)
-    questions_list = "\n".join([f"{i+1}. {q}" for i, q in enumerate(custom_questions)]) if custom_questions else "Questions will be provided during the interview."
+    questions_list = (
+        "\n".join([f"{i+1}. {q}" for i, q in enumerate(custom_questions)])
+        if custom_questions
+        else "Questions will be provided during the interview."
+    )
 
     # Extract first name only from full name
-    candidate_first_name = candidate_name.split()[0] if candidate_name and " " in candidate_name else candidate_name
+    candidate_first_name = (
+        candidate_name.split()[0]
+        if candidate_name and " " in candidate_name
+        else candidate_name
+    )
 
     # Simplified prompt specifically for custom questions mode
     system_instructions = f"""You are Alex, an experienced interviewer conducting an interview for the {position} position.
@@ -214,15 +240,25 @@ When you've completed all questions, thank them briefly, explain the hiring team
 
     return {
         "system_instructions": system_instructions,
-        "initial_greeting": initial_greeting
+        "initial_greeting": initial_greeting,
     }
 
 
-def _get_custom_exercise_config(candidate_name: str, position: str, custom_exercise_prompt: Optional[str] = None, skills: Optional[List[Dict[str, str]]] = None, role_description: Optional[str] = None, **kwargs) -> Dict[str, str]:
+def _get_custom_exercise_config(
+    candidate_name: str,
+    position: str,
+    custom_exercise_prompt: Optional[str] = None,
+    skills: Optional[List[Dict[str, str]]] = None,
+    role_description: Optional[str] = None,
+    **kwargs,
+) -> Dict[str, str]:
     """Custom portfolio/asset evaluation interview configuration."""
 
     skills_section = _format_skills_section(skills)
-    exercise_description = custom_exercise_prompt or "A custom creative brief or portfolio evaluation will be provided during the interview."
+    exercise_description = (
+        custom_exercise_prompt
+        or "A custom creative brief or portfolio evaluation will be provided during the interview."
+    )
     base_prompt = _build_base_prompt(candidate_name, position, skills, role_description)
 
     # Extract role requirements from skills for more focused questioning
@@ -254,5 +290,5 @@ def _get_custom_exercise_config(candidate_name: str, position: str, custom_exerc
 
     return {
         "system_instructions": system_instructions,
-        "initial_greeting": initial_greeting
+        "initial_greeting": initial_greeting,
     }

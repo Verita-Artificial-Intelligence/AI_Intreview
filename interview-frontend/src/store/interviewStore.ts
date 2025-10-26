@@ -2,28 +2,28 @@
  * Zustand store for realtime interview state management.
  */
 
-import { create } from 'zustand';
+import { create } from 'zustand'
 import {
   InterviewState,
   InterviewStatus,
   TranscriptEntry,
   LatencyMetrics,
-} from '../types/interview.ts';
+} from '../types/interview.ts'
 
 interface InterviewStore extends InterviewState {
   // Actions
-  setStatus: (status: InterviewStatus) => void;
-  setSessionId: (sessionId: string) => void;
-  setError: (error: string | null) => void;
-  addTranscript: (transcript: TranscriptEntry) => void;
-  setCurrentUserText: (text: string) => void;
-  setCurrentAIText: (text: string) => void;
-  setMicActive: (active: boolean) => void;
-  setAIPlaying: (playing: boolean) => void;
-  setUserAudioLevel: (level: number) => void;
-  setLatencyMetrics: (metrics: LatencyMetrics) => void;
-  clearTranscripts: () => void;
-  reset: () => void;
+  setStatus: (status: InterviewStatus) => void
+  setSessionId: (sessionId: string) => void
+  setError: (error: string | null) => void
+  addTranscript: (transcript: TranscriptEntry) => void
+  setCurrentUserText: (text: string) => void
+  setCurrentAIText: (text: string) => void
+  setMicActive: (active: boolean) => void
+  setAIPlaying: (playing: boolean) => void
+  setUserAudioLevel: (level: number) => void
+  setLatencyMetrics: (metrics: LatencyMetrics) => void
+  clearTranscripts: () => void
+  reset: () => void
 }
 
 const initialState: InterviewState = {
@@ -37,7 +37,7 @@ const initialState: InterviewState = {
   isAIPlaying: false,
   userAudioLevel: 0,
   latencyMetrics: null,
-};
+}
 
 export const useInterviewStore = create<InterviewStore>((set) => ({
   ...initialState,
@@ -68,20 +68,20 @@ export const useInterviewStore = create<InterviewStore>((set) => ({
   clearTranscripts: () => set({ transcripts: [] }),
 
   reset: () => set(initialState),
-}));
+}))
 
 // Selectors for optimized re-renders
 export const useInterviewStatus = () =>
-  useInterviewStore((state) => state.status);
+  useInterviewStore((state) => state.status)
 
 export const useTranscripts = () =>
-  useInterviewStore((state) => state.transcripts);
+  useInterviewStore((state) => state.transcripts)
 
 export const useIsAIPlaying = () =>
-  useInterviewStore((state) => state.isAIPlaying);
+  useInterviewStore((state) => state.isAIPlaying)
 
 export const useIsMicActive = () =>
-  useInterviewStore((state) => state.isMicActive);
+  useInterviewStore((state) => state.isMicActive)
 
 export const useUserAudioLevel = () =>
-  useInterviewStore((state) => state.userAudioLevel);
+  useInterviewStore((state) => state.userAudioLevel)

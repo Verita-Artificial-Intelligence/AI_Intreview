@@ -5,11 +5,11 @@ import uuid
 
 # Annotation task status type definition
 AnnotationTaskStatus = Literal[
-    "pending",      # Task created, waiting for assignment
-    "assigned",     # Task assigned to annotator
+    "pending",  # Task created, waiting for assignment
+    "assigned",  # Task assigned to annotator
     "in_progress",  # Annotator started working
-    "completed",    # Annotator submitted annotation
-    "reviewed",     # Manager reviewed the annotation
+    "completed",  # Annotator submitted annotation
+    "reviewed",  # Manager reviewed the annotation
 ]
 
 
@@ -66,6 +66,7 @@ class AnnotationTaskAssign(BaseModel):
 
 class AnnotatorStats(BaseModel):
     """Aggregated statistics for an annotator"""
+
     annotator_id: str
     name: str
     total_tasks: int

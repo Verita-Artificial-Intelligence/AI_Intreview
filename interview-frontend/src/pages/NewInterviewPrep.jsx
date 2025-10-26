@@ -1,7 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { CheckCircle, Mic, Video, AlertCircle, Loader2, Briefcase } from 'lucide-react'
+import {
+  CheckCircle,
+  Mic,
+  Video,
+  AlertCircle,
+  Loader2,
+  Briefcase,
+} from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { v4 as uuidv4 } from 'uuid'
 import axios from 'axios'
@@ -89,16 +96,22 @@ const NewInterviewPrep = () => {
         })
 
         const hasActiveOrCompletedInterview = response.data.some((interview) =>
-          ['in_progress', 'completed', 'under_review', 'approved'].includes(interview.status)
+          ['in_progress', 'completed', 'under_review', 'approved'].includes(
+            interview.status
+          )
         )
 
         if (hasActiveOrCompletedInterview) {
-          setError('You have already completed this interview. Visit your status page for updates instead of reapplying.')
+          setError(
+            'You have already completed this interview. Visit your status page for updates instead of reapplying.'
+          )
           return
         }
       } catch (checkError) {
         console.error('Error checking existing interview:', checkError)
-        setError('Unable to verify your application status right now. Please refresh and try again.')
+        setError(
+          'Unable to verify your application status right now. Please refresh and try again.'
+        )
         return
       }
     }
@@ -273,7 +286,8 @@ const NewInterviewPrep = () => {
                       Discuss your creative portfolio
                     </p>
                     <p className="text-neutral-600 text-xs leading-relaxed">
-                      Share your best work, creative process, and design/creative approach
+                      Share your best work, creative process, and
+                      design/creative approach
                     </p>
                   </div>
                 </div>
@@ -287,7 +301,8 @@ const NewInterviewPrep = () => {
                       20-30 minute conversation
                     </p>
                     <p className="text-neutral-600 text-xs leading-relaxed">
-                      Deep dive into your projects, inspiration, and creative experience
+                      Deep dive into your projects, inspiration, and creative
+                      experience
                     </p>
                   </div>
                 </div>
@@ -301,7 +316,8 @@ const NewInterviewPrep = () => {
                       Express your creative vision
                     </p>
                     <p className="text-neutral-600 text-xs leading-relaxed">
-                      Be authentic about your artistic style and the projects you're proud of
+                      Be authentic about your artistic style and the projects
+                      you're proud of
                     </p>
                   </div>
                 </div>
@@ -315,7 +331,8 @@ const NewInterviewPrep = () => {
                       AI assessment
                     </p>
                     <p className="text-neutral-600 text-xs leading-relaxed">
-                      Your work and responses evaluated to match with creative roles
+                      Your work and responses evaluated to match with creative
+                      roles
                     </p>
                   </div>
                 </div>
