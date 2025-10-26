@@ -26,6 +26,10 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+# Store active sessions for testing and reconnection
+_active_sessions: dict[str, RealtimeService] = {}
+_active_session_metadata: dict[str, dict] = {}  # Store session metadata for reconnection
+
 
 def _merge_transcript_chunk(
     transcript: list[dict],
@@ -270,13 +274,23 @@ async def websocket_endpoint(websocket: WebSocket):
 
         await realtime.connect()
 
+        # Register session for testing and tracking
+        _active_sessions[session_id] = realtime
+        _active_session_metadata[session_id] = {
+            "interview_id": interview_id,
+            "job_id": job_id,
+            "candidate_id": candidate_id,
+            "candidate_name": candidate_name,
+            "started_at": asyncio.get_event_loop().time()
+        }
+
         # Notify client session is ready
         await websocket.send_json({
             "event": "session_ready",
             "session_id": session_id,
         })
 
-        logger.info(f"Session ready: {session_id}")
+        logger.info(f"Session ready: {session_id} for interview: {interview_id}")
 
         # Seed initial turn so the model starts proactively
         # Include actual candidate name (first name only), position, and interview type guidance
@@ -303,7 +317,13 @@ async def websocket_endpoint(websocket: WebSocket):
             forward_client_to_openai(websocket, realtime, audio_buffer)
         )
 
-        await asyncio.gather(openai_task, client_proxy_task)
+        results = await asyncio.gather(openai_task, client_proxy_task, return_exceptions=True)
+
+        # Log any exceptions from tasks instead of crashing the session
+        for i, result in enumerate(results):
+            task_name = "openai_task" if i == 0 else "client_proxy_task"
+            if isinstance(result, Exception):
+                logger.error(f"{task_name} failed with exception: {result}", exc_info=result)
 
     except WebSocketDisconnect:
         logger.info(f"Client disconnected: {session_id}")
@@ -334,6 +354,16 @@ async def websocket_endpoint(websocket: WebSocket):
 
         if realtime:
             await realtime.close()
+
+        # Unregister session
+        if session_id:
+            if session_id in _active_sessions:
+                del _active_sessions[session_id]
+                logger.info(f"Removed session {session_id} from active sessions")
+            if session_id in _active_session_metadata:
+                session_duration = asyncio.get_event_loop().time() - _active_session_metadata[session_id].get("started_at", 0)
+                logger.info(f"Session {session_id} lasted {session_duration:.1f}s")
+                del _active_session_metadata[session_id]
 
         # Wait a moment for any pending transcription events after session end
         if transcript and len([e for e in transcript if e.get("speaker") == "user"]) == 0:
@@ -554,14 +584,32 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
         release_guard_ms=settings.AUDIO_CHUNK_MS * 2,
     )
     zero_chunk_cache: dict[int, str] = {}
-    
+
     # Track recent speech activity to prevent mid-speech interruptions
     recent_speech_chunks = []  # Track last 20 chunks (2 seconds at 100ms chunks)
     max_recent_chunks = 20
 
+    # Track consecutive send failures to detect permanent disconnections
+    consecutive_send_failures = 0
+    max_consecutive_failures = 5  # Allow 5 failures before terminating
+
+    # Track VAD adjustment state to prevent oscillation
+    vad_mode = "normal"  # Can be: "low", "normal", "high"
+    vad_check_counter = 0  # Only check every N chunks
+    vad_check_interval = 30  # Check every 30 chunks (3 seconds)
+    last_false_turn_extension = 0  # Timestamp of last false turn extension
+    was_reconnecting = False  # Track previous reconnection state
+
     try:
         while True:
-            message = await websocket.receive_text()
+            # Add timeout to detect unresponsive clients (60 seconds)
+            try:
+                message = await asyncio.wait_for(websocket.receive_text(), timeout=60.0)
+            except asyncio.TimeoutError:
+                logger.warning("Client timeout - no messages received for 60 seconds")
+                # Don't break immediately - client might just be listening silently
+                continue
+
             data = json.loads(message)
 
             event_type = data.get("event")
@@ -593,39 +641,49 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
                 recent_speech_chunks.append(is_speech)
                 if len(recent_speech_chunks) > max_recent_chunks:
                     recent_speech_chunks.pop(0)
-                
-                # Calculate speech density in recent chunks
-                recent_speech_count = sum(recent_speech_chunks)
-                speech_density = recent_speech_count / len(recent_speech_chunks) if recent_speech_chunks else 0
-                
-                # Dynamically adjust silence window based on speech activity
-                if speech_density > 0.7:  # Very high speech activity (70%+ of recent chunks)
-                    # User is actively speaking - extend silence window to prevent interruption
-                    target_silence = min(3500, settings.OPENAI_REALTIME_SILENCE_DURATION_MAX_MS)
-                    try:
-                        await realtime.update_turn_detection(target_silence)
-                        if logger.isEnabledFor(logging.DEBUG):
-                            logger.debug(f"🗣️  Very high speech activity ({speech_density:.1%}) - extended silence window to {target_silence}ms")
-                    except Exception as e:
-                        logger.debug(f"Failed to extend silence window during active speech: {e}")
-                elif speech_density > 0.4:  # Moderate speech activity
-                    # Some speech but not continuous - use default window
-                    target_silence = settings.OPENAI_REALTIME_SILENCE_DURATION_MS
-                    try:
-                        await realtime.update_turn_detection(target_silence)
-                        if logger.isEnabledFor(logging.DEBUG):
-                            logger.debug(f"🎯 Moderate speech activity ({speech_density:.1%}) - using default silence window {target_silence}ms")
-                    except Exception as e:
-                        logger.debug(f"Failed to set default silence window: {e}")
-                elif speech_density < 0.15:  # Very low speech activity
-                    # Mostly silence - use shorter window for responsiveness
-                    target_silence = max(2200, settings.OPENAI_REALTIME_SILENCE_DURATION_MS - 800)
-                    try:
-                        await realtime.update_turn_detection(target_silence)
-                        if logger.isEnabledFor(logging.DEBUG):
-                            logger.debug(f"🤫 Low speech activity ({speech_density:.1%}) - reduced silence window to {target_silence}ms")
-                    except Exception as e:
-                        logger.debug(f"Failed to reduce silence window during low activity: {e}")
+
+                # Only check VAD periodically to prevent API spam
+                vad_check_counter += 1
+                if vad_check_counter >= vad_check_interval and len(recent_speech_chunks) >= max_recent_chunks:
+                    vad_check_counter = 0
+
+                    # Calculate speech density in recent chunks
+                    recent_speech_count = sum(recent_speech_chunks)
+                    speech_density = recent_speech_count / len(recent_speech_chunks)
+
+                    # Use hysteresis to prevent oscillation
+                    # Different thresholds for entering vs exiting each mode
+                    new_mode = vad_mode
+
+                    if vad_mode == "normal":
+                        if speech_density > 0.75:  # High threshold to enter high mode
+                            new_mode = "high"
+                        elif speech_density < 0.10:  # Low threshold to enter low mode
+                            new_mode = "low"
+                    elif vad_mode == "high":
+                        if speech_density < 0.60:  # Lower threshold to exit high mode
+                            new_mode = "normal"
+                    elif vad_mode == "low":
+                        if speech_density > 0.25:  # Higher threshold to exit low mode
+                            new_mode = "normal"
+
+                    # Only update if mode changed
+                    if new_mode != vad_mode:
+                        vad_mode = new_mode
+
+                        # Set target silence based on mode
+                        if vad_mode == "high":
+                            target_silence = min(3500, settings.OPENAI_REALTIME_SILENCE_DURATION_MAX_MS)
+                        elif vad_mode == "low":
+                            target_silence = max(2000, settings.OPENAI_REALTIME_SILENCE_DURATION_MS - 400)
+                        else:  # normal
+                            target_silence = settings.OPENAI_REALTIME_SILENCE_DURATION_MS
+
+                        try:
+                            await realtime.update_turn_detection(target_silence)
+                            logger.info(f"VAD mode changed to '{vad_mode}' (density={speech_density:.1%}, target={target_silence}ms)")
+                        except Exception as e:
+                            logger.debug(f"Failed to update VAD silence window: {e}")
 
                 # Buffer microphone audio for server-side mixing (keep original bytes)
                 await audio_buffer.add_mic_chunk(
@@ -660,11 +718,55 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
                         "type": "input_audio_buffer.append",
                         "audio": forward_audio_b64
                     })
+                    consecutive_send_failures = 0  # Reset on success
+
+                    # Check if reconnection just completed successfully
+                    is_reconnecting = getattr(realtime, '_is_reconnecting', False)
+                    reconnection_succeeded = getattr(realtime, '_reconnection_succeeded', False)
+                    if was_reconnecting and not is_reconnecting and reconnection_succeeded:
+                        logger.info("Reconnection succeeded - resetting VAD state for fresh start")
+                        recent_speech_chunks.clear()
+                        vad_check_counter = 0
+                        vad_mode = "normal"
+                        # Clear the flag after processing
+                        realtime._reconnection_succeeded = False
+                    was_reconnecting = is_reconnecting
+
                     if logger.isEnabledFor(logging.DEBUG) and is_speech:
                         logger.debug(f"🎤 Sent speech audio to OpenAI: seq={seq}, rms={rms:.4f}")
                 except RuntimeError as e:
-                    logger.warning(f"Failed to send audio chunk: {e}")
-                    break  # WebSocket closed, stop processing
+                    # Check if we're reconnecting - if so, don't count as permanent failure
+                    is_reconnecting = getattr(realtime, '_is_reconnecting', False)
+
+                    if is_reconnecting:
+                        logger.info(f"Skipping audio chunk during reconnection (attempt in progress)")
+                        consecutive_send_failures = 0  # Don't count failures during reconnection
+                        was_reconnecting = is_reconnecting
+                        await asyncio.sleep(0.5)  # Wait longer during reconnection
+                        continue
+
+                    # Detect successful reconnection completion (only on success)
+                    reconnection_succeeded = getattr(realtime, '_reconnection_succeeded', False)
+                    if was_reconnecting and not is_reconnecting:
+                        if reconnection_succeeded:
+                            logger.info("Reconnection succeeded - resetting VAD state and speech buffers")
+                            recent_speech_chunks.clear()
+                            vad_check_counter = 0
+                            vad_mode = "normal"
+                            consecutive_send_failures = 0
+                            realtime._reconnection_succeeded = False
+                        else:
+                            logger.error("Reconnection failed - all attempts exhausted")
+                            # Don't reset state - let the failure counter naturally terminate
+
+                    was_reconnecting = is_reconnecting
+
+                    consecutive_send_failures += 1
+                    logger.warning(f"Failed to send audio chunk ({consecutive_send_failures}/{max_consecutive_failures}): {e}")
+                    if consecutive_send_failures >= max_consecutive_failures:
+                        logger.error("Too many consecutive send failures - OpenAI connection lost")
+                        break
+                    await asyncio.sleep(0.1)  # Brief backoff before continuing
 
             elif event_type == "user_turn_end":
                 # More conservative approach: require meaningful speech AND sufficient silence
@@ -719,14 +821,26 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
                         await realtime.send_event({
                             "type": "input_audio_buffer.commit"
                         })
+                        consecutive_send_failures = 0  # Reset on success
                         speech_monitor.mark_commit_success()
                         # Reset recent speech tracking after successful commit
                         recent_speech_chunks.clear()
                         logger.info("✅ Audio committed to OpenAI - waiting for transcription event")
-                        
+
                     except RuntimeError as e:
-                        logger.warning(f"Failed to commit audio buffer: {e}")
-                        break
+                        # Don't count failures during reconnection
+                        is_reconnecting = getattr(realtime, '_is_reconnecting', False)
+                        if is_reconnecting:
+                            logger.info(f"Skipping commit during reconnection")
+                            consecutive_send_failures = 0
+                            continue
+
+                        consecutive_send_failures += 1
+                        logger.warning(f"Failed to commit audio buffer ({consecutive_send_failures}/{max_consecutive_failures}): {e}")
+                        if consecutive_send_failures >= max_consecutive_failures:
+                            logger.error("Too many consecutive send failures - OpenAI connection lost")
+                            break
+                        await asyncio.sleep(0.1)  # Brief backoff before continuing
                 else:
                     false_turns = speech_monitor.register_false_turn()
                     rejection_reason = []
@@ -749,19 +863,23 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
                         recent_speech_density * 100,
                         false_turns,
                     )
-                    # Be more aggressive about extending silence window for false turns
-                    if false_turns >= 1:  # Changed from 2 to 1 for faster adaptation
-                        try:
-                            extended = await realtime.extend_silence_window()
-                            if extended is not None:
-                                logger.info(
-                                    "🔧 Extended server VAD silence window to %sms after %s false turn(s)",
-                                    extended,
-                                    false_turns,
-                                )
-                                speech_monitor.reset_false_turns()
-                        except Exception as exc:
-                            logger.debug(f"Failed to extend silence window: {exc}")
+                    # Extend silence window for false turns (throttled to once per 10 seconds)
+                    if false_turns >= 2:  # Require at least 2 false turns
+                        import time
+                        current_time = time.time()
+                        if current_time - last_false_turn_extension >= 10.0:
+                            try:
+                                extended = await realtime.extend_silence_window()
+                                if extended is not None:
+                                    logger.info(
+                                        "🔧 Extended server VAD silence window to %sms after %s false turn(s)",
+                                        extended,
+                                        false_turns,
+                                    )
+                                    speech_monitor.reset_false_turns()
+                                    last_false_turn_extension = current_time
+                            except Exception as exc:
+                                logger.debug(f"Failed to extend silence window: {exc}")
 
             elif event_type == "clear_buffer":
                 # Clear any partial audio buffered on the server
@@ -770,9 +888,21 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
                     await realtime.send_event({
                         "type": "input_audio_buffer.clear"
                     })
+                    consecutive_send_failures = 0  # Reset on success
                 except RuntimeError as e:
-                    logger.warning(f"Failed to clear audio buffer: {e}")
-                    break
+                    # Don't count failures during reconnection
+                    is_reconnecting = getattr(realtime, '_is_reconnecting', False)
+                    if is_reconnecting:
+                        logger.info(f"Skipping clear_buffer during reconnection")
+                        consecutive_send_failures = 0
+                        continue
+
+                    consecutive_send_failures += 1
+                    logger.warning(f"Failed to clear audio buffer ({consecutive_send_failures}/{max_consecutive_failures}): {e}")
+                    if consecutive_send_failures >= max_consecutive_failures:
+                        logger.error("Too many consecutive send failures - OpenAI connection lost")
+                        break
+                    await asyncio.sleep(0.1)  # Brief backoff before continuing
 
             elif event_type == "barge_in":
                 # Interrupt current model response
@@ -780,9 +910,21 @@ async def forward_client_to_openai(websocket: WebSocket, realtime: RealtimeServi
                     await realtime.send_event({
                         "type": "response.cancel"
                     })
+                    consecutive_send_failures = 0  # Reset on success
                 except RuntimeError as e:
-                    logger.warning(f"Failed to cancel response: {e}")
-                    break
+                    # Don't count failures during reconnection
+                    is_reconnecting = getattr(realtime, '_is_reconnecting', False)
+                    if is_reconnecting:
+                        logger.info(f"Skipping barge_in during reconnection")
+                        consecutive_send_failures = 0
+                        continue
+
+                    consecutive_send_failures += 1
+                    logger.warning(f"Failed to cancel response ({consecutive_send_failures}/{max_consecutive_failures}): {e}")
+                    if consecutive_send_failures >= max_consecutive_failures:
+                        logger.error("Too many consecutive send failures - OpenAI connection lost")
+                        break
+                    await asyncio.sleep(0.1)  # Brief backoff before continuing
 
             elif event_type == "ai_chunk_played":
                 if audio_buffer is not None:
@@ -1110,15 +1252,49 @@ async def forward_openai_to_client(
                     await realtime.send_event({"type": "response.cancel"})
                     break
 
+            elif event_type == "connection.reconnecting":
+                # OpenAI connection is reconnecting
+                if not await safe_send({
+                    "event": "reconnecting",
+                    "message": event.get("message", "Reconnecting..."),
+                    "attempt": event.get("attempt", 0),
+                    "max_attempts": event.get("max_attempts", 3)
+                }):
+                    return
+
+            elif event_type == "connection.reconnected":
+                # OpenAI connection successfully reconnected
+                if not await safe_send({
+                    "event": "reconnected",
+                    "message": event.get("message", "Connection restored"),
+                    "context_restored": event.get("context_restored", False)
+                }):
+                    return
+
             elif event_type == "error":
                 # OpenAI error
                 error = event.get("error", {})
+                error_type = error.get("type", "")
+                error_message = error.get("message", "Unknown error")
+
+                # Send error to client
                 if not await safe_send({
                     "event": "error",
                     "code": "OPENAI_ERROR",
-                    "message": error.get("message", "Unknown error")
+                    "error_type": error_type,
+                    "message": error_message
                 }):
                     return
+
+                # If connection was lost and couldn't be restored, terminate the session
+                if error_type == "connection_lost":
+                    logger.error(f"OpenAI connection lost and could not be restored - terminating session")
+                    # Send session end event
+                    await safe_send({
+                        "event": "session_terminated",
+                        "reason": "Connection to AI service was lost and could not be restored"
+                    })
+                    break  # Exit the event loop to end the session
 
             # Pass through other events for debugging
             else:
@@ -1136,6 +1312,41 @@ async def forward_openai_to_client(
 
 @router.get("/sessions/active")
 async def get_active_sessions():
-    """Get count of active sessions (for monitoring)."""
-    # Simplified - no session tracking needed
-    return {"active_sessions": 0}
+    """Get count and list of active sessions (for monitoring)."""
+    sessions = []
+    for session_id, metadata in _active_session_metadata.items():
+        realtime_service = _active_sessions.get(session_id)
+        sessions.append({
+            "session_id": session_id,
+            "interview_id": metadata.get("interview_id"),
+            "candidate_name": metadata.get("candidate_name"),
+            "duration_seconds": asyncio.get_event_loop().time() - metadata.get("started_at", 0),
+            "openai_connected": realtime_service.connected if realtime_service else False,
+            "conversation_messages": len(realtime_service._conversation_history) if realtime_service else 0
+        })
+
+    return {
+        "active_sessions": len(sessions),
+        "sessions": sessions
+    }
+
+
+@router.post("/test/force-disconnect/{session_id}")
+async def force_disconnect_session(session_id: str):
+    """
+    TEST ENDPOINT: Force disconnect a session to test reconnection logic.
+
+    Usage: POST /api/websocket/test/force-disconnect/{session_id}
+    """
+    realtime_service = _active_sessions.get(session_id)
+    if not realtime_service:
+        return {"error": "Session not found", "session_id": session_id}
+
+    logger.warning(f"TEST: Force disconnecting session {session_id}")
+    await realtime_service.force_disconnect()
+
+    return {
+        "success": True,
+        "message": f"Forced disconnect for session {session_id}",
+        "conversation_history_size": len(realtime_service._conversation_history)
+    }
