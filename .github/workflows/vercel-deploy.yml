@@ -18,10 +18,33 @@ on:
       - 'dashboard-frontend/**'
 
 jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      interview: ${{ steps.filter.outputs.interview }}
+      dashboard: ${{ steps.filter.outputs.dashboard }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Check for changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            interview:
+              - 'interview-frontend/**'
+              - '.github/workflows/vercel-deploy.yml'
+            dashboard:
+              - 'dashboard-frontend/**'
+              - '.github/workflows/vercel-deploy.yml'
+
   deploy-interview:
     name: Deploy Interview Frontend
     runs-on: ubuntu-latest
-    if: contains(github.event.head_commit.modified, 'interview-frontend/') || contains(github.event.head_commit.added, 'interview-frontend/') || github.event_name == 'pull_request'
+    needs: changes
+    if: needs.changes.outputs.interview == 'true'
 
     steps:
       - name: Checkout Code
@@ -59,7 +82,8 @@ jobs:
   deploy-dashboard:
     name: Deploy Dashboard Frontend
     runs-on: ubuntu-latest
-    if: contains(github.event.head_commit.modified, 'dashboard-frontend/') || contains(github.event.head_commit.added, 'dashboard-frontend/') || github.event_name == 'pull_request'
+    needs: changes
+    if: needs.changes.outputs.dashboard == 'true'
 
     steps:
       - name: Checkout Code
