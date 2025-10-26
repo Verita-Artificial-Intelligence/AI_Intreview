@@ -55,22 +55,23 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Install Dependencies
+        working-directory: ./interview-frontend
+        run: npm ci
+
+      - name: Build Project
+        working-directory: ./interview-frontend
+        env:
+          REACT_APP_BACKEND_URL: ${{ github.ref == 'refs/heads/main' && 'https://api.verita-ai.com' || 'https://staging.api.verita-ai.com' }}
+        run: npm run build
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
-
-      - name: Build Project Artifacts
-        run: |
-          cd interview-frontend
-          vercel build ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_INTERVIEW }}
-          REACT_APP_BACKEND_URL: ${{ github.ref == 'refs/heads/main' && 'https://api.verita-ai.com' || 'https://staging.api.verita-ai.com' }}
 
       - name: Deploy to Vercel
         run: |
           cd interview-frontend
-          vercel deploy ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+          vercel deploy --prebuilt ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_INTERVIEW }}
@@ -90,22 +91,23 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Install Dependencies
+        working-directory: ./dashboard-frontend
+        run: npm ci
+
+      - name: Build Project
+        working-directory: ./dashboard-frontend
+        env:
+          REACT_APP_BACKEND_URL: ${{ github.ref == 'refs/heads/main' && 'https://api.verita-ai.com' || 'https://staging.api.verita-ai.com' }}
+        run: npm run build
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
-
-      - name: Build Project Artifacts
-        run: |
-          cd dashboard-frontend
-          vercel build ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_DASHBOARD }}
-          REACT_APP_BACKEND_URL: ${{ github.ref == 'refs/heads/main' && 'https://api.verita-ai.com' || 'https://staging.api.verita-ai.com' }}
 
       - name: Deploy to Vercel
         run: |
           cd dashboard-frontend
-          vercel deploy ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+          vercel deploy --prebuilt ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_DASHBOARD }}
