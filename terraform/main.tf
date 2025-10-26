@@ -160,33 +160,3 @@ module "monitoring" {
     module.documentdb,
   ]
 }
-
-# Interview Frontend (React App)
-module "interview_frontend" {
-  source = "./modules/cloudfront-s3-react"
-
-  app_name          = "${var.app_name}-interview"
-  environment       = var.environment
-  bucket_name       = "${var.app_name}-interview-${var.environment}"
-  domain_name       = var.environment == "prod" ? "interview.verita-ai.com" : "staging.interview.verita-ai.com"
-  enable_versioning = var.environment == "prod"
-
-  providers = {
-    aws.us-east-1 = aws.us-east-1
-  }
-}
-
-# Dashboard Frontend (React App)
-module "dashboard_frontend" {
-  source = "./modules/cloudfront-s3-react"
-
-  app_name          = "${var.app_name}-dashboard"
-  environment       = var.environment
-  bucket_name       = "${var.app_name}-dashboard-${var.environment}"
-  domain_name       = var.environment == "prod" ? "dashboard.verita-ai.com" : "staging.dashboard.verita-ai.com"
-  enable_versioning = var.environment == "prod"
-
-  providers = {
-    aws.us-east-1 = aws.us-east-1
-  }
-}
