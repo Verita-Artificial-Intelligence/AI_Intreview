@@ -49,3 +49,45 @@ output "backend_url" {
   description = "Backend API URL (configure CORS in backend with this)"
   value       = "https://${module.alb.dns_name}"
 }
+
+# Interview Frontend Outputs
+output "interview_frontend_url" {
+  description = "URL of the interview frontend"
+  value       = module.interview_frontend.website_url
+}
+
+output "interview_frontend_cloudfront_domain" {
+  description = "CloudFront domain name for interview frontend"
+  value       = module.interview_frontend.cloudfront_domain_name
+}
+
+output "interview_frontend_s3_bucket" {
+  description = "S3 bucket name for interview frontend"
+  value       = module.interview_frontend.bucket_name
+}
+
+output "interview_frontend_cloudfront_id" {
+  description = "CloudFront distribution ID for interview frontend"
+  value       = module.interview_frontend.cloudfront_distribution_id
+}
+
+# Dashboard Frontend Outputs
+output "dashboard_frontend_url" {
+  description = "URL of the dashboard frontend"
+  value       = module.dashboard_frontend.website_url
+}
+
+output "dashboard_frontend_cloudfront_domain" {
+  description = "CloudFront domain name for dashboard frontend"
+  value       = module.dashboard_frontend.cloudfront_domain_name
+}
+
+output "dashboard_frontend_s3_bucket" {
+  description = "S3 bucket name for dashboard frontend"
+  value       = module.dashboard_frontend.bucket_name
+}
+
+output "dashboard_frontend_cloudfront_id" {
+  description = "CloudFront distribution ID for dashboard frontend"
+  value       = module.dashboard_frontend.cloudfront_distribution_id
+}

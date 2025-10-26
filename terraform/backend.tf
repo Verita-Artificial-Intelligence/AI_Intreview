@@ -27,3 +27,17 @@ provider "aws" {
     }
   }
 }
+
+# US East 1 provider for ACM certificates (CloudFront requires certs in us-east-1)
+provider "aws" {
+  alias  = "us-east-1"
+  region = "us-east-1"
+
+  default_tags {
+    tags = {
+      Project     = "Verita-AI-Interview"
+      Environment = var.environment
+      ManagedBy   = "Terraform"
+    }
+  }
+}
