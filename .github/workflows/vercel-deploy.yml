@@ -55,23 +55,13 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install Dependencies
-        working-directory: ./interview-frontend
-        run: npm ci
-
-      - name: Build Project
-        working-directory: ./interview-frontend
-        env:
-          REACT_APP_BACKEND_URL: ${{ github.ref == 'refs/heads/main' && 'https://api.verita-ai.com' || 'https://staging.api.verita-ai.com' }}
-        run: npm run build
-
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
       - name: Deploy to Vercel
         run: |
           cd interview-frontend
-          vercel deploy --prebuilt ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
+          vercel deploy --build-env REACT_APP_BACKEND_URL=${{ github.ref == 'refs/heads/main' && 'https://api.verita-ai.com' || 'https://staging.api.verita-ai.com' }} ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }} --yes
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_INTERVIEW }}
@@ -91,23 +81,13 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install Dependencies
-        working-directory: ./dashboard-frontend
-        run: npm ci
-
-      - name: Build Project
-        working-directory: ./dashboard-frontend
-        env:
-          REACT_APP_BACKEND_URL: ${{ github.ref == 'refs/heads/main' && 'https://api.verita-ai.com' || 'https://staging.api.verita-ai.com' }}
-        run: npm run build
-
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
       - name: Deploy to Vercel
         run: |
           cd dashboard-frontend
-          vercel deploy --prebuilt ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
+          vercel deploy --build-env REACT_APP_BACKEND_URL=${{ github.ref == 'refs/heads/main' && 'https://api.verita-ai.com' || 'https://staging.api.verita-ai.com' }} ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }} --yes
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_DASHBOARD }}
