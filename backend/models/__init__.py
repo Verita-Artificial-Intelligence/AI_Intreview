@@ -3,7 +3,7 @@ from .candidate import Candidate, CandidateCreate
 from .interview import Interview, InterviewCreate
 from .chat import ChatMessage, ChatRequest
 from .audio import TTSRequest, TTSResponse, STTResponse
-from .job import Job, JobCreate, JobStatusUpdate, InterviewType, SkillDefinition
+from .job import Job, JobCreate, JobUpdate, JobStatusUpdate, InterviewType, SkillDefinition
 from .annotation import AnnotationTask, AnnotationTaskCreate, AnnotationTaskUpdate, AnnotationTaskAssign, AnnotationTaskStatus, AnnotatorStats
 from .annotation_data import AnnotationData, AnnotationDataCreate, DataType
 from .earnings import Earning, EarningsSummary, EarningStatus
@@ -42,6 +42,7 @@ __all__ = [
     "STTResponse",
     "Job",
     "JobCreate",
+    "JobUpdate",
     "JobStatusUpdate",
     "AnnotationTask",
     "AnnotationTaskCreate",

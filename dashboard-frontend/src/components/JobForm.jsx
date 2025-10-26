@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -62,7 +62,8 @@ const INTERVIEW_TYPES = [
   },
 ]
 
-const JobForm = ({ open, onClose, onSubmit }) => {
+const JobForm = ({ open, onClose, onSubmit, job = null }) => {
+  const isEditMode = job !== null
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
     title: '',
@@ -84,6 +85,37 @@ const JobForm = ({ open, onClose, onSubmit }) => {
 
   // Custom questions state
   const [currentQuestion, setCurrentQuestion] = useState('')
+
+  // Populate form data when editing
+  useEffect(() => {
+    if (job) {
+      setFormData({
+        title: job.title || '',
+        description: job.description || '',
+        position_type: job.position_type || '',
+        pay_per_hour: job.pay_per_hour ? String(job.pay_per_hour) : '',
+        availability: job.availability || '',
+        interview_type: job.interview_type || 'standard',
+        skills: job.skills || [],
+        custom_questions: job.custom_questions || [],
+        custom_exercise_prompt: job.custom_exercise_prompt || '',
+      })
+    } else {
+      // Reset form when not editing
+      setFormData({
+        title: '',
+        description: '',
+        position_type: '',
+        pay_per_hour: '',
+        availability: '',
+        interview_type: 'standard',
+        skills: [],
+        custom_questions: [],
+        custom_exercise_prompt: '',
+      })
+    }
+    setStep(1)
+  }, [job, open])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -170,7 +202,8 @@ const JobForm = ({ open, onClose, onSubmit }) => {
         delete submitData.pay_per_hour
       }
 
-      await onSubmit(submitData)
+      // Pass job ID if editing
+      await onSubmit(submitData, isEditMode ? job.id : null)
       // Reset form
       setFormData({
         title: '',
@@ -187,7 +220,7 @@ const JobForm = ({ open, onClose, onSubmit }) => {
       setStep(1)
       onClose()
     } catch (error) {
-      console.error('Error creating job:', error)
+      console.error(isEditMode ? 'Error updating job:' : 'Error creating job:', error)
     } finally {
       setLoading(false)
     }
@@ -527,7 +560,9 @@ const JobForm = ({ open, onClose, onSubmit }) => {
           disabled={loading}
           className="rounded-lg bg-brand-500 hover:bg-brand-600 text-white"
         >
-          {loading ? 'Creating...' : 'Create Job'}
+          {loading
+            ? (isEditMode ? 'Updating...' : 'Creating...')
+            : (isEditMode ? 'Update Job' : 'Create Job')}
         </Button>
       </DialogFooter>
     </>
@@ -539,7 +574,7 @@ const JobForm = ({ open, onClose, onSubmit }) => {
         <DialogHeader>
           <DialogTitle className="text-xl font-display font-bold">
             {step === 1
-              ? 'Create New Job'
+              ? (isEditMode ? 'Edit Job' : 'Create New Job')
               : step === 2
                 ? 'Select Interview Type'
                 : 'Configure Interview'}

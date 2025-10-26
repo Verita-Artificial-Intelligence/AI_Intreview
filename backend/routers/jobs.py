@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query
 from typing import List, Optional
-from models import Job, JobCreate, JobStatusUpdate
+from models import Job, JobCreate, JobUpdate, JobStatusUpdate
 from services import JobService
 
 router = APIRouter()
@@ -22,6 +22,12 @@ async def get_jobs(status: Optional[str] = Query(None, description="Filter by st
 async def get_job(job_id: str):
     """Get a specific job by ID"""
     return await JobService.get_job(job_id)
+
+
+@router.put("/{job_id}", response_model=Job)
+async def update_job(job_id: str, job_update: JobUpdate):
+    """Update a job's details"""
+    return await JobService.update_job(job_id, job_update)
 
 
 @router.get("/{job_id}/can-complete")

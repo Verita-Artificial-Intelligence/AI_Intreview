@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
-import { Briefcase, Plus, Search, FileText, MessagesSquare } from 'lucide-react'
+import { Briefcase, Plus, Search, FileText, MessagesSquare, Pencil } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -28,6 +28,7 @@ const Jobs = () => {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [showJobForm, setShowJobForm] = useState(false)
+  const [editingJob, setEditingJob] = useState(null)
   const [showStatusDialog, setShowStatusDialog] = useState(false)
   const [statusTransition, setStatusTransition] = useState(null)
 
@@ -68,15 +69,32 @@ const Jobs = () => {
     }
   }
 
-  const handleCreateJob = async (jobData) => {
+  const handleSubmitJob = async (jobData, jobId = null) => {
     try {
-      await axios.post(`${API}/jobs`, jobData)
+      if (jobId) {
+        // Update existing job
+        await axios.put(`${API}/jobs/${jobId}`, jobData)
+      } else {
+        // Create new job
+        await axios.post(`${API}/jobs`, jobData)
+      }
       fetchJobs()
       setShowJobForm(false)
+      setEditingJob(null)
     } catch (error) {
-      console.error('Error creating job:', error)
+      console.error(jobId ? 'Error updating job:' : 'Error creating job:', error)
       throw error
     }
+  }
+
+  const handleEditJob = (job) => {
+    setEditingJob(job)
+    setShowJobForm(true)
+  }
+
+  const handleCloseJobForm = () => {
+    setShowJobForm(false)
+    setEditingJob(null)
   }
 
   const handleViewInterviews = (jobId) => {
@@ -351,6 +369,15 @@ const Jobs = () => {
                   {/* Actions */}
                   <div className="space-y-2">
                     <Button
+                      onClick={() => handleEditJob(job)}
+                      variant="outline"
+                      size="sm"
+                      className="w-full rounded-lg"
+                    >
+                      <Pencil className="w-3.5 h-3.5 mr-2" />
+                      Edit Job
+                    </Button>
+                    <Button
                       onClick={() => handleViewInterviews(job.id)}
                       variant="outline"
                       size="sm"
@@ -378,8 +405,9 @@ const Jobs = () => {
       {/* Job Form Modal */}
       <JobForm
         open={showJobForm}
-        onClose={() => setShowJobForm(false)}
-        onSubmit={handleCreateJob}
+        onClose={handleCloseJobForm}
+        onSubmit={handleSubmitJob}
+        job={editingJob}
       />
 
       {/* Status Transition Dialog */}
