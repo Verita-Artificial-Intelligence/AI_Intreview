@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from '@/utils/api'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -35,9 +35,6 @@ import {
 } from '@/components/ui/alert-dialog'
 import { toast } from 'sonner'
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
-
 const UploadAnnotationData = () => {
   const navigate = useNavigate()
   const [jobs, setJobs] = useState([])
@@ -63,7 +60,7 @@ const UploadAnnotationData = () => {
 
   const fetchJobs = async () => {
     try {
-      const response = await axios.get(`${API}/jobs`)
+      const response = await api.get(`/jobs`)
       setJobs(response.data)
     } catch (error) {
       console.error('Error fetching jobs:', error)
@@ -178,8 +175,8 @@ const UploadAnnotationData = () => {
 
             let dataUrl
             try {
-              const uploadResponse = await axios.post(
-                `${API}/annotation-data/upload`,
+              const uploadResponse = await api.post(
+                `/annotation-data/upload`,
                 formDataUpload,
                 {
                   headers: {
@@ -207,7 +204,7 @@ const UploadAnnotationData = () => {
               data_url: dataUrl,
             }
 
-            await axios.post(`${API}/annotation-data`, payload)
+            await api.post(`/annotation-data`, payload)
             successCount++
           } catch (error) {
             console.error(`Error uploading ${file.name}:`, error)
@@ -239,7 +236,7 @@ const UploadAnnotationData = () => {
           payload.data_url = formData.data_url
         }
 
-        await axios.post(`${API}/annotation-data`, payload)
+        await api.post(`/annotation-data`, payload)
         toast.success('Annotation data uploaded successfully')
         navigate('/annotation-data')
       }

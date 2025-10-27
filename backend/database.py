@@ -61,6 +61,10 @@ async def create_indexes():
 
     # Users collection indexes
     await db.users.create_index("email", unique=True)
+    await db.users.create_index(
+        "clerk_user_id", unique=True, sparse=True
+    )  # Sparse index for Clerk users only
+    await db.users.create_index("auth_provider")  # Index for filtering by auth provider
 
     # Candidates collection indexes (users are candidates)
     # No separate candidates collection, using users

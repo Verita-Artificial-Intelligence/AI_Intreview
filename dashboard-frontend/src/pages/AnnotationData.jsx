@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from '@/utils/api'
 import { useNavigate } from 'react-router-dom'
 import {
   Upload,
@@ -39,9 +39,6 @@ import {
 import { toast } from 'sonner'
 import Sidebar from '@/components/Sidebar'
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
-
 const AnnotationData = () => {
   const navigate = useNavigate()
   const [data, setData] = useState([])
@@ -69,7 +66,7 @@ const AnnotationData = () => {
   const fetchData = async () => {
     try {
       setLoading(true)
-      const response = await axios.get(`${API}/annotation-data`)
+      const response = await api.get(`/annotation-data`)
       setData(response.data)
     } catch (error) {
       console.error('Error fetching annotation data:', error)
@@ -81,7 +78,7 @@ const AnnotationData = () => {
 
   const fetchJobs = async () => {
     try {
-      const response = await axios.get(`${API}/jobs`)
+      const response = await api.get(`/jobs`)
       setJobs(response.data)
     } catch (error) {
       console.error('Error fetching jobs:', error)
@@ -120,7 +117,7 @@ const AnnotationData = () => {
     if (!dataToDelete) return
 
     try {
-      await axios.delete(`${API}/annotation-data/${dataToDelete.id}`)
+      await api.delete(`/annotation-data/${dataToDelete.id}`)
       toast.success('Annotation data deleted')
       setShowDeleteDialog(false)
       setDataToDelete(null)

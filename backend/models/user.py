@@ -14,6 +14,10 @@ class User(BaseModel):
     username: Optional[str] = None  # Auto-generated from email if not provided
     email: EmailStr
 
+    # Clerk integration fields
+    clerk_user_id: Optional[str] = None  # Clerk user ID (if auth via Clerk)
+    auth_provider: str = "legacy"  # "legacy", "clerk_candidate", or "clerk_admin"
+
     # Profile fields (optional until profile is completed)
     name: Optional[str] = None
     position: Optional[str] = None

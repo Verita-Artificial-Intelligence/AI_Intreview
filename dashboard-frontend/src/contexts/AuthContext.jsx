@@ -1,8 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import axios from 'axios'
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
+import { useUser, useAuth as useClerkAuth } from '@clerk/clerk-react'
+import api, { initializeApiClient, API_BASE_URL } from '../utils/api'
 
 const AuthContext = createContext(null)
 
@@ -15,119 +13,57 @@ export const useAuth = () => {
 }
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null)
-  const [token, setToken] = useState(localStorage.getItem('token'))
-  const [role, setRole] = useState(localStorage.getItem('role') || 'candidate')
-  const [loading, setLoading] = useState(true)
-  const [interviewStatus, setInterviewStatus] = useState(null)
+  const { user: clerkUser, isSignedIn, isLoaded } = useUser()
+  const { getToken, signOut } = useClerkAuth()
 
-  // Fetch user profile on mount if token exists
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  // Initialize API client with Clerk getToken function
   useEffect(() => {
-    if (token) {
+    if (getToken) {
+      initializeApiClient(getToken)
+    }
+  }, [getToken])
+
+  // Fetch admin user profile when Clerk user is available AND getToken is ready
+  useEffect(() => {
+    if (isLoaded && isSignedIn && getToken) {
       fetchUserProfile()
-    } else {
+    } else if (isLoaded && !isSignedIn) {
       setLoading(false)
     }
-  }, [token])
+  }, [isLoaded, isSignedIn, getToken])
 
   const fetchUserProfile = async () => {
     try {
-      const endpoint =
-        role === 'admin' ? `${API}/admin/profile` : `${API}/profile/me`
-      const response = await axios.get(endpoint, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const response = await api.get('/admin/profile')
       setUser(response.data)
     } catch (error) {
-      console.error('Error fetching user profile:', error)
-      logout()
+      console.error('❌ Error fetching admin profile:', error)
+      console.error('Response data:', error.response?.data)
+      console.error('Response status:', error.response?.status)
+      // Don't auto-logout on 401 - let user see the error
+      // Only logout if Clerk session is actually invalid
     } finally {
       setLoading(false)
     }
   }
 
-  const fetchInterviewStatus = async () => {
-    if (!token || role === 'admin') return null
-
-    try {
-      const response = await axios.get(`${API}/profile/interview-status`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      setInterviewStatus(response.data)
-      return response.data
-    } catch (error) {
-      console.error('Error fetching interview status:', error)
-      return null
-    }
-  }
-
-  const login = async (email, password, userRole = 'candidate') => {
-    const endpoint =
-      userRole === 'admin' ? `${API}/admin/login` : `${API}/auth/login`
-    const response = await axios.post(endpoint, {
-      email,
-      password,
-    })
-
-    const { token: newToken, user: userData } = response.data
-    localStorage.setItem('token', newToken)
-    localStorage.setItem('role', userRole)
-    setToken(newToken)
-    setRole(userRole)
-    setUser(userData)
-
-    return userData
-  }
-
-  const signup = async (email, password) => {
-    const response = await axios.post(`${API}/auth/register`, {
-      email,
-      password,
-    })
-
-    const { token: newToken, user: userData } = response.data
-    localStorage.setItem('token', newToken)
-    localStorage.setItem('role', 'candidate')
-    setToken(newToken)
-    setRole('candidate')
-    setUser(userData)
-
-    return userData
-  }
-
-  const completeProfile = async (profileData) => {
-    const response = await axios.put(`${API}/profile/complete`, profileData, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-
-    setUser(response.data)
-    return response.data
-  }
-
-  const logout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('role')
-    setToken(null)
-    setRole('candidate')
+  const logout = async () => {
     setUser(null)
-    setInterviewStatus(null)
+    await signOut()
   }
 
   const value = {
     user,
-    token,
-    role,
+    clerkUser,
     loading,
-    interviewStatus,
-    login,
-    signup,
     logout,
-    completeProfile,
-    fetchInterviewStatus,
-    isAuthenticated: !!token,
-    isAdmin: role === 'admin',
-    isCandidate: role === 'candidate',
-    isProfileComplete: user?.profile_completed || false,
+    fetchUserProfile,
+    getToken,
+    isAuthenticated: isSignedIn,
+    isAdmin: true, // All dashboard users are admins
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

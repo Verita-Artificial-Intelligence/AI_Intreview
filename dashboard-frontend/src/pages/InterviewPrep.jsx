@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import axios from 'axios'
+import api from '@/utils/api'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -27,9 +27,6 @@ import {
   cssGradients,
 } from '@/lib/design-system'
 import CandidateSidebar from '@/components/CandidateSidebar'
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
 
 const InterviewPrep = () => {
   const { interviewId } = useParams()
@@ -117,12 +114,12 @@ const InterviewPrep = () => {
 
   const fetchInterview = async () => {
     try {
-      const response = await axios.get(`${API}/interviews/${interviewId}`)
+      const response = await api.get(`/interviews/${interviewId}`)
       setInterview(response.data)
 
       // Fetch candidate data
-      const candidateResponse = await axios.get(
-        `${API}/candidates/${response.data.candidate_id}`
+      const candidateResponse = await api.get(
+        `/candidates/${response.data.candidate_id}`
       )
       setCandidate(candidateResponse.data)
       setEducation(candidateResponse.data.education || '')
@@ -143,7 +140,7 @@ const InterviewPrep = () => {
 
     setSavingEducation(true)
     try {
-      await axios.patch(`${API}/candidates/${candidate.id}/education`, {
+      await api.patch(`/candidates/${candidate.id}/education`, {
         education: education,
       })
 
@@ -255,8 +252,8 @@ const InterviewPrep = () => {
       const formData = new FormData()
       formData.append('resume', file)
 
-      const uploadResponse = await axios.post(
-        `${API}/interviews/upload/resume`,
+      const uploadResponse = await api.post(
+        '/interviews/upload/resume',
         formData,
         {
           headers: { 'Content-Type': 'multipart/form-data' },
@@ -266,8 +263,8 @@ const InterviewPrep = () => {
       if (uploadResponse.data.success) {
         const resumeText = uploadResponse.data.resume_text
 
-        const updateResponse = await axios.patch(
-          `${API}/interviews/${interviewId}/resume`,
+        const updateResponse = await api.patch(
+          `/interviews/${interviewId}/resume`,
           {
             resume_text: resumeText,
           }

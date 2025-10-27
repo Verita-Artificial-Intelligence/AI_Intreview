@@ -5,10 +5,7 @@ import { Card } from '@/components/ui/card'
 import { cardStyles } from '@/lib/design-system'
 import { Loader2, Video } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import axios from 'axios'
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
+import api from '@/utils/api'
 
 const Interview = () => {
   const navigate = useNavigate()
@@ -26,8 +23,8 @@ const Interview = () => {
     setError('')
 
     try {
-      await axios.post(
-        `${API}/interviews/${user.interview_id}/complete`,
+      await api.post(
+        `/interviews/${user.interview_id}/complete`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },

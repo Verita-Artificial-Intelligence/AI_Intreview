@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import axios from 'axios'
+import api from '@/utils/api'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import {
@@ -17,9 +17,6 @@ import {
   cardStyles,
   cssGradients,
 } from '@/lib/design-system'
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
 
 const InterviewPrep = () => {
   const { interviewId } = useParams()
@@ -95,7 +92,7 @@ const InterviewPrep = () => {
 
   const fetchInterview = async () => {
     try {
-      const response = await axios.get(`${API}/interviews/${interviewId}`)
+      const response = await api.get(`/interviews/${interviewId}`)
       setInterview(response.data)
     } catch (error) {
       console.error('Error fetching interview:', error)

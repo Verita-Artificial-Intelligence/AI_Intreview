@@ -32,3 +32,15 @@ variable "documentdb_password" {
   type        = string
   sensitive   = true
 }
+
+variable "clerk_candidate_secret_key" {
+  description = "Clerk secret key for candidate authentication"
+  type        = string
+  sensitive   = true
+}
+
+variable "clerk_admin_secret_key" {
+  description = "Clerk secret key for admin authentication"
+  type        = string
+  sensitive   = true
+}

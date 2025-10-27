@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '@/utils/api'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import {
@@ -15,9 +15,6 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import { pageHeader, containers, cardStyles } from '@/lib/design-system'
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
 
 const AdminInterviewReview = () => {
   const { interviewId } = useParams()
@@ -35,16 +32,16 @@ const AdminInterviewReview = () => {
   const fetchInterviewData = async () => {
     try {
       const [interviewRes, messagesRes] = await Promise.all([
-        axios.get(`${API}/interviews/${interviewId}`),
-        axios.get(`${API}/interviews/${interviewId}/messages`),
+        api.get(`/interviews/${interviewId}`),
+        api.get(`/interviews/${interviewId}/messages`),
       ])
 
       setInterview(interviewRes.data)
       setMessages(messagesRes.data)
 
       // Fetch candidate
-      const candidateRes = await axios.get(
-        `${API}/candidates/${interviewRes.data.candidate_id}`
+      const candidateRes = await api.get(
+        `/candidates/${interviewRes.data.candidate_id}`
       )
       setCandidate(candidateRes.data)
 
@@ -60,8 +57,8 @@ const AdminInterviewReview = () => {
   const generateAnalysis = async (msgs, cand) => {
     try {
       // Call AI to generate comprehensive analysis
-      const response = await axios.post(
-        `${API}/interviews/${interviewId}/analyze?framework=behavioral`
+      const response = await api.post(
+        `/interviews/${interviewId}/analyze?framework=behavioral`
       )
       setAnalysis(response.data)
     } catch (error) {

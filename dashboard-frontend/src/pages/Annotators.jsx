@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from '@/utils/api'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
@@ -86,8 +86,8 @@ export default function Annotators() {
 
       // Fetch both annotations and interviews to get candidate names
       const [annotationsRes, interviewsRes] = await Promise.all([
-        axios.get(`${API}/annotations`),
-        axios.get(`${API}/interviews`),
+        api.get(`/annotations`),
+        api.get(`/interviews`),
       ])
 
       const tasks = annotationsRes.data

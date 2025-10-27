@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '@/utils/api'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Users, Briefcase, Clock, CheckCircle } from 'lucide-react'
@@ -12,9 +12,6 @@ import {
   getStatusClass,
   getStatusLabel,
 } from '@/lib/design-system'
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
 
 const Dashboard = () => {
   const navigate = useNavigate()
@@ -29,8 +26,8 @@ const Dashboard = () => {
   const fetchData = async () => {
     try {
       const [interviewsRes, candidatesRes] = await Promise.all([
-        axios.get(`${API}/interviews`),
-        axios.get(`${API}/candidates`),
+        api.get(`/interviews`),
+        api.get(`/candidates`),
       ])
       setInterviews(interviewsRes.data)
       setCandidates(candidatesRes.data)

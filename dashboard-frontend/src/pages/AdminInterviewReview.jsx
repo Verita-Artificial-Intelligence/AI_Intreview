@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '@/utils/api'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import {
@@ -24,9 +24,6 @@ import {
 import { pageHeader, containers, cardStyles } from '@/lib/design-system'
 import { toast } from 'sonner'
 import Sidebar from '@/components/Sidebar'
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
 
 const AdminInterviewReview = () => {
   const { interviewId } = useParams()
@@ -123,7 +120,7 @@ const AdminInterviewReview = () => {
     try {
       setTranscriptUnavailable(false)
 
-      const interviewPromise = axios.get(`${API}/interviews/${interviewId}`)
+      const interviewPromise = api.get(`/interviews/${interviewId}`)
       const messagesPromise = axios
         .get(`${API}/interviews/${interviewId}/messages`)
         .then((res) => res.data)
@@ -158,8 +155,8 @@ const AdminInterviewReview = () => {
       let candidateData
       if (interviewRes.data.candidate_id) {
         try {
-          const candidateRes = await axios.get(
-            `${API}/candidates/${interviewRes.data.candidate_id}`
+          const candidateRes = await api.get(
+            `/candidates/${interviewRes.data.candidate_id}`
           )
           candidateData = candidateRes.data
         } catch (candidateError) {
@@ -286,8 +283,8 @@ const AdminInterviewReview = () => {
     setAnalyzing(true)
     setAnalysisError(null)
     try {
-      const response = await axios.post(
-        `${API}/interviews/${interviewId}/analyze?framework=behavioral`
+      const response = await api.post(
+        `/interviews/${interviewId}/analyze?framework=behavioral`
       )
       setAnalysis(response.data)
       setAnalysisError(null)
@@ -306,7 +303,7 @@ const AdminInterviewReview = () => {
 
   const confirmAcceptCandidate = async () => {
     try {
-      await axios.patch(`${API}/interviews/${interviewId}/accept`)
+      await api.patch(`/interviews/${interviewId}/accept`)
       toast.success(
         'Candidate accepted! You can now create annotation tasks for them.'
       )
@@ -320,7 +317,7 @@ const AdminInterviewReview = () => {
 
   const confirmRejectCandidate = async () => {
     try {
-      await axios.patch(`${API}/interviews/${interviewId}/reject`)
+      await api.patch(`/interviews/${interviewId}/reject`)
       toast.success('Candidate rejected')
       setShowRejectDialog(false)
       fetchInterviewData()

@@ -1,13 +1,10 @@
 import { useState } from 'react'
-import axios from 'axios'
+import api from '@/utils/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
 import { cssGradients } from '@/lib/design-system'
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
 
 const Auth = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true)
@@ -25,12 +22,12 @@ const Auth = ({ onLogin }) => {
     setLoading(true)
 
     try {
-      const endpoint = isLogin ? `${API}/auth/login` : `${API}/auth/register`
+      const endpoint = isLogin ? `/auth/login` : `/auth/register`
       const payload = isLogin
         ? { email: formData.email, password: formData.password }
         : formData
 
-      const response = await axios.post(endpoint, payload)
+      const response = await api.post(endpoint, payload)
       onLogin(response.data.token, response.data.user)
     } catch (err) {
       setError(err.response?.data?.detail || 'An error occurred')

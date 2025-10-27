@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from '@/utils/api'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
@@ -25,7 +25,7 @@ export default function ReviewAnnotation() {
   const fetchTask = async () => {
     try {
       setLoading(true)
-      const response = await axios.get(`${API}/annotations/${taskId}`)
+      const response = await api.get(`/annotations/${taskId}`)
       setTask(response.data)
     } catch (error) {
       console.error('Failed to fetch task:', error)

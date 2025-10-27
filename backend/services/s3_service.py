@@ -2,6 +2,7 @@
 S3 Service for managing file uploads and downloads.
 
 Handles all interactions with AWS S3 for durable file storage.
+Falls back to local storage in development when S3 is not configured.
 """
 
 import logging
@@ -14,6 +15,9 @@ from config import settings
 import os
 
 logger = logging.getLogger(__name__)
+
+# Local storage directory for development
+LOCAL_STORAGE_DIR = Path("local_storage")
 
 
 class S3Service:
@@ -41,6 +45,15 @@ class S3Service:
         """Check if S3 is properly configured."""
         return self.bucket_name is not None and self.s3_client is not None
 
+    def _get_local_path(self, s3_key: str) -> Path:
+        """Get local file path for a given S3 key."""
+        return LOCAL_STORAGE_DIR / s3_key
+
+    def _ensure_local_dir(self, s3_key: str) -> None:
+        """Ensure local directory exists for the given S3 key."""
+        local_path = self._get_local_path(s3_key)
+        local_path.parent.mkdir(parents=True, exist_ok=True)
+
     async def upload_file(
         self,
         file_content: bytes,
@@ -49,7 +62,7 @@ class S3Service:
         is_temp: bool = False,
     ) -> Optional[str]:
         """
-        Upload file to S3.
+        Upload file to S3 or local storage (if USE_LOCAL_STORAGE=true).
 
         Args:
             file_content: File content as bytes
@@ -60,9 +73,25 @@ class S3Service:
         Returns:
             S3 key if successful, None otherwise
         """
+        # Fall back to local storage ONLY if explicitly enabled
         if not self.is_configured():
-            logger.error("S3 not configured, cannot upload file")
-            return None
+            if settings.USE_LOCAL_STORAGE:
+                logger.warning(f"S3 not configured, using local storage for: {s3_key}")
+                try:
+                    self._ensure_local_dir(s3_key)
+                    local_path = self._get_local_path(s3_key)
+                    with open(local_path, "wb") as f:
+                        f.write(file_content)
+                    logger.info(f"Saved file to local storage: {local_path}")
+                    return s3_key
+                except Exception as e:
+                    logger.error(f"Local storage upload failed for {s3_key}: {e}")
+                    return None
+            else:
+                logger.error(
+                    "S3 not configured and USE_LOCAL_STORAGE is not enabled. Cannot upload file."
+                )
+                return None
 
         try:
             tags = {
@@ -120,7 +149,7 @@ class S3Service:
 
     async def download_file(self, s3_key: str) -> Optional[bytes]:
         """
-        Download file from S3.
+        Download file from S3 or local storage (if USE_LOCAL_STORAGE=true).
 
         Args:
             s3_key: S3 object key
@@ -128,9 +157,27 @@ class S3Service:
         Returns:
             File content as bytes, or None if failed
         """
+        # Fall back to local storage ONLY if explicitly enabled
         if not self.is_configured():
-            logger.error("S3 not configured, cannot download file")
-            return None
+            if settings.USE_LOCAL_STORAGE:
+                logger.warning(f"S3 not configured, using local storage for: {s3_key}")
+                try:
+                    local_path = self._get_local_path(s3_key)
+                    if not local_path.exists():
+                        logger.warning(f"File not found in local storage: {local_path}")
+                        return None
+                    with open(local_path, "rb") as f:
+                        content = f.read()
+                    logger.info(f"Downloaded file from local storage: {local_path}")
+                    return content
+                except Exception as e:
+                    logger.error(f"Local storage download failed for {s3_key}: {e}")
+                    return None
+            else:
+                logger.error(
+                    "S3 not configured and USE_LOCAL_STORAGE is not enabled. Cannot download file."
+                )
+                return None
 
         try:
             response = self.s3_client.get_object(Bucket=self.bucket_name, Key=s3_key)
@@ -175,7 +222,7 @@ class S3Service:
 
     async def delete_file(self, s3_key: str) -> bool:
         """
-        Delete file from S3.
+        Delete file from S3 or local storage (if USE_LOCAL_STORAGE=true).
 
         Args:
             s3_key: S3 object key
@@ -183,9 +230,24 @@ class S3Service:
         Returns:
             True if successful, False otherwise
         """
+        # Fall back to local storage ONLY if explicitly enabled
         if not self.is_configured():
-            logger.error("S3 not configured, cannot delete file")
-            return False
+            if settings.USE_LOCAL_STORAGE:
+                logger.warning(f"S3 not configured, using local storage for: {s3_key}")
+                try:
+                    local_path = self._get_local_path(s3_key)
+                    if local_path.exists():
+                        local_path.unlink()
+                        logger.info(f"Deleted file from local storage: {local_path}")
+                    return True
+                except Exception as e:
+                    logger.error(f"Local storage delete failed for {s3_key}: {e}")
+                    return False
+            else:
+                logger.error(
+                    "S3 not configured and USE_LOCAL_STORAGE is not enabled. Cannot delete file."
+                )
+                return False
 
         try:
             self.s3_client.delete_object(Bucket=self.bucket_name, Key=s3_key)
@@ -201,17 +263,33 @@ class S3Service:
 
     async def get_file_stream(self, s3_key: str):
         """
-        Get streaming response for file in S3.
+        Get streaming response for file in S3 or local storage (if USE_LOCAL_STORAGE=true).
 
         Args:
             s3_key: S3 object key
 
         Returns:
-            S3 streaming body or None
+            S3 streaming body or file handle for local storage, or None
         """
+        # Fall back to local storage ONLY if explicitly enabled
         if not self.is_configured():
-            logger.error("S3 not configured, cannot stream file")
-            return None
+            if settings.USE_LOCAL_STORAGE:
+                logger.warning(f"S3 not configured, using local storage for: {s3_key}")
+                try:
+                    local_path = self._get_local_path(s3_key)
+                    if not local_path.exists():
+                        logger.warning(f"File not found in local storage: {local_path}")
+                        return None
+                    # Return file handle (caller must close it)
+                    return open(local_path, "rb")
+                except Exception as e:
+                    logger.error(f"Local storage stream failed for {s3_key}: {e}")
+                    return None
+            else:
+                logger.error(
+                    "S3 not configured and USE_LOCAL_STORAGE is not enabled. Cannot stream file."
+                )
+                return None
 
         try:
             response = self.s3_client.get_object(Bucket=self.bucket_name, Key=s3_key)

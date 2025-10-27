@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import axios from 'axios'
+import api from '@/utils/api'
 import { AvatarCanvas } from '../components/avatar/AvatarCanvas.tsx'
 import { InterviewControls } from '../components/interview/InterviewControls.tsx'
 import { useInterviewStore } from '../store/interviewStore.ts'
@@ -467,7 +467,7 @@ export default function RealtimeInterview() {
       // Mark interview as completed via API for both user and AI endings
       if (interviewId && token) {
         try {
-          await axios.post(
+          await api.post(
             `${BACKEND_URL}/api/interviews/${interviewId}/complete`,
             {},
             {

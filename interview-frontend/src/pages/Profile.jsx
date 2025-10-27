@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from '@/utils/api'
 import Sidebar from '@/components/Sidebar'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -9,11 +9,8 @@ import { Badge } from '@/components/ui/badge'
 import { Save, Edit2, Plus, X, FileText, Download, Upload } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
-
 export default function Profile() {
-  const { user, token } = useAuth()
+  const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [profileData, setProfileData] = useState({
@@ -52,9 +49,7 @@ export default function Profile() {
   const fetchProfile = async () => {
     try {
       setLoading(true)
-      const response = await axios.get(`${API}/profile/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const response = await api.get('/profile/me')
 
       setProfileData({
         name: response.data.name || '',
@@ -110,9 +105,7 @@ export default function Profile() {
         resume_url: profileData.resume_url || undefined,
       }
 
-      await axios.put(`${API}/profile/complete`, updateData, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      await api.put('/profile/complete', updateData)
 
       toggleSection(section)
     } catch (error) {

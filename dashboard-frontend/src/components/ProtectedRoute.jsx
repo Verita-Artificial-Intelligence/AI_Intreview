@@ -1,42 +1,29 @@
 import { Navigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth as useClerkAuth } from '@clerk/clerk-react'
+import { Loader2 } from 'lucide-react'
 
 /**
  * Protected Route Component
- * Ensures user is authenticated and optionally checks for role and profile completion
+ * Ensures user is authenticated via Clerk (all dashboard users are admins)
  */
-const ProtectedRoute = ({
-  children,
-  requireRole = null,
-  requireProfile = false,
-}) => {
-  const { isAuthenticated, role, isProfileComplete, loading } = useAuth()
+const ProtectedRoute = ({ children }) => {
+  const { isSignedIn, isLoaded } = useClerkAuth()
 
-  // Show nothing while loading (prevents flash of login page)
-  if (loading) {
+  // Show loading while Clerk is loading
+  if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-neutral-600">Loading...</div>
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 text-brand-500 animate-spin mx-auto mb-3" />
+          <p className="text-sm text-neutral-600">Loading...</p>
+        </div>
       </div>
     )
   }
 
-  // Not authenticated - redirect to appropriate login
-  if (!isAuthenticated) {
-    const loginPath =
-      requireRole === 'admin' ? '/admin/login' : '/candidate/login'
-    return <Navigate to={loginPath} replace />
-  }
-
-  // Role check - redirect to appropriate home if wrong role
-  if (requireRole && role !== requireRole) {
-    const homePath = role === 'admin' ? '/' : '/candidate/portal'
-    return <Navigate to={homePath} replace />
-  }
-
-  // Profile required but not completed - redirect to profile setup (only for candidates)
-  if (requireProfile && !isProfileComplete && role === 'candidate') {
-    return <Navigate to="/candidate/profile-setup" replace />
+  // Not authenticated - redirect to login
+  if (!isSignedIn) {
+    return <Navigate to="/login" replace />
   }
 
   return children

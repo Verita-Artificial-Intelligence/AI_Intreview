@@ -1,12 +1,13 @@
 from datetime import datetime, timezone
 from typing import List, Optional, Sequence, Union, cast
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from fastapi.responses import StreamingResponse
 
 from database import db
-from models import AdminDataPage
+from models import AdminDataPage, User
 from services.admin_data_service import AdminDataExplorerService, AdminDataFilters
+from dependencies import require_admin_user
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -97,6 +98,12 @@ def _collect_video_sources(interview_doc: dict) -> List[str]:
     return sources
 
 
+@router.get("/profile", response_model=User)
+async def get_admin_profile(current_user: User = Depends(require_admin_user)):
+    """Get current admin user's profile (Clerk authenticated)"""
+    return current_user
+
+
 @router.get("/data", response_model=AdminDataPage)
 async def get_admin_data_overview(
     page: int = Query(1, ge=1),
@@ -116,6 +123,7 @@ async def get_admin_data_overview(
     completed_to: Optional[datetime] = Query(None),
     assigned_from: Optional[datetime] = Query(None),
     assigned_to: Optional[datetime] = Query(None),
+    current_user: User = Depends(require_admin_user),
 ):
     filters = AdminDataFilters(
         job_id=job_id,
@@ -160,6 +168,7 @@ async def export_admin_data(
     completed_to: Optional[datetime] = Query(None),
     assigned_from: Optional[datetime] = Query(None),
     assigned_to: Optional[datetime] = Query(None),
+    current_user: User = Depends(require_admin_user),
 ):
     filters = AdminDataFilters(
         job_id=job_id,
@@ -189,9 +198,12 @@ async def export_admin_data(
 
 
 @router.get("/review/{interview_id}")
-async def get_admin_review(interview_id: str):
+async def get_admin_review(
+    interview_id: str, current_user: User = Depends(require_admin_user)
+):
     """
     Provide admin review metadata including available interview recordings.
+    (Clerk authenticated)
     """
     from services import InterviewService
 

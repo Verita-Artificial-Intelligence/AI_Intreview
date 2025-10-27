@@ -5,6 +5,7 @@ import '@/App.css'
 
 // Admin auth
 import Login from './pages/Login'
+import Signup from './pages/Signup'
 
 // Admin pages
 import Dashboard from './pages/Dashboard'
@@ -30,13 +31,17 @@ import Opportunities from './pages/Candidate/Opportunities'
 import MyAnnotationTasks from './pages/Candidate/MyAnnotationTasks'
 import AnnotateTask from './pages/Candidate/AnnotateTask'
 
+// Error pages
+import NotFound from './pages/NotFound'
+
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          {/* Admin auth routes */}
-          <Route path="/login" element={<Login />} />
+          {/* Admin auth routes - wildcard to handle SSO callbacks */}
+          <Route path="/login/*" element={<Login />} />
+          <Route path="/signup/*" element={<Signup />} />
 
           {/* Public candidate auth routes */}
           <Route path="/candidate/login" element={<CandidateLogin />} />
@@ -86,32 +91,114 @@ function App() {
             }
           />
 
-          {/* Admin routes - existing functionality */}
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/candidates" element={<Candidates />} />
-          <Route path="/interviews" element={<Interviews />} />
-          <Route path="/jobs" element={<Jobs />} />
-          <Route path="/admin/data-explorer" element={<AdminDataExplorer />} />
-          <Route path="/annotation-data" element={<AnnotationData />} />
+          {/* Admin routes - all require authentication */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/candidates"
+            element={
+              <ProtectedRoute>
+                <Candidates />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/interviews"
+            element={
+              <ProtectedRoute>
+                <Interviews />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/jobs"
+            element={
+              <ProtectedRoute>
+                <Jobs />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/data-explorer"
+            element={
+              <ProtectedRoute>
+                <AdminDataExplorer />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/annotation-data"
+            element={
+              <ProtectedRoute>
+                <AnnotationData />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/annotation-data/upload"
-            element={<UploadAnnotationData />}
+            element={
+              <ProtectedRoute>
+                <UploadAnnotationData />
+              </ProtectedRoute>
+            }
           />
-          <Route path="/annotators" element={<Annotators />} />
-          <Route path="/review/:taskId" element={<ReviewAnnotation />} />
+          <Route
+            path="/annotators"
+            element={
+              <ProtectedRoute>
+                <Annotators />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/review/:taskId"
+            element={
+              <ProtectedRoute>
+                <ReviewAnnotation />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/interview-prep/:interviewId"
-            element={<InterviewPrep />}
+            element={
+              <ProtectedRoute>
+                <InterviewPrep />
+              </ProtectedRoute>
+            }
           />
-          <Route path="/interview/:interviewId" element={<InterviewPage />} />
+          <Route
+            path="/interview/:interviewId"
+            element={
+              <ProtectedRoute>
+                <InterviewPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/audio-interview/:interviewId"
-            element={<AudioInterviewPage />}
+            element={
+              <ProtectedRoute>
+                <AudioInterviewPage />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/admin/review/:interviewId"
-            element={<AdminInterviewReview />}
+            element={
+              <ProtectedRoute>
+                <AdminInterviewReview />
+              </ProtectedRoute>
+            }
           />
+
+          {/* 404 catch-all route */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

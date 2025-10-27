@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from '@/utils/api'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { Button } from '../../components/ui/button'
@@ -46,12 +46,12 @@ export default function AnnotateTask() {
   const fetchTask = async () => {
     try {
       setLoading(true)
-      const response = await axios.get(`${API}/annotations/${taskId}`)
+      const response = await api.get(`/annotations/${taskId}`)
       setTask(response.data)
 
       // If task status is 'assigned', mark it as 'in_progress'
       if (response.data.status === 'assigned') {
-        await axios.post(`${API}/annotations/${taskId}/start`)
+        await api.post(`/annotations/${taskId}/start`)
       }
     } catch (error) {
       console.error('Failed to fetch task:', error)
@@ -70,7 +70,7 @@ export default function AnnotateTask() {
 
     try {
       setSubmitting(true)
-      await axios.post(`${API}/annotations/${taskId}/submit`, {
+      await api.post(`/annotations/${taskId}/submit`, {
         quality_rating: rating,
         feedback_notes: feedback || null,
       })

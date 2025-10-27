@@ -27,10 +27,7 @@ import {
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { cardStyles } from '@/lib/design-system'
-import axios from 'axios'
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
+import api from '@/utils/api'
 
 // CENTRALIZED INTERVIEW TYPE DEFINITIONS
 // These definitions match backend/config/interview_type_definitions.py exactly
@@ -134,7 +131,7 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
   const fetchJobs = async () => {
     try {
       setLoadingJobs(true)
-      const response = await axios.get(`${API}/jobs`)
+      const response = await api.get(`/jobs`)
       const availableJobs = response.data.filter((job) =>
         ['pending', 'in_progress'].includes(job.status)
       )
@@ -211,15 +208,11 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
       const formData = new FormData()
       formData.append('resume', file)
 
-      const response = await axios.post(
-        `${API}/interviews/upload/resume`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      )
+      const response = await api.post(`/interviews/upload/resume`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
 
       if (response.data.success) {
         setResumeText(response.data.resume_text)
@@ -277,7 +270,7 @@ const InterviewCreationModal = ({ open, onClose, candidate, onSuccess }) => {
           selectedType === 'resume_based' && resumeText ? resumeText : null,
       }
 
-      const response = await axios.post(`${API}/interviews`, interviewData)
+      const response = await api.post(`/interviews`, interviewData)
 
       if (response.data) {
         onSuccess(response.data)

@@ -31,11 +31,26 @@ enable_lifecycle_rules = true
 object_expiration_days = 180
 
 # HTTPS (REQUIRED for production)
-domain_name = "api.yourdomain.com" # CHANGE THIS TO YOUR DOMAIN
+domain_name = "api.verita-ai.com"
 
-# Sensitive variables (set via environment or terraform.tfvars)
-# container_image = "123456789.dkr.ecr.us-east-1.amazonaws.com/verita-backend:v1.0.0"
-# openai_api_key = "sk-..."
-# jwt_secret = "your-strong-secret-key"
-# documentdb_password = "VeryStrongPassword123!ABC"
-# alert_email = "alerts@yourdomain.com"
+# Sensitive variables
+container_image     = "015312928304.dkr.ecr.us-east-1.amazonaws.com/verita-backend:prod-latest"
+jwt_secret          = "8f18aca95fbbf818805003c1d1cd1a71"
+documentdb_password = "IXy8rceLUYap5pMldfie+Gy1fXA="
+alert_email         = "nicholas@intrace.ai"
+iam_role_arn        = "arn:aws:iam::015312928304:role/github-actions-terraform"
+
+# Clerk Candidate (Interview Frontend) - LIVE keys
+# TODO: Get production Clerk keys from Clerk dashboard
+clerk_candidate_jwks_url   = "https://YOUR-PROD-INSTANCE.clerk.accounts.dev/.well-known/jwks.json"
+clerk_candidate_issuer     = "https://YOUR-PROD-INSTANCE.clerk.accounts.dev"
+clerk_candidate_secret_key = "sk_live_YOUR_LIVE_SECRET_KEY_HERE"
+
+# Clerk Admin (Dashboard Frontend) - LIVE keys
+# TODO: Get production Clerk keys from Clerk dashboard
+clerk_admin_jwks_url   = "https://YOUR-PROD-INSTANCE.clerk.accounts.dev/.well-known/jwks.json"
+clerk_admin_issuer     = "https://YOUR-PROD-INSTANCE.clerk.accounts.dev"
+clerk_admin_secret_key = "sk_live_YOUR_LIVE_SECRET_KEY_HERE"
+
+# Authorized parties for production
+clerk_authorized_parties = "https://interview.verita-ai.com,https://dashboard.verita-ai.com"

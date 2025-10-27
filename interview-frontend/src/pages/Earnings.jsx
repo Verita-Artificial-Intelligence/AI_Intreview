@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from '@/utils/api'
 import Sidebar from '@/components/Sidebar'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -15,9 +15,6 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
-
 export default function Earnings() {
   const { user, token } = useAuth()
   const [earnings, setEarnings] = useState(null)
@@ -32,10 +29,10 @@ export default function Earnings() {
       setLoading(true)
       // Fetch real earnings data from backend
       const [summaryRes, transactionsRes] = await Promise.all([
-        axios.get(`${API}/earnings/user/${user?.id}/summary`, {
+        api.get(`/earnings/user/${user?.id}/summary`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        axios.get(`${API}/earnings/user/${user?.id}/transactions`, {
+        api.get(`/earnings/user/${user?.id}/transactions`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ])

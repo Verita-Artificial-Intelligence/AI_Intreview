@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import axios from 'axios'
+import api from '@/utils/api'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -12,9 +12,6 @@ import {
   getStatusClass,
   getStatusLabel,
 } from '@/lib/design-system'
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
 
 const Interviews = () => {
   const navigate = useNavigate()
@@ -50,9 +47,9 @@ const Interviews = () => {
       const queryString = params.toString() ? `?${params.toString()}` : ''
 
       const [interviewsRes, candidatesRes, jobsRes] = await Promise.all([
-        axios.get(`${API}/interviews${queryString}`),
-        axios.get(`${API}/candidates`),
-        axios.get(`${API}/jobs`),
+        api.get(`/interviews${queryString}`),
+        api.get('/candidates'),
+        api.get('/jobs'),
       ])
       setInterviews(interviewsRes.data)
       setCandidates(candidatesRes.data)
@@ -78,7 +75,7 @@ const Interviews = () => {
     }
 
     try {
-      await axios.delete(`${API}/interviews/${interviewId}`)
+      await api.delete(`/interviews/${interviewId}`)
       fetchData()
     } catch (error) {
       console.error('Error deleting interview:', error)

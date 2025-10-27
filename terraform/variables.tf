@@ -128,3 +128,42 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+# Clerk Candidate Project (Interview Frontend)
+variable "clerk_candidate_jwks_url" {
+  description = "Clerk JWKS URL for candidate authentication"
+  type        = string
+}
+
+variable "clerk_candidate_issuer" {
+  description = "Clerk issuer URL for candidate authentication"
+  type        = string
+}
+
+variable "clerk_candidate_secret_key" {
+  description = "Clerk secret key for candidate authentication"
+  type        = string
+  sensitive   = true
+}
+
+# Clerk Admin Project (Dashboard Frontend)
+variable "clerk_admin_jwks_url" {
+  description = "Clerk JWKS URL for admin authentication"
+  type        = string
+}
+
+variable "clerk_admin_issuer" {
+  description = "Clerk issuer URL for admin authentication"
+  type        = string
+}
+
+variable "clerk_admin_secret_key" {
+  description = "Clerk secret key for admin authentication"
+  type        = string
+  sensitive   = true
+}
+
+variable "clerk_authorized_parties" {
+  description = "Comma-separated list of authorized Clerk parties (frontend URLs)"
+  type        = string
+}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '@/utils/api'
 import Sidebar from '@/components/Sidebar'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -18,9 +18,6 @@ import {
   Calendar,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
 
 export default function Jobs() {
   const navigate = useNavigate()
@@ -45,13 +42,13 @@ export default function Jobs() {
     try {
       setLoading(true)
       const [interviewsRes, annotationsRes, jobsRes] = await Promise.all([
-        axios.get(`${API}/interviews`, {
+        api.get(`/interviews`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        axios.get(`${API}/annotations/user/${user?.id}`, {
+        api.get(`/annotations/user/${user?.id}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        axios.get(`${API}/jobs`),
+        api.get(`/jobs`),
       ])
 
       // Filter interviews for current user

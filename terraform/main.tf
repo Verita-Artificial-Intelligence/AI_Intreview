@@ -75,13 +75,15 @@ resource "aws_security_group_rule" "ecs_to_documentdb" {
 module "secrets" {
   source = "./modules/secrets"
 
-  app_name            = var.app_name
-  environment         = var.environment
-  aws_region          = var.aws_region
-  ecs_task_role_id    = module.iam.ecs_task_role_id
-  openai_api_key      = var.openai_api_key
-  jwt_secret          = var.jwt_secret
-  documentdb_password = var.documentdb_password
+  app_name                   = var.app_name
+  environment                = var.environment
+  aws_region                 = var.aws_region
+  ecs_task_role_id           = module.iam.ecs_task_role_id
+  openai_api_key             = var.openai_api_key
+  jwt_secret                 = var.jwt_secret
+  documentdb_password        = var.documentdb_password
+  clerk_candidate_secret_key = var.clerk_candidate_secret_key
+  clerk_admin_secret_key     = var.clerk_admin_secret_key
 }
 
 # WAF for ALB
@@ -125,6 +127,19 @@ module "ecs" {
     DB_NAME        = "verita_ai_interview"
     LOG_LEVEL      = var.environment == "prod" ? "INFO" : "DEBUG"
     CORS_ORIGINS   = "http://localhost:3000,http://localhost:8000,https://staging.interview.verita-ai.com,https://interview.verita-ai.com,https://staging.dashboard.verita-ai.com,https://dashboard.verita-ai.com"
+
+    # Clerk Candidate Configuration
+    CLERK_CANDIDATE_JWKS_URL   = var.clerk_candidate_jwks_url
+    CLERK_CANDIDATE_ISSUER     = var.clerk_candidate_issuer
+    CLERK_CANDIDATE_SECRET_KEY = var.clerk_candidate_secret_key
+
+    # Clerk Admin Configuration
+    CLERK_ADMIN_JWKS_URL   = var.clerk_admin_jwks_url
+    CLERK_ADMIN_ISSUER     = var.clerk_admin_issuer
+    CLERK_ADMIN_SECRET_KEY = var.clerk_admin_secret_key
+
+    # Authorized Parties
+    CLERK_AUTHORIZED_PARTIES = var.clerk_authorized_parties
   }
 
   # Scaling configuration

@@ -135,8 +135,9 @@ coverage/
 reports/
 .claude/
 
-# Ignore uploaded videos
+# Ignore uploaded videos and local storage
 backend/uploads/
+backend/local_storage/
 
 # Terraform
 terraform/.terraform/
@@ -147,6 +148,10 @@ terraform/.terraform.tfstate.lock.info
 terraform/secrets.tfvars
 terraform/*.auto.tfvars
 **/secrets.tfvars
+terraform/environments/dev.tfvars
+terraform/environments/prod.tfvars
+dev.tfvars
+prod.tfvars
 
 # Secret generation scripts output
 generate-github-secrets.sh

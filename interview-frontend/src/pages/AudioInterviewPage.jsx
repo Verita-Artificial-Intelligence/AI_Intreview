@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '@/utils/api'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import {
@@ -18,9 +18,6 @@ import {
   cardStyles,
   cssGradients,
 } from '@/lib/design-system'
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
 
 const AudioInterviewPage = () => {
   const { interviewId } = useParams()
@@ -58,7 +55,7 @@ const AudioInterviewPage = () => {
 
   const fetchPersona = async () => {
     try {
-      const response = await axios.get(`${API}/audio/persona`)
+      const response = await api.get(`/audio/persona`)
       setPersona(response.data)
     } catch (error) {
       console.error('Error fetching persona:', error)
@@ -75,7 +72,7 @@ const AudioInterviewPage = () => {
 
   const fetchInterview = async () => {
     try {
-      const response = await axios.get(`${API}/interviews/${interviewId}`)
+      const response = await api.get(`/interviews/${interviewId}`)
       setInterview(response.data)
     } catch (error) {
       console.error('Error fetching interview:', error)
@@ -86,9 +83,7 @@ const AudioInterviewPage = () => {
 
   const fetchMessages = async () => {
     try {
-      const response = await axios.get(
-        `${API}/interviews/${interviewId}/messages`
-      )
+      const response = await api.get(`/interviews/${interviewId}/messages`)
       setMessages(response.data)
 
       // Auto-play the first AI message
@@ -103,7 +98,7 @@ const AudioInterviewPage = () => {
   const playAudio = async (text) => {
     try {
       setIsPlaying(true)
-      const response = await axios.post(`${API}/audio/tts`, {
+      const response = await api.post(`/audio/tts`, {
         text: text,
         voice_id: '21m00Tcm4TlvDq8ikWAM',
         stability: 0.5,
@@ -174,7 +169,7 @@ const AudioInterviewPage = () => {
       const formData = new FormData()
       formData.append('audio_file', audioBlob, 'recording.webm')
 
-      const sttResponse = await axios.post(`${API}/audio/stt`, formData, {
+      const sttResponse = await api.post(`/audio/stt`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
 
@@ -190,7 +185,7 @@ const AudioInterviewPage = () => {
       setMessages((prev) => [...prev, userMsg])
 
       // Get AI response
-      const chatResponse = await axios.post(`${API}/chat`, {
+      const chatResponse = await api.post(`/chat`, {
         interview_id: interviewId,
         message: transcribedText,
       })
@@ -220,7 +215,7 @@ const AudioInterviewPage = () => {
 
     setCompleting(true)
     try {
-      await axios.post(`${API}/interviews/${interviewId}/complete`)
+      await api.post(`/interviews/${interviewId}/complete`)
       alert('Interview completed successfully!')
       navigate('/')
     } catch (error) {

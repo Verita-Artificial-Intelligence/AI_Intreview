@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '@/utils/api'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -45,9 +45,6 @@ import {
   getStatusLabel,
 } from '@/lib/design-system'
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
-
 const Dashboard = () => {
   const navigate = useNavigate()
   const [interviews, setInterviews] = useState([])
@@ -84,7 +81,7 @@ const Dashboard = () => {
 
   const fetchData = async () => {
     try {
-      const interviewsRes = await axios.get(`${API}/interviews`)
+      const interviewsRes = await api.get('/interviews')
       setInterviews(interviewsRes.data)
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -103,8 +100,8 @@ const Dashboard = () => {
       if (performanceFilter !== 'all')
         params.append('performance_filter', performanceFilter)
 
-      const response = await axios.get(
-        `${API}/annotations/annotators/stats?${params.toString()}`
+      const response = await api.get(
+        `/annotations/annotators/stats?${params.toString()}`
       )
       setAnnotatorStats(Array.isArray(response.data) ? response.data : [])
     } catch (error) {
@@ -149,7 +146,7 @@ const Dashboard = () => {
     if (!interviewToDelete) return
 
     try {
-      await axios.delete(`${API}/interviews/${interviewToDelete.id}`)
+      await api.delete(`/interviews/${interviewToDelete.id}`)
       setShowDeleteDialog(false)
       setInterviewToDelete(null)
       fetchData()

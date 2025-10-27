@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
-import axios from 'axios'
+import api from '@/utils/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
@@ -18,9 +18,6 @@ import {
   CheckCircle,
   Loader2,
 } from 'lucide-react'
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
 
 export default function JobApplicationOnboarding() {
   const navigate = useNavigate()
@@ -91,10 +88,10 @@ export default function JobApplicationOnboarding() {
   const fetchProfileAndJob = async () => {
     try {
       const [profileRes, jobRes] = await Promise.all([
-        axios.get(`${API}/profile/me`, {
+        api.get(`/profile/me`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        axios.get(`${API}/jobs/${jobId}`),
+        api.get(`/jobs/${jobId}`),
       ])
 
       setProfileData(profileRes.data)
@@ -179,15 +176,11 @@ export default function JobApplicationOnboarding() {
       const uploadFormData = new FormData()
       uploadFormData.append('file', file)
 
-      const uploadResponse = await axios.post(
-        `${API}/files/upload`,
-        uploadFormData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      )
+      const uploadResponse = await api.post(`/files/upload`, uploadFormData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
 
       if (uploadResponse.data.url) {
         setFormData((prev) => ({
@@ -302,7 +295,7 @@ export default function JobApplicationOnboarding() {
       }
 
       // Update profile with complete data
-      await axios.put(`${API}/profile/complete`, completeProfileData, {
+      await api.put(`/profile/complete`, completeProfileData, {
         headers: { Authorization: `Bearer ${token}` },
       })
 
@@ -388,7 +381,7 @@ export default function JobApplicationOnboarding() {
     // Check for existing interview - only block if truly active/completed
     if (jobId && user?.id) {
       try {
-        const response = await axios.get(`${API}/interviews`, {
+        const response = await api.get(`/interviews`, {
           params: { job_id: jobId, candidate_id: user.id },
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         })

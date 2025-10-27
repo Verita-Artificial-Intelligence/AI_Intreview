@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { SignIn, useAuth } from '@clerk/clerk-react'
+import { SignUp, useAuth } from '@clerk/clerk-react'
 import { Loader2 } from 'lucide-react'
 
-const Login = () => {
+const Signup = () => {
   const navigate = useNavigate()
   const { isSignedIn, isLoaded } = useAuth()
 
@@ -17,7 +17,7 @@ const Login = () => {
   // Show loading state while Clerk is loading
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-3 bg-background">
+      <div className="min-h-screen flex items-center justify-center p-3 bg-white">
         <div className="text-center">
           <Loader2 className="w-8 h-8 text-brand-500 animate-spin mx-auto mb-3" />
           <p className="text-sm text-neutral-600">Loading...</p>
@@ -40,15 +40,15 @@ const Login = () => {
           <h1 className="text-2xl font-display font-bold mb-3 text-neutral-900">
             Verita
           </h1>
-          <p className="text-sm text-neutral-600">Admin Dashboard</p>
+          <p className="text-sm text-neutral-600">Create Admin Account</p>
         </div>
 
         <div className="flex justify-center">
-          <SignIn
+          <SignUp
             routing="path"
-            path="/login"
-            signUpUrl="/signup"
-            afterSignInUrl="/"
+            path="/signup"
+            signInUrl="/login"
+            afterSignUpUrl="/"
             appearance={{
               elements: {
                 rootBox: 'mx-auto',
@@ -75,4 +75,4 @@ const Login = () => {
   )
 }
 
-export default Login
+export default Signup

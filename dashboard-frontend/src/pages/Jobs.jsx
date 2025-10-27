@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from '@/utils/api'
 import { useNavigate } from 'react-router-dom'
 import {
   Briefcase,
@@ -24,9 +24,6 @@ import {
 } from '@/components/ui/alert-dialog'
 import Sidebar from '@/components/Sidebar'
 import JobForm from '@/components/JobForm'
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
 
 const Jobs = () => {
   const navigate = useNavigate()
@@ -62,7 +59,7 @@ const Jobs = () => {
   const fetchJobs = async () => {
     try {
       setLoading(true)
-      const response = await axios.get(`${API}/jobs`)
+      const response = await api.get('/jobs')
       // Filter out completed and archived jobs - only show active jobs
       const activeJobs = response.data.filter(
         (job) => job.status === 'pending' || job.status === 'in_progress'
@@ -80,10 +77,10 @@ const Jobs = () => {
     try {
       if (jobId) {
         // Update existing job
-        await axios.put(`${API}/jobs/${jobId}`, jobData)
+        await api.put(`/jobs/${jobId}`, jobData)
       } else {
         // Create new job
-        await axios.post(`${API}/jobs`, jobData)
+        await api.post('/jobs', jobData)
       }
       fetchJobs()
       setShowJobForm(false)
@@ -188,7 +185,7 @@ const Jobs = () => {
     // If moving to completed, check if all tasks are done
     if (nextStatus === 'completed') {
       try {
-        const response = await axios.get(`${API}/jobs/${job.id}/can-complete`)
+        const response = await api.get(`/jobs/${job.id}/can-complete`)
         if (!response.data.can_complete) {
           alert(`Cannot mark as completed: ${response.data.reason}`)
           return
@@ -212,7 +209,7 @@ const Jobs = () => {
     if (!statusTransition) return
 
     try {
-      await axios.put(`${API}/jobs/${statusTransition.job.id}/status`, {
+      await api.put(`/jobs/${statusTransition.job.id}/status`, {
         status: statusTransition.nextStatus,
       })
       setShowStatusDialog(false)

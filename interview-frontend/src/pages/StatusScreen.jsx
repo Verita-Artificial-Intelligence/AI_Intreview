@@ -12,11 +12,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import axios from 'axios'
+import api from '@/utils/api'
 import { cardStyles } from '@/lib/design-system'
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
 
 const StatusScreen = () => {
   const navigate = useNavigate()
@@ -49,7 +46,7 @@ const StatusScreen = () => {
   const loadData = async () => {
     try {
       // Fetch user's interviews
-      const response = await axios.get(`${API}/interviews`, {
+      const response = await api.get(`/interviews`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       const userInterviews = response.data.filter(

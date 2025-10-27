@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from '@/utils/api'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { Button } from '../../components/ui/button'
@@ -41,7 +41,7 @@ export default function CandidatePortal() {
 
   const fetchInterviews = async () => {
     try {
-      const response = await axios.get(`${API}/interviews/candidate/${user.id}`)
+      const response = await api.get(`/interviews/candidate/${user.id}`)
       setInterviews(response.data || [])
     } catch (error) {
       console.error('Failed to fetch interviews:', error)
@@ -51,7 +51,7 @@ export default function CandidatePortal() {
   const fetchAnnotationTasks = async () => {
     try {
       setLoading(true)
-      const response = await axios.get(`${API}/annotations/user/${user.id}`)
+      const response = await api.get(`/annotations/user/${user.id}`)
       setAnnotationTasks(response.data || [])
     } catch (error) {
       console.error('Failed to fetch annotation tasks:', error)

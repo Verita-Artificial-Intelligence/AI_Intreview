@@ -12,6 +12,8 @@ from . import (
     websocket,
     uploads,
     admin,
+    clerk_webhooks,
+    migration,
 )
 
 __all__ = [
@@ -22,4 +24,6 @@ __all__ = [
     "audio_router",
     "profile_router",
     "websocket_router",
+    "clerk_webhooks",
+    "migration",
 ]

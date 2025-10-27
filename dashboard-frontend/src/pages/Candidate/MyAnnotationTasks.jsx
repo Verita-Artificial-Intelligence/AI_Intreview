@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from '@/utils/api'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { Button } from '../../components/ui/button'
@@ -39,7 +39,7 @@ export default function MyAnnotationTasks() {
     try {
       setLoading(true)
       if (user?.id) {
-        const response = await axios.get(`${API}/annotations/user/${user.id}`)
+        const response = await api.get(`/annotations/user/${user.id}`)
         setTasks(response.data || [])
       }
     } catch (error) {

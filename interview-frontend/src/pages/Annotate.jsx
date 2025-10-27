@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '@/utils/api'
 import Sidebar from '@/components/Sidebar'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -26,9 +26,6 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
-
 export default function Annotate() {
   const { taskId } = useParams()
   const navigate = useNavigate()
@@ -48,13 +45,13 @@ export default function Annotate() {
   const fetchTask = async () => {
     try {
       setLoading(true)
-      const response = await axios.get(`${API}/annotations/${taskId}`, {
+      const response = await api.get(`/annotations/${taskId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       setTask(response.data)
 
       // Fetch job status
-      const jobResponse = await axios.get(`${API}/jobs/${response.data.job_id}`)
+      const jobResponse = await api.get(`/jobs/${response.data.job_id}`)
       setJob(jobResponse.data)
 
       // Check if job is in correct status
@@ -81,8 +78,8 @@ export default function Annotate() {
 
       // Mark as started if not already (job must be in_progress here)
       if (response.data.status === 'assigned') {
-        await axios.post(
-          `${API}/annotations/${taskId}/start`,
+        await api.post(
+          `/annotations/${taskId}/start`,
           {},
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -113,8 +110,8 @@ export default function Annotate() {
 
     try {
       setSubmitting(true)
-      await axios.post(
-        `${API}/annotations/${taskId}/submit`,
+      await api.post(
+        `/annotations/${taskId}/submit`,
         {
           quality_rating: rating,
           feedback_notes: notes,

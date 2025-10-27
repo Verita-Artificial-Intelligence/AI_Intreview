@@ -11,10 +11,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { v4 as uuidv4 } from 'uuid'
-import axios from 'axios'
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
+import api from '@/utils/api'
 
 const NewInterviewPrep = () => {
   const navigate = useNavigate()
@@ -54,7 +51,7 @@ const NewInterviewPrep = () => {
   const fetchJob = async () => {
     setLoadingJob(true)
     try {
-      const response = await axios.get(`${API}/jobs/${jobId}`)
+      const response = await api.get(`/jobs/${jobId}`)
       setJob(response.data)
     } catch (error) {
       console.error('Error fetching job:', error)
@@ -90,7 +87,7 @@ const NewInterviewPrep = () => {
   const handleStartInterview = async () => {
     if (jobId && user?.id) {
       try {
-        const response = await axios.get(`${API}/interviews`, {
+        const response = await api.get(`/interviews`, {
           params: { job_id: jobId, candidate_id: user.id },
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         })

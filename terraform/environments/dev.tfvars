@@ -1,5 +1,4 @@
 # Development Environment Configuration
-# Trigger deployment
 
 aws_region  = "us-east-1"
 environment = "dev"
@@ -28,11 +27,24 @@ enable_versioning      = false
 enable_lifecycle_rules = false
 
 # HTTPS
-domain_name = "" # Leave empty for HTTP-only in dev, or set to "api.dev.yourdomain.com"
+domain_name = "staging.api.verita-ai.com"
 
-# Sensitive variables (set via secrets.tfvars)
-# container_image = "123456789.dkr.ecr.us-east-1.amazonaws.com/verita-backend:latest"
-# openai_api_key = "sk-..."
-# jwt_secret = "your-secret-key"
-# documentdb_password = "SecurePassword123!"
-# alert_email = "your-email@example.com"
+# Sensitive variables
+container_image     = "015312928304.dkr.ecr.us-east-1.amazonaws.com/verita-backend:dev-latest"
+jwt_secret          = "8f18aca95fbbf818805003c1d1cd1a71"
+documentdb_password = "WyGkayfXp7lLhDGdKjIBL7UZbEc="
+alert_email         = "nicholas@intrace.ai"
+iam_role_arn        = "arn:aws:iam::015312928304:role/github-actions-terraform"
+
+# Clerk Candidate (Interview Frontend) - TEST keys
+clerk_candidate_jwks_url   = "https://emerging-pheasant-9.clerk.accounts.dev/.well-known/jwks.json"
+clerk_candidate_issuer     = "https://emerging-pheasant-9.clerk.accounts.dev"
+clerk_candidate_secret_key = "sk_test_V45Vk8CZ4tk8yyZ9rbYeXR0SRofZl6DJyxgyNgL84E"
+
+# Clerk Admin (Dashboard Frontend) - TEST keys
+clerk_admin_jwks_url   = "https://boss-eel-27.clerk.accounts.dev/.well-known/jwks.json"
+clerk_admin_issuer     = "https://boss-eel-27.clerk.accounts.dev"
+clerk_admin_secret_key = "sk_test_HRTDt3PDEBK4qOydwy1kWX6t9knsoyhcWeuvmguWiT"
+
+# Authorized parties for staging
+clerk_authorized_parties = "http://localhost:3000,http://localhost:3001,https://staging.interview.verita-ai.com,https://staging.dashboard.verita-ai.com"

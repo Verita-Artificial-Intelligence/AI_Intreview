@@ -17,8 +17,11 @@ from routers import (
     annotation_data,
     earnings,
     admin,
+    clerk_webhooks,
+    migration,
 )
 from services.admin_data_service import AdminDataExplorerService
+from utils.clerk_auth import init_clerk_jwks_clients
 
 # Main application setup
 app = FastAPI(
@@ -42,6 +45,8 @@ app.add_middleware(
 async def startup():
     await create_indexes()
     await AdminDataExplorerService.ensure_indexes()
+    # Initialize Clerk JWKS clients for JWT verification
+    init_clerk_jwks_clients()
 
 
 @app.on_event("shutdown")
@@ -60,7 +65,9 @@ async def health_check():
 
 
 # Include all routers
-app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
+app.include_router(
+    auth.router, prefix="/api/auth", tags=["Authentication"]
+)  # Legacy - will be deprecated
 app.include_router(profile.router, prefix="/api/profile", tags=["User Profile"])
 app.include_router(interviews.router, prefix="/api/interviews", tags=["Interviews"])
 app.include_router(candidates.router, prefix="/api/candidates", tags=["Candidates"])
@@ -74,6 +81,10 @@ app.include_router(earnings.router, prefix="/api/earnings", tags=["Earnings"])
 app.include_router(audio.router, prefix="/api/audio", tags=["Audio"])
 app.include_router(uploads.router, prefix="/api", tags=["Uploads"])
 app.include_router(admin.router, prefix="/api", tags=["Admin"])
+
+# Clerk authentication routers
+app.include_router(clerk_webhooks.router, tags=["Clerk Webhooks"])
+app.include_router(migration.router, tags=["Migration"])
 
 # Include WebSocket router (not under /api prefix)
 app.include_router(websocket.router, prefix="/ws", tags=["WebSocket"])

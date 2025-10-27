@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '@/utils/api'
 import Sidebar from '@/components/Sidebar'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -20,9 +20,6 @@ import {
   MapPin,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
 
 const Marketplace = () => {
   const navigate = useNavigate()
@@ -107,8 +104,8 @@ const Marketplace = () => {
   const fetchJobs = async () => {
     try {
       const [jobsRes, interviewsRes] = await Promise.all([
-        axios.get(`${API}/jobs`), // Get all jobs
-        axios.get(`${API}/interviews`, {
+        api.get(`/jobs`), // Get all jobs
+        api.get(`/interviews`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ])
@@ -135,7 +132,7 @@ const Marketplace = () => {
 
   const fetchProfile = async () => {
     try {
-      const response = await axios.get(`${API}/profile/me`, {
+      const response = await api.get(`/profile/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       setProfileData(response.data)

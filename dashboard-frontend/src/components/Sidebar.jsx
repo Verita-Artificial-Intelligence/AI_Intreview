@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Button } from './ui/button'
 import {
@@ -10,11 +11,14 @@ import {
   Table,
   MessagesSquare,
   Layers,
+  User,
 } from 'lucide-react'
+import AccountModal from './AccountModal'
 
 export default function Sidebar() {
   const navigate = useNavigate()
   const location = useLocation()
+  const [accountModalOpen, setAccountModalOpen] = useState(false)
 
   const isActive = (path) => {
     if (path === '/') {
@@ -101,7 +105,14 @@ export default function Sidebar() {
           })}
         </nav>
 
-        <div className="p-4 border-t border-neutral-200">
+        <div className="p-4 border-t border-neutral-200 space-y-1">
+          <button
+            onClick={() => setAccountModalOpen(true)}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50 transition-colors"
+          >
+            <User className="w-4 h-4 flex-shrink-0" />
+            <span className="flex-1 text-left">Account</span>
+          </button>
           <button
             onClick={() => {
               // Add logout logic here
@@ -136,16 +147,20 @@ export default function Sidebar() {
             )
           })}
           <button
-            onClick={() => {
-              navigate('/login')
-            }}
+            onClick={() => setAccountModalOpen(true)}
             className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-neutral-600 transition-colors"
           >
-            <LogOut className="w-5 h-5" />
-            <span className="text-xs font-medium">Logout</span>
+            <User className="w-5 h-5" />
+            <span className="text-xs font-medium">Account</span>
           </button>
         </div>
       </nav>
+
+      {/* Account Modal */}
+      <AccountModal
+        open={accountModalOpen}
+        onOpenChange={setAccountModalOpen}
+      />
     </>
   )
 }

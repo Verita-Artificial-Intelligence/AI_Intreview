@@ -14,6 +14,22 @@ JWT_SECRET = os.environ.get("JWT_SECRET", "default_secret_key")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY") or os.environ.get("EMERGENT_LLM_KEY")
 APIFY_API_KEY = os.environ.get("APIFY_API_KEY")
 
+# Clerk Configuration
+# Candidate/Interview Project
+CLERK_CANDIDATE_JWKS_URL = os.environ.get("CLERK_CANDIDATE_JWKS_URL", "")
+CLERK_CANDIDATE_ISSUER = os.environ.get("CLERK_CANDIDATE_ISSUER", "")
+CLERK_CANDIDATE_SECRET_KEY = os.environ.get("CLERK_CANDIDATE_SECRET_KEY", "")
+CLERK_CANDIDATE_API_KEY = os.environ.get("CLERK_CANDIDATE_API_KEY", "")
+
+# Admin/Dashboard Project
+CLERK_ADMIN_JWKS_URL = os.environ.get("CLERK_ADMIN_JWKS_URL", "")
+CLERK_ADMIN_ISSUER = os.environ.get("CLERK_ADMIN_ISSUER", "")
+CLERK_ADMIN_SECRET_KEY = os.environ.get("CLERK_ADMIN_SECRET_KEY", "")
+CLERK_ADMIN_API_KEY = os.environ.get("CLERK_ADMIN_API_KEY", "")
+
+# Authorized parties for Clerk JWT validation
+CLERK_AUTHORIZED_PARTIES = os.environ.get("CLERK_AUTHORIZED_PARTIES", "").split(",")
+
 # CORS Configuration
 CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*").split(",")
 
@@ -81,6 +97,9 @@ MOCK_OPENAI_REALTIME = (
     os.environ.get("MOCK_OPENAI_REALTIME", str(USE_MOCK_SERVICES)).lower() == "true"
 )
 
+# Local Storage Configuration (for development without S3)
+USE_LOCAL_STORAGE = os.environ.get("USE_LOCAL_STORAGE", "false").lower() == "true"
+
 
 # Settings class for easy access
 class Settings:
@@ -94,6 +113,17 @@ class Settings:
     JWT_SECRET = JWT_SECRET
     OPENAI_API_KEY = OPENAI_API_KEY
     APIFY_API_KEY = APIFY_API_KEY
+
+    # Clerk Configuration
+    CLERK_CANDIDATE_JWKS_URL = CLERK_CANDIDATE_JWKS_URL
+    CLERK_CANDIDATE_ISSUER = CLERK_CANDIDATE_ISSUER
+    CLERK_CANDIDATE_SECRET_KEY = CLERK_CANDIDATE_SECRET_KEY
+    CLERK_CANDIDATE_API_KEY = CLERK_CANDIDATE_API_KEY
+    CLERK_ADMIN_JWKS_URL = CLERK_ADMIN_JWKS_URL
+    CLERK_ADMIN_ISSUER = CLERK_ADMIN_ISSUER
+    CLERK_ADMIN_SECRET_KEY = CLERK_ADMIN_SECRET_KEY
+    CLERK_ADMIN_API_KEY = CLERK_ADMIN_API_KEY
+    CLERK_AUTHORIZED_PARTIES = CLERK_AUTHORIZED_PARTIES
 
     # CORS
     CORS_ORIGINS = CORS_ORIGINS
@@ -159,6 +189,9 @@ If the candidate only greets or gives a very short answer, acknowledge briefly a
     # Mock Services
     USE_MOCK_SERVICES = USE_MOCK_SERVICES
     MOCK_OPENAI_REALTIME = MOCK_OPENAI_REALTIME
+
+    # Local Storage
+    USE_LOCAL_STORAGE = USE_LOCAL_STORAGE
 
 
 settings = Settings()

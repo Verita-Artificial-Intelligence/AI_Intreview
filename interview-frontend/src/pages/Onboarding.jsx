@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '@/utils/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -25,9 +25,6 @@ import {
   ArrowRight,
   Loader2,
 } from 'lucide-react'
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
 
 const STEPS = [
   {
@@ -240,7 +237,13 @@ const COUNTRIES = [
 
 export default function Onboarding() {
   const navigate = useNavigate()
-  const { user, token, completeProfile } = useAuth()
+  const {
+    user,
+    token,
+    completeProfile,
+    isProfileComplete,
+    loading: authLoading,
+  } = useAuth()
   const [currentStep, setCurrentStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [scrapingLinkedIn, setScrapingLinkedIn] = useState(false)
@@ -250,6 +253,13 @@ export default function Onboarding() {
   const [verificationProgress, setVerificationProgress] = useState(0)
   const [verificationStep, setVerificationStep] = useState('')
   const [isVerified, setIsVerified] = useState(false)
+
+  // Redirect to marketplace if profile is already complete
+  useEffect(() => {
+    if (!authLoading && isProfileComplete) {
+      navigate('/', { replace: true })
+    }
+  }, [authLoading, isProfileComplete, navigate])
 
   const [formData, setFormData] = useState({
     // Step 1: Resume
@@ -302,16 +312,12 @@ export default function Onboarding() {
       const uploadFormData = new FormData()
       uploadFormData.append('file', file)
 
-      const uploadResponse = await axios.post(
-        `${API}/files/upload`,
-        uploadFormData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      )
+      const uploadResponse = await api.post(`/files/upload`, uploadFormData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      })
 
       if (uploadResponse.data.url) {
         setFormData((prev) => ({
@@ -348,8 +354,8 @@ export default function Onboarding() {
     setError('')
 
     try {
-      const response = await axios.post(
-        `${API}/profile/scrape-linkedin`,
+      const response = await api.post(
+        `/profile/scrape-linkedin`,
         { linkedin_url: linkedinUrl },
         {
           headers: { Authorization: `Bearer ${token}` },

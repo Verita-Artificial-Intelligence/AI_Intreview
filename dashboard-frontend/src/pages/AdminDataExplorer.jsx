@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import axios from 'axios'
+import api from '@/utils/api'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 import {
@@ -62,11 +62,6 @@ import {
 } from '@/components/ui/pagination'
 import { cn } from '@/lib/utils'
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API_BASE = BACKEND_URL
-  ? `${BACKEND_URL}/api`
-  : 'http://localhost:8000/api'
-
 const PAGE_SIZE = 25
 const STATUS_OPTIONS = [
   { value: 'pending', label: 'Pending' },
@@ -122,7 +117,7 @@ const AdminDataExplorer = () => {
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const response = await axios.get(`${API_BASE}/jobs`)
+        const response = await api.get(`/jobs`)
         setJobs(response.data || [])
       } catch (error) {
         console.error('Failed to load jobs', error)
@@ -218,7 +213,7 @@ const AdminDataExplorer = () => {
       setLoading(true)
       try {
         const params = buildQueryParams()
-        const response = await axios.get(`${API_BASE}/admin/data`, {
+        const response = await api.get(`/admin/data`, {
           params,
           signal: controller.signal,
         })
@@ -315,7 +310,7 @@ const AdminDataExplorer = () => {
       delete params.page
       delete params.page_size
 
-      const response = await axios.get(`${API_BASE}/admin/data/export`, {
+      const response = await api.get(`/admin/data/export`, {
         params,
         responseType: 'blob',
       })

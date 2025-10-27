@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '@/utils/api'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -16,9 +16,6 @@ import {
 import InterviewCreationModal from '@/components/InterviewCreationModal'
 import Sidebar from '@/components/Sidebar'
 import { cardStyles, containers } from '@/lib/design-system'
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
 
 const Candidates = () => {
   const navigate = useNavigate()
@@ -45,8 +42,8 @@ const Candidates = () => {
   const fetchData = async () => {
     try {
       const [candidatesRes, interviewsRes] = await Promise.all([
-        axios.get(`${API}/candidates`),
-        axios.get(`${API}/interviews`),
+        api.get('/candidates'),
+        api.get('/interviews'),
       ])
       setCandidates(candidatesRes.data)
       setInterviews(interviewsRes.data)

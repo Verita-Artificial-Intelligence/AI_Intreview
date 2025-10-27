@@ -1,8 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import axios from 'axios'
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
+import { useUser, useAuth as useClerkAuth } from '@clerk/clerk-react'
+import api, { initializeApiClient, API_BASE_URL } from '../utils/api'
 
 const AuthContext = createContext(null)
 
@@ -15,41 +13,49 @@ export const useAuth = () => {
 }
 
 export const AuthProvider = ({ children }) => {
+  const { user: clerkUser, isSignedIn, isLoaded } = useUser()
+  const { getToken, signOut } = useClerkAuth()
+
   const [user, setUser] = useState(null)
-  const [token, setToken] = useState(localStorage.getItem('token'))
   const [loading, setLoading] = useState(true)
   const [interviewStatus, setInterviewStatus] = useState(null)
 
-  // Fetch user profile on mount if token exists
+  // Initialize API client with Clerk getToken function
   useEffect(() => {
-    if (token) {
+    if (getToken) {
+      initializeApiClient(getToken)
+    }
+  }, [getToken])
+
+  // Fetch user profile when Clerk user is available AND getToken is ready
+  useEffect(() => {
+    if (isLoaded && isSignedIn && getToken) {
       fetchUserProfile()
-    } else {
+    } else if (isLoaded && !isSignedIn) {
       setLoading(false)
     }
-  }, [token])
+  }, [isLoaded, isSignedIn, getToken])
 
   const fetchUserProfile = async () => {
     try {
-      const response = await axios.get(`${API}/profile/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const response = await api.get('/profile/me')
       setUser(response.data)
     } catch (error) {
-      console.error('Error fetching user profile:', error)
-      logout()
+      console.error('❌ Error fetching user profile:', error)
+      console.error('Response data:', error.response?.data)
+      console.error('Response status:', error.response?.status)
+      // Don't auto-logout on 401 - let user see the error
+      // Only logout if Clerk session is actually invalid
     } finally {
       setLoading(false)
     }
   }
 
   const fetchInterviewStatus = async () => {
-    if (!token) return null
+    if (!isSignedIn) return null
 
     try {
-      const response = await axios.get(`${API}/profile/interview-status`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const response = await api.get('/profile/interview-status')
       setInterviewStatus(response.data)
       return response.data
     } catch (error) {
@@ -58,61 +64,34 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const login = async (email, password) => {
-    const response = await axios.post(`${API}/auth/login`, {
-      email,
-      password,
-    })
-
-    const { token: newToken, user: userData } = response.data
-    localStorage.setItem('token', newToken)
-    setToken(newToken)
-    setUser(userData)
-
-    return userData
-  }
-
-  const signup = async (email, password) => {
-    const response = await axios.post(`${API}/auth/register`, {
-      email,
-      password,
-    })
-
-    const { token: newToken, user: userData } = response.data
-    localStorage.setItem('token', newToken)
-    setToken(newToken)
-    setUser(userData)
-
-    return userData
-  }
-
   const completeProfile = async (profileData) => {
-    const response = await axios.put(`${API}/profile/complete`, profileData, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-
-    setUser(response.data)
-    return response.data
+    try {
+      const response = await api.put('/profile/complete', profileData)
+      setUser(response.data)
+      return response.data
+    } catch (error) {
+      console.error('Error completing profile:', error)
+      throw error
+    }
   }
 
-  const logout = () => {
-    localStorage.removeItem('token')
-    setToken(null)
+  const logout = async () => {
     setUser(null)
     setInterviewStatus(null)
+    await signOut()
   }
 
   const value = {
     user,
-    token,
+    clerkUser,
     loading,
     interviewStatus,
-    login,
-    signup,
     logout,
     completeProfile,
     fetchInterviewStatus,
-    isAuthenticated: !!token,
+    fetchUserProfile,
+    getToken,
+    isAuthenticated: isSignedIn,
     isProfileComplete: user?.profile_completed || false,
   }
 

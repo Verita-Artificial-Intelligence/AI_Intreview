@@ -1,15 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import api from '@/utils/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { Send, ArrowLeft, CheckCircle } from 'lucide-react'
 import { pageHeader, containers, cssGradients } from '@/lib/design-system'
 import CandidateSidebar from '@/components/CandidateSidebar'
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL
-const API = `${BACKEND_URL}/api`
 
 const InterviewPage = () => {
   const { interviewId } = useParams()
@@ -37,7 +34,7 @@ const InterviewPage = () => {
 
   const fetchInterview = async () => {
     try {
-      const response = await axios.get(`${API}/interviews/${interviewId}`)
+      const response = await api.get(`/interviews/${interviewId}`)
       setInterview(response.data)
     } catch (error) {
       console.error('Error fetching interview:', error)
@@ -48,9 +45,7 @@ const InterviewPage = () => {
 
   const fetchMessages = async () => {
     try {
-      const response = await axios.get(
-        `${API}/interviews/${interviewId}/messages`
-      )
+      const response = await api.get(`/interviews/${interviewId}/messages`)
       setMessages(response.data)
     } catch (error) {
       console.error('Error fetching messages:', error)
@@ -75,7 +70,7 @@ const InterviewPage = () => {
     setMessages((prev) => [...prev, tempUserMsg])
 
     try {
-      const response = await axios.post(`${API}/chat`, {
+      const response = await api.post(`/chat`, {
         interview_id: interviewId,
         message: userMsg,
       })
@@ -102,7 +97,7 @@ const InterviewPage = () => {
 
     setCompleting(true)
     try {
-      await axios.post(`${API}/interviews/${interviewId}/complete`)
+      await api.post(`/interviews/${interviewId}/complete`)
       alert('Interview completed successfully!')
       navigate('/')
     } catch (error) {

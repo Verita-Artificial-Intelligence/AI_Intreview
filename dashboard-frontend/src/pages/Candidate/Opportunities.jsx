@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from '@/utils/api'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { Button } from '../../components/ui/button'
@@ -38,7 +38,7 @@ export default function Opportunities() {
 
   const fetchJobs = async () => {
     try {
-      const response = await axios.get(`${API}/jobs`)
+      const response = await api.get(`/jobs`)
       // Filter to only show open jobs
       const openJobs = response.data.filter((job) => job.status === 'open')
       setJobs(openJobs)
@@ -52,7 +52,7 @@ export default function Opportunities() {
 
   const fetchAnnotationTasks = async () => {
     try {
-      const response = await axios.get(`${API}/annotations/user/${user.id}`)
+      const response = await api.get(`/annotations/user/${user.id}`)
       setAnnotationTasks(response.data || [])
     } catch (error) {
       console.error('Failed to fetch annotation tasks:', error)
@@ -61,7 +61,7 @@ export default function Opportunities() {
 
   const fetchAppliedJobs = async () => {
     try {
-      const response = await axios.get(`${API}/interviews/candidate/${user.id}`)
+      const response = await api.get(`/interviews/candidate/${user.id}`)
       const jobIds = new Set(response.data.map((interview) => interview.job_id))
       setAppliedJobs(jobIds)
     } catch (error) {
@@ -72,7 +72,7 @@ export default function Opportunities() {
   const handleApply = async (jobId) => {
     try {
       // Create an interview for this job
-      await axios.post(`${API}/interviews`, {
+      await api.post(`/interviews`, {
         job_id: jobId,
         candidate_id: user.id,
         candidate_name: user.name,
