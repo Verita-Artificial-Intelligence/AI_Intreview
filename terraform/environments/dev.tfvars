@@ -5,9 +5,6 @@ aws_region  = "us-east-1"
 environment = "dev"
 app_name    = "verita-ai-interview"
 
-# GitHub Repository
-github_repository_url = "https://github.com/Verita-Artificial-Intelligence/AI_Intreview"
-
 # Networking
 vpc_cidr = "10.0.0.0/16"
 
@@ -39,6 +36,3 @@ domain_name = "" # Leave empty for HTTP-only in dev, or set to "api.dev.yourdoma
 # jwt_secret = "your-secret-key"
 # documentdb_password = "SecurePassword123!"
 # alert_email = "your-email@example.com"
-#
-# Note: GitHub access for Amplify is handled via manual authorization in AWS Console
-# See: AWS Amplify Console → New app → GitHub → Authorize (one-time setup)
