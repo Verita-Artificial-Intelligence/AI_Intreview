@@ -18,6 +18,9 @@
     ],
     "backend/**/*.py": [
       "black"
+    ],
+    "terraform/**/*.tf": [
+      "terraform fmt"
     ]
   }
 }

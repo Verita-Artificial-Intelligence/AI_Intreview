@@ -165,12 +165,12 @@ module "monitoring" {
 module "interview_frontend" {
   source = "./modules/amplify"
 
-  app_name                = "${var.app_name}-interview"
-  environment             = var.environment
-  repository_url          = var.github_repository_url
-  build_path              = "interview-frontend"
-  iam_service_role_arn    = module.iam.amplify_role_arn
-  production_domain       = "interview.verita-ai.com"
+  app_name                 = "${var.app_name}-interview"
+  environment              = var.environment
+  repository_url           = var.github_repository_url
+  build_path               = "interview-frontend"
+  iam_service_role_arn     = module.iam.amplify_role_arn
+  production_domain        = "interview.verita-ai.com"
   staging_subdomain_prefix = "staging"
 
   # Common environment variables
@@ -191,12 +191,12 @@ module "interview_frontend" {
 module "dashboard_frontend" {
   source = "./modules/amplify"
 
-  app_name                = "${var.app_name}-dashboard"
-  environment             = var.environment
-  repository_url          = var.github_repository_url
-  build_path              = "dashboard-frontend"
-  iam_service_role_arn    = module.iam.amplify_role_arn
-  production_domain       = "dashboard.verita-ai.com"
+  app_name                 = "${var.app_name}-dashboard"
+  environment              = var.environment
+  repository_url           = var.github_repository_url
+  build_path               = "dashboard-frontend"
+  iam_service_role_arn     = module.iam.amplify_role_arn
+  production_domain        = "dashboard.verita-ai.com"
   staging_subdomain_prefix = "staging"
 
   # Common environment variables
