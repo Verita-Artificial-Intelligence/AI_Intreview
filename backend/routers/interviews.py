@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import aiofiles
-from database import get_interviews_collection, get_candidates_collection, db
+from database import db
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -53,8 +53,7 @@ async def get_interview(interview_id: str):
 async def delete_interview(interview_id: str):
     """Delete an interview"""
     try:
-        await db.interviews.delete_one({"id": interview_id})
-        return {"success": True, "message": "Interview deleted successfully"}
+        return await InterviewService.delete_interview(interview_id)
     except Exception as e:
         logger.error(f"Error deleting interview: {e}")
         return {"success": False, "error": str(e)}
@@ -76,21 +75,15 @@ async def accept_candidate(interview_id: str):
         if not interview:
             return {"success": False, "error": "Interview not found"}
 
-        # Update acceptance status
-        interviews_collection = get_interviews_collection()
-        result = await interviews_collection.update_one(
-            {"id": interview_id}, {"$set": {"acceptance_status": "accepted"}}
-        )
-
-        if result.modified_count == 0:
-            logger.warning(f"Interview {interview_id} acceptance_status not updated")
-
         logger.info(
             f"Accepted candidate {interview.candidate_id} for interview {interview_id}"
         )
 
-        # Return updated interview
-        updated_interview = await InterviewService.get_interview(interview_id)
+        # Update acceptance status
+        updated_interview = await InterviewService.update_acceptance_status(
+            interview_id, "accepted"
+        )
+
         return {
             "success": True,
             "message": "Candidate accepted. You can now create annotation tasks for them.",
@@ -114,21 +107,15 @@ async def reject_candidate(interview_id: str):
         if not interview:
             return {"success": False, "error": "Interview not found"}
 
-        # Update acceptance status
-        interviews_collection = get_interviews_collection()
-        result = await interviews_collection.update_one(
-            {"id": interview_id}, {"$set": {"acceptance_status": "rejected"}}
-        )
-
-        if result.modified_count == 0:
-            return {"success": False, "error": "Failed to update interview"}
-
         logger.info(
             f"Rejected candidate {interview.candidate_id} for interview {interview_id}"
         )
 
-        # Return updated interview
-        updated_interview = await InterviewService.get_interview(interview_id)
+        # Update acceptance status
+        updated_interview = await InterviewService.update_acceptance_status(
+            interview_id, "rejected"
+        )
+
         return {
             "success": True,
             "message": "Candidate rejected",

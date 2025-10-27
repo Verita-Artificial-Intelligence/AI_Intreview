@@ -8,11 +8,8 @@ from models import (
     AnnotatorStats,
 )
 from utils import prepare_for_mongo, parse_from_mongo
-from database import (
-    get_annotations_collection,
-    get_jobs_collection,
-    get_interviews_collection,
-)
+from repositories import AnnotationRepository, JobRepository, InterviewRepository
+from database import db
 from datetime import datetime, timezone
 
 
@@ -20,17 +17,14 @@ class AnnotationService:
     @staticmethod
     async def create_annotation_task(task_data: AnnotationTaskCreate) -> AnnotationTask:
         """Create a new annotation task"""
-        annotations_collection = get_annotations_collection()
-
         # Verify job exists
-        jobs_collection = get_jobs_collection()
-        job = await jobs_collection.find_one({"id": task_data.job_id}, {"_id": 0})
+        job = await JobRepository.find_by_id(task_data.job_id)
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
 
         task = AnnotationTask(**task_data.model_dump())
         doc = prepare_for_mongo(task.model_dump())
-        await annotations_collection.insert_one(doc)
+        await AnnotationRepository.create(doc)
         return task
 
     @staticmethod
@@ -40,28 +34,17 @@ class AnnotationService:
         status: Optional[str] = None,
     ) -> List[AnnotationTask]:
         """Get annotation tasks with optional filters"""
-        annotations_collection = get_annotations_collection()
-
-        query = {}
-        if job_id:
-            query["job_id"] = job_id
-        if annotator_id:
-            query["annotator_id"] = annotator_id
-        if status:
-            query["status"] = status
-
-        tasks_docs = await annotations_collection.find(query, {"_id": 0}).to_list(1000)
+        tasks_docs = await AnnotationRepository.find_many(
+            job_id=job_id, annotator_id=annotator_id, status=status
+        )
         return [AnnotationTask(**doc) for doc in tasks_docs]
 
     @staticmethod
     async def get_annotation_task(task_id: str) -> AnnotationTask:
         """Get a specific annotation task"""
-        annotations_collection = get_annotations_collection()
-
-        task_doc = await annotations_collection.find_one({"id": task_id}, {"_id": 0})
+        task_doc = await AnnotationRepository.find_by_id(task_id)
         if not task_doc:
             raise HTTPException(status_code=404, detail="Annotation task not found")
-
         return AnnotationTask(**task_doc)
 
     @staticmethod
@@ -69,8 +52,6 @@ class AnnotationService:
         task_id: str, assign_data: AnnotationTaskAssign
     ) -> AnnotationTask:
         """Assign an annotation task to an annotator"""
-        annotations_collection = get_annotations_collection()
-
         # Get task
         task = await AnnotationService.get_annotation_task(task_id)
 
@@ -81,8 +62,8 @@ class AnnotationService:
             "assigned_at": datetime.now(timezone.utc),
         }
 
-        await annotations_collection.update_one(
-            {"id": task_id}, {"$set": prepare_for_mongo(update_data)}
+        await AnnotationRepository.update_fields(
+            task_id, prepare_for_mongo(update_data)
         )
 
         task.annotator_id = assign_data.annotator_id
@@ -93,8 +74,6 @@ class AnnotationService:
     @staticmethod
     async def start_annotation_task(task_id: str) -> AnnotationTask:
         """Mark annotation task as in progress"""
-        annotations_collection = get_annotations_collection()
-
         # Get task
         task = await AnnotationService.get_annotation_task(task_id)
 
@@ -103,10 +82,7 @@ class AnnotationService:
             return task
 
         # Check job status - can only start tasks when job is in_progress
-        from database import get_jobs_collection
-
-        jobs_collection = get_jobs_collection()
-        job = await jobs_collection.find_one({"id": task.job_id}, {"_id": 0})
+        job = await JobRepository.find_by_id(task.job_id)
 
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
@@ -135,8 +111,8 @@ class AnnotationService:
             "started_at": datetime.now(timezone.utc),
         }
 
-        await annotations_collection.update_one(
-            {"id": task_id}, {"$set": prepare_for_mongo(update_data)}
+        await AnnotationRepository.update_fields(
+            task_id, prepare_for_mongo(update_data)
         )
 
         task.status = "in_progress"
@@ -148,8 +124,6 @@ class AnnotationService:
         task_id: str, update_data: AnnotationTaskUpdate
     ) -> AnnotationTask:
         """Submit an annotation with quality rating"""
-        annotations_collection = get_annotations_collection()
-
         # Get task
         task = await AnnotationService.get_annotation_task(task_id)
 
@@ -170,8 +144,8 @@ class AnnotationService:
             "completed_at": datetime.now(timezone.utc),
         }
 
-        await annotations_collection.update_one(
-            {"id": task_id}, {"$set": prepare_for_mongo(update_dict)}
+        await AnnotationRepository.update_fields(
+            task_id, prepare_for_mongo(update_dict)
         )
 
         task.status = "completed"
@@ -196,30 +170,20 @@ class AnnotationService:
     @staticmethod
     async def get_available_tasks() -> List[AnnotationTask]:
         """Get all unassigned annotation tasks"""
-        annotations_collection = get_annotations_collection()
-
-        tasks_docs = await annotations_collection.find(
-            {"status": "pending"}, {"_id": 0}
-        ).to_list(1000)
+        tasks_docs = await AnnotationRepository.find_many(status="pending")
         return [AnnotationTask(**doc) for doc in tasks_docs]
 
     @staticmethod
     async def get_user_tasks(annotator_id: str) -> List[AnnotationTask]:
         """Get all tasks for a specific annotator"""
-        annotations_collection = get_annotations_collection()
-
-        tasks_docs = await annotations_collection.find(
-            {"annotator_id": annotator_id}, {"_id": 0}
-        ).to_list(1000)
+        tasks_docs = await AnnotationRepository.find_many(annotator_id=annotator_id)
         return [AnnotationTask(**doc) for doc in tasks_docs]
 
     @staticmethod
     async def delete_annotation_task(task_id: str) -> None:
         """Delete an annotation task"""
-        annotations_collection = get_annotations_collection()
-
-        result = await annotations_collection.delete_one({"id": task_id})
-        if result.deleted_count == 0:
+        deleted_count = await AnnotationRepository.delete_by_id(task_id)
+        if deleted_count == 0:
             raise HTTPException(status_code=404, detail="Annotation task not found")
 
     @staticmethod
@@ -229,9 +193,7 @@ class AnnotationService:
         performance_filter: Optional[str] = None,
     ) -> List[AnnotatorStats]:
         """Get aggregated statistics for all annotators with optional filters"""
-        annotations_collection = get_annotations_collection()
-        interviews_collection = get_interviews_collection()
-
+        # Note: This method uses aggregation which requires direct database access
         # MongoDB aggregation pipeline
         pipeline = [
             # Filter out tasks without annotator_id
@@ -279,11 +241,11 @@ class AnnotationService:
         ]
 
         # Execute aggregation
-        cursor = annotations_collection.aggregate(pipeline)
+        cursor = db.annotation_tasks.aggregate(pipeline)
         stats_list = await cursor.to_list(length=1000)
 
         # Fetch all interviews to create a candidate name map
-        interviews_cursor = interviews_collection.find(
+        interviews_cursor = db.interviews.find(
             {}, {"_id": 0, "candidate_id": 1, "candidate_name": 1}
         )
         interviews = await interviews_cursor.to_list(length=10000)

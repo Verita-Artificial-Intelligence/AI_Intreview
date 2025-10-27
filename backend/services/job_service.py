@@ -2,47 +2,35 @@ from fastapi import HTTPException
 from typing import List
 from models import Job, JobCreate, JobUpdate, JobStatusUpdate
 from utils import prepare_for_mongo, parse_from_mongo
-from database import get_jobs_collection
+from repositories import JobRepository, InterviewRepository, AnnotationRepository
 
 
 class JobService:
     @staticmethod
     async def create_job(job_data: JobCreate) -> Job:
         """Create a new job"""
-        jobs_collection = get_jobs_collection()
         job = Job(**job_data.model_dump())
         doc = prepare_for_mongo(job.model_dump())
-        await jobs_collection.insert_one(doc)
+        await JobRepository.create(doc)
         return job
 
     @staticmethod
     async def get_jobs(status: str = None) -> List[Job]:
         """Get all jobs with optional status filter"""
-        jobs_collection = get_jobs_collection()
-
-        query = {}
-        if status:
-            query["status"] = status
-
-        jobs_docs = await jobs_collection.find(query, {"_id": 0}).to_list(100)
+        jobs_docs = await JobRepository.find_many(status=status)
         return [Job(**doc) for doc in jobs_docs]
 
     @staticmethod
     async def get_job(job_id: str) -> Job:
         """Get a specific job by ID"""
-        jobs_collection = get_jobs_collection()
-
-        job_doc = await jobs_collection.find_one({"id": job_id}, {"_id": 0})
+        job_doc = await JobRepository.find_by_id(job_id)
         if not job_doc:
             raise HTTPException(status_code=404, detail="Job not found")
-
         return Job(**job_doc)
 
     @staticmethod
     async def update_job(job_id: str, job_update: JobUpdate) -> Job:
         """Update job fields"""
-        jobs_collection = get_jobs_collection()
-
         # Verify job exists
         job = await JobService.get_job(job_id)
 
@@ -56,10 +44,10 @@ class JobService:
             return job
 
         # Update the job
-        await jobs_collection.update_one({"id": job_id}, {"$set": update_data})
+        await JobRepository.update_fields(job_id, update_data)
 
         # Return updated job
-        updated_job_doc = await jobs_collection.find_one({"id": job_id}, {"_id": 0})
+        updated_job_doc = await JobRepository.find_by_id(job_id)
         return Job(**updated_job_doc)
 
     @staticmethod
@@ -89,9 +77,7 @@ class JobService:
                 raise HTTPException(status_code=400, detail=can_complete["reason"])
 
         # Update status
-        await jobs_collection.update_one(
-            {"id": job_id}, {"$set": {"status": status_update.status}}
-        )
+        await JobRepository.update_status(job_id, status_update.status)
 
         # Return updated job
         job.status = status_update.status
@@ -100,16 +86,10 @@ class JobService:
     @staticmethod
     async def can_complete_job(job_id: str) -> dict:
         """Check if a job can be marked as completed (all annotation tasks must be done)"""
-        from database import get_annotations_collection
+        # Get count of all tasks and completed tasks
+        total_tasks = await AnnotationRepository.count_by_job(job_id)
 
-        annotations_collection = get_annotations_collection()
-
-        # Get all annotation tasks for this job
-        all_tasks = await annotations_collection.find(
-            {"job_id": job_id}, {"_id": 0}
-        ).to_list(1000)
-
-        if len(all_tasks) == 0:
+        if total_tasks == 0:
             return {
                 "can_complete": True,
                 "reason": "No annotation tasks for this job",
@@ -118,42 +98,36 @@ class JobService:
             }
 
         # Check if all tasks are completed or reviewed
-        completed_tasks = [
-            task
-            for task in all_tasks
-            if task.get("status") in ["completed", "reviewed"]
-        ]
+        completed_tasks_count = await AnnotationRepository.count_by_job_and_status(
+            job_id, ["completed", "reviewed"]
+        )
 
-        can_complete = len(completed_tasks) == len(all_tasks)
+        can_complete = completed_tasks_count == total_tasks
 
         return {
             "can_complete": can_complete,
             "reason": (
-                f"Only {len(completed_tasks)} of {len(all_tasks)} annotation tasks are completed"
+                f"Only {completed_tasks_count} of {total_tasks} annotation tasks are completed"
                 if not can_complete
                 else "All tasks completed"
             ),
-            "completed_tasks": len(completed_tasks),
-            "total_tasks": len(all_tasks),
+            "completed_tasks": completed_tasks_count,
+            "total_tasks": total_tasks,
         }
 
     @staticmethod
     async def delete_job(job_id: str):
         """Delete a job and all associated interviews"""
-        from database import db
-
-        jobs_collection = get_jobs_collection()
-
         # Verify job exists
         await JobService.get_job(job_id)
 
         # Delete all interviews for this job
-        await db.interviews.delete_many({"job_id": job_id})
+        await InterviewRepository.delete_by_job_id(job_id)
 
         # Delete the job
-        result = await jobs_collection.delete_one({"id": job_id})
+        deleted_count = await JobRepository.delete_by_id(job_id)
 
-        if result.deleted_count == 0:
+        if deleted_count == 0:
             raise HTTPException(status_code=404, detail="Job not found")
 
         return {

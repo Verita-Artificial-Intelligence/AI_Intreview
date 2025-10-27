@@ -1,3 +1,19 @@
+"""
+Annotation Data: Enterprise-uploaded data (images, videos, documents) that needs annotation.
+
+This module defines datasets uploaded by administrators/enterprises for external annotation work.
+This is separate from interview-based annotation tasks.
+
+Use this when:
+- Admins upload external datasets (images, videos, documents) for annotation
+- Creating annotation work from non-interview sources
+- Managing enterprise data labeling projects
+
+Database Collection: annotation_data
+
+Related: See annotation.py for interview-based annotation tasks (different use case)
+"""
+
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, Literal, Dict, Any
 from datetime import datetime, timezone

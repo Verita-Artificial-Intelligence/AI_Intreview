@@ -3,7 +3,6 @@ from fastapi.responses import JSONResponse, StreamingResponse
 import logging
 from uuid import uuid4
 import os
-from database import get_interviews_collection
 from models.user import User
 from dependencies import get_current_user
 from services.s3_service import s3_service
@@ -49,15 +48,14 @@ async def upload_video(
 
         logger.info(f"Video for interview {interview_id} uploaded to S3: {s3_key}")
 
-        interviews_collection = get_interviews_collection()
-        result = await interviews_collection.update_one(
-            {"_id": interview_id},
-            {"$set": {"video_url": s3_key}},
-        )
+        # Update interview with video URL
+        from services import InterviewService
 
-        if result.matched_count == 0:
+        try:
+            await InterviewService.update_video_url(interview_id, s3_key)
+        except Exception as e:
             logger.warning(
-                f"Could not find matching interview {interview_id} to save video URL."
+                f"Could not update interview {interview_id} with video URL: {e}"
             )
 
         url_path = f"/uploads/{s3_key}"

@@ -19,7 +19,6 @@ from services.audio_buffer import AudioBuffer
 from services.audio_mixer import AudioMixer
 from services.speech_activity import SpeechActivityMonitor
 from services.s3_service import s3_service
-from database import get_interviews_collection
 from prompts.chat import get_interviewer_system_prompt
 from pathlib import Path
 from websockets.exceptions import (
@@ -168,107 +167,43 @@ async def websocket_endpoint(websocket: WebSocket):
         # Pre-check interview state to guide flow and persistence
         if interview_id:
             try:
-                from database import get_jobs_collection
+                from services.interview_service import InterviewService
+                from fastapi import HTTPException
 
-                interviews_collection = get_interviews_collection()
-                interview_doc = await interviews_collection.find_one(
-                    {"id": interview_id}
-                )
-
-                if not interview_doc:
-                    if candidate_id and job_id:
-                        existing_for_job = await interviews_collection.find_one(
-                            {
-                                "candidate_id": candidate_id,
-                                "job_id": job_id,
-                                "status": {
-                                    "$in": [
-                                        "in_progress",
-                                        "completed",
-                                        "under_review",
-                                        "approved",
-                                    ]
-                                },
-                            }
+                # Use the new service method to get or create interview
+                try:
+                    interview_doc = (
+                        await InterviewService.get_or_create_interview_for_session(
+                            interview_id=interview_id,
+                            candidate_id=candidate_id,
+                            candidate_name=candidate_name,
+                            job_id=job_id,
                         )
-
-                        if existing_for_job:
-                            await websocket.send_json(
-                                {
-                                    "event": "error",
-                                    "message": "You have already completed this interview. Please review your application status instead of starting a new one.",
-                                }
-                            )
-                            await websocket.close(
-                                code=1008, reason="duplicate-completed-interview"
-                            )
-                            return
-
-                    # Create new interview document
-                    from datetime import datetime, timezone
-
-                    interview_doc = {
-                        "id": interview_id,
-                        "status": "in_progress",
-                        "created_at": datetime.now(timezone.utc),
-                        "transcript": [],
-                        "acceptance_status": "pending",  # Set default acceptance status
-                        "candidate_id": candidate_id,
-                        "candidate_name": candidate_name or "Unknown",
-                    }
-
-                    # Add job information if job_id provided
-                    if job_id:
-                        jobs_collection = get_jobs_collection()
-                        job = await jobs_collection.find_one({"id": job_id}, {"_id": 0})
-                        if job:
-                            interview_doc["job_id"] = job_id
-                            interview_doc["job_title"] = job.get("title")
-                            interview_doc["position"] = job.get("title")
-                            # Set interview configuration from job
-                            interview_doc["interview_type"] = (
-                                job.get("interview_type") or "standard"
-                            )
-                            interview_doc["skills"] = job.get("skills") or None
-                            interview_doc["custom_questions"] = (
-                                job.get("custom_questions") or None
-                            )
-                            interview_doc["custom_exercise_prompt"] = (
-                                job.get("custom_exercise_prompt") or None
-                            )
-
-                            # Generate summary of job description for efficient prompt usage
-                            job_description = job.get("description")
-                            if job_description:
-                                from services.interview_service import InterviewService
-
-                                job_description_summary = (
-                                    await InterviewService.summarize_job_description(
-                                        job_description
-                                    )
-                                )
-                                interview_doc["job_description_summary"] = (
-                                    job_description_summary
-                                )
-
-                            logger.info(
-                                f"Loaded job config: type={job.get('interview_type', 'standard')}, custom_questions={len(job.get('custom_questions') or [])}, skills={len(job.get('skills') or [])}"
-                            )
-
-                    await interviews_collection.insert_one(interview_doc)
-                    logger.info(
-                        f"Created new interview document: {interview_id} for candidate {candidate_name} ({candidate_id}) with acceptance_status: pending"
                     )
-                else:
-                    # Interview already exists - check if it's completed
-                    if interview_doc.get("status") == "completed":
+                except HTTPException as e:
+                    # Handle duplicate interview error
+                    if e.status_code == 400:
                         await websocket.send_json(
                             {
-                                "event": "notice",
-                                "msg": "Interview already completed. Starting a practice session; results won't be saved.",
+                                "event": "error",
+                                "message": str(e.detail),
                             }
                         )
-                        can_persist = False
+                        await websocket.close(
+                            code=1008, reason="duplicate-completed-interview"
+                        )
+                        return
+                    raise
+
+                # Check if interview is completed
+                if interview_doc and interview_doc.get("status") == "completed":
+                    await websocket.send_json(
+                        {
+                            "event": "notice",
+                            "msg": "Interview already completed. Starting a practice session; results won't be saved.",
+                        }
+                    )
+                    can_persist = False
             except Exception as e:
                 logger.error(f"Error checking/creating interview: {e}")
                 # If pre-check fails, proceed with defaults and avoid persistence
@@ -502,6 +437,7 @@ async def save_transcript(interview_id: str, transcript: list[dict]):
     """
     try:
         from datetime import datetime, timezone
+        from services.interview_service import InterviewService
 
         # Add timestamps to entries that don't have them and sort by timestamp
         current_time = datetime.now(timezone.utc)
@@ -513,16 +449,9 @@ async def save_transcript(interview_id: str, transcript: list[dict]):
         # Sort transcript by timestamp to ensure proper ordering
         sorted_transcript = sorted(transcript, key=lambda x: x.get("timestamp", 0))
 
-        interviews_collection = get_interviews_collection()
-        await interviews_collection.update_one(
-            {"id": interview_id},
-            {
-                "$set": {
-                    "transcript": sorted_transcript,
-                    "status": "completed",
-                    "completed_at": current_time,
-                }
-            },
+        # Use service method to update transcript and complete interview
+        await InterviewService.update_transcript_and_complete(
+            interview_id, sorted_transcript
         )
         logger.info(
             f"Transcript saved for interview {interview_id} with {len(sorted_transcript)} entries in chronological order"

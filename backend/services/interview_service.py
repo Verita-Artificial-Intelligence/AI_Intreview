@@ -7,7 +7,8 @@ import re
 from openai import AsyncOpenAI
 from models import Interview, InterviewCreate, ChatMessage, SkillDefinition
 from utils import prepare_for_mongo, parse_from_mongo
-from database import db, get_jobs_collection, get_candidates_collection
+from database import db
+from repositories import InterviewRepository, JobRepository, CandidateRepository
 from config import OPENAI_API_KEY
 from prompts.chat import get_initial_greeting
 from prompts.interview_analysis import get_analysis_prompt, SYSTEM_PROMPT
@@ -64,22 +65,16 @@ Summary:""",
     async def create_interview(interview_data: InterviewCreate) -> Interview:
         """Create a new interview - inherits configuration from job if job_id is provided"""
         # Get candidate
-        candidate = await db.candidates.find_one(
-            {"id": interview_data.candidate_id}, {"_id": 0}
-        )
+        candidate = await CandidateRepository.find_by_id(interview_data.candidate_id)
         if not candidate:
             raise HTTPException(status_code=404, detail="Candidate not found")
 
         # Prevent duplicate interviews for the same job once a candidate has progressed
         if interview_data.job_id:
-            existing_interview = await db.interviews.find_one(
-                {
-                    "candidate_id": interview_data.candidate_id,
-                    "job_id": interview_data.job_id,
-                    "status": {
-                        "$in": ["in_progress", "completed", "under_review", "approved"]
-                    },
-                }
+            existing_interview = await InterviewRepository.find_by_candidate_and_job(
+                interview_data.candidate_id,
+                interview_data.job_id,
+                ["in_progress", "completed", "under_review", "approved"],
             )
             if existing_interview:
                 raise HTTPException(
@@ -97,10 +92,7 @@ Summary:""",
         custom_exercise_prompt = interview_data.custom_exercise_prompt
 
         if interview_data.job_id:
-            jobs_collection = get_jobs_collection()
-            job = await jobs_collection.find_one(
-                {"id": interview_data.job_id}, {"_id": 0}
-            )
+            job = await JobRepository.find_by_id(interview_data.job_id)
             if job:
                 job_title = job.get("title")
                 job_description = job.get("description")
@@ -152,7 +144,7 @@ Summary:""",
         )
 
         doc = prepare_for_mongo(interview.model_dump())
-        await db.interviews.insert_one(doc)
+        await InterviewRepository.create(doc)
 
         # Create initial AI message using type-specific greeting
         # Convert skills to dict format for prompt generation
@@ -193,10 +185,7 @@ Summary:""",
                 f"Auto-generating job description summary for interview {interview.id}"
             )
             try:
-                jobs_collection = get_jobs_collection()
-                job = await jobs_collection.find_one(
-                    {"id": interview.job_id}, {"_id": 0}
-                )
+                job = await JobRepository.find_by_id(interview.job_id)
                 if job and job.get("description"):
                     job_description_summary = (
                         await InterviewService.summarize_job_description(
@@ -204,9 +193,9 @@ Summary:""",
                         )
                     )
                     # Save the summary back to the interview record
-                    await db.interviews.update_one(
-                        {"id": interview.id},
-                        {"$set": {"job_description_summary": job_description_summary}},
+                    await InterviewRepository.update_fields(
+                        interview.id,
+                        {"job_description_summary": job_description_summary},
                     )
                     logger.info(
                         f"Successfully saved job description summary for interview {interview.id}"
@@ -237,24 +226,15 @@ Summary:""",
         candidate_id: str = None, job_id: str = None
     ) -> List[Interview]:
         """Get all interviews sorted by creation date with optional filtering"""
-        # Build filter query
-        filter_query = {}
-        if candidate_id:
-            filter_query["candidate_id"] = candidate_id
-        if job_id:
-            filter_query["job_id"] = job_id
-
-        interviews = (
-            await db.interviews.find(filter_query, {"_id": 0})
-            .sort("created_at", -1)
-            .to_list(100)
+        interviews = await InterviewRepository.find_many(
+            candidate_id=candidate_id, job_id=job_id
         )
         return [Interview(**parse_from_mongo(i)) for i in interviews]
 
     @staticmethod
     async def get_interview(interview_id: str) -> Interview:
         """Get a specific interview by ID"""
-        interview = await db.interviews.find_one({"id": interview_id}, {"_id": 0})
+        interview = await InterviewRepository.find_by_id(interview_id)
         if not interview:
             raise HTTPException(status_code=404, detail="Interview not found")
         return Interview(**parse_from_mongo(interview))
@@ -262,20 +242,18 @@ Summary:""",
     @staticmethod
     async def complete_interview(interview_id: str):
         """Mark interview as completed and set analysis status to pending"""
-        interview = await db.interviews.find_one({"id": interview_id})
+        interview = await InterviewRepository.find_by_id(interview_id)
         if not interview:
             raise HTTPException(status_code=404, detail="Interview not found")
 
         # Mark as completed and set analysis status to pending
         # Analysis will be generated on-demand when viewing results
-        await db.interviews.update_one(
-            {"id": interview_id},
+        await InterviewRepository.update_fields(
+            interview_id,
             {
-                "$set": {
-                    "status": "completed",
-                    "completed_at": datetime.now(timezone.utc).isoformat(),
-                    "analysis_status": "pending",
-                }
+                "status": "completed",
+                "completed_at": datetime.now(timezone.utc).isoformat(),
+                "analysis_status": "pending",
             },
         )
 
@@ -288,17 +266,15 @@ Summary:""",
         """Generate AI analysis of interview and save to database"""
         try:
             # Mark analysis as processing
-            await db.interviews.update_one(
-                {"id": interview_id}, {"$set": {"analysis_status": "processing"}}
+            await InterviewRepository.update_fields(
+                interview_id, {"analysis_status": "processing"}
             )
 
             # Get interview
-            interview_doc = await db.interviews.find_one(
-                {"id": interview_id}, {"_id": 0}
-            )
+            interview_doc = await InterviewRepository.find_by_id(interview_id)
             if not interview_doc:
-                await db.interviews.update_one(
-                    {"id": interview_id}, {"$set": {"analysis_status": "failed"}}
+                await InterviewRepository.update_fields(
+                    interview_id, {"analysis_status": "failed"}
                 )
                 raise HTTPException(status_code=404, detail="Interview not found")
 
@@ -330,21 +306,18 @@ Summary:""",
                     "recommendations": ["Complete the full interview process"],
                     "next_steps": [],
                 }
-                await db.interviews.update_one(
-                    {"id": interview_id},
+                await InterviewRepository.update_fields(
+                    interview_id,
                     {
-                        "$set": {
-                            "analysis_status": "completed",
-                            "analysis_result": default_analysis,
-                        }
+                        "analysis_status": "completed",
+                        "analysis_result": default_analysis,
                     },
                 )
                 return default_analysis
 
             # Get candidate info
-            candidates_collection = get_candidates_collection()
-            candidate = await candidates_collection.find_one(
-                {"id": interview_doc["candidate_id"]}, {"_id": 0}
+            candidate = await CandidateRepository.find_by_id(
+                interview_doc["candidate_id"]
             )
 
             if not candidate:
@@ -410,13 +383,11 @@ Summary:""",
                 analysis.setdefault("next_steps", [])
 
                 # Save analysis to database
-                await db.interviews.update_one(
-                    {"id": interview_id},
+                await InterviewRepository.update_fields(
+                    interview_id,
                     {
-                        "$set": {
-                            "analysis_status": "completed",
-                            "analysis_result": analysis,
-                        }
+                        "analysis_status": "completed",
+                        "analysis_result": analysis,
                     },
                 )
 
@@ -445,13 +416,11 @@ Summary:""",
                 }
 
                 # Save basic analysis to database
-                await db.interviews.update_one(
-                    {"id": interview_id},
+                await InterviewRepository.update_fields(
+                    interview_id,
                     {
-                        "$set": {
-                            "analysis_status": "completed",
-                            "analysis_result": basic_analysis,
-                        }
+                        "analysis_status": "completed",
+                        "analysis_result": basic_analysis,
                     },
                 )
 
@@ -462,7 +431,147 @@ Summary:""",
         except Exception as e:
             logger.error(f"Error analyzing interview: {e}")
             # Mark as failed
-            await db.interviews.update_one(
-                {"id": interview_id}, {"$set": {"analysis_status": "failed"}}
+            await InterviewRepository.update_fields(
+                interview_id, {"analysis_status": "failed"}
             )
             raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+    @staticmethod
+    async def delete_interview(interview_id: str) -> Dict[str, Any]:
+        """
+        Delete an interview by ID.
+        Used by routers that need to delete interviews.
+
+        Returns:
+            Success status and message
+        """
+        deleted_count = await InterviewRepository.delete_by_id(interview_id)
+        if deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Interview not found")
+        return {"success": True, "message": "Interview deleted successfully"}
+
+    @staticmethod
+    async def update_acceptance_status(interview_id: str, status: str) -> Interview:
+        """
+        Update the acceptance status of an interview.
+
+        Args:
+            interview_id: The interview ID
+            status: New acceptance status (accepted/rejected/pending)
+
+        Returns:
+            Updated interview object
+        """
+        # Verify interview exists
+        interview = await InterviewService.get_interview(interview_id)
+
+        # Update acceptance status
+        modified_count = await InterviewRepository.update_acceptance_status(
+            interview_id, status
+        )
+
+        if modified_count == 0:
+            logger.warning(f"Interview {interview_id} acceptance_status not updated")
+
+        # Return updated interview
+        return await InterviewService.get_interview(interview_id)
+
+    @staticmethod
+    async def update_transcript_and_complete(
+        interview_id: str, transcript: List[Dict[str, Any]]
+    ) -> None:
+        """
+        Update interview transcript and mark as completed.
+        Used by websocket when interview session ends.
+
+        Args:
+            interview_id: The interview ID
+            transcript: Sorted transcript entries
+        """
+        from datetime import datetime, timezone
+
+        completed_at = datetime.now(timezone.utc)
+        await InterviewRepository.update_transcript_and_complete(
+            interview_id, transcript, completed_at
+        )
+
+    @staticmethod
+    async def update_video_url(interview_id: str, video_url: str) -> None:
+        """
+        Update the video URL for an interview.
+        Used after video upload completes.
+
+        Args:
+            interview_id: The interview ID
+            video_url: S3 key or URL for the video
+        """
+        await InterviewRepository.update_video_url(interview_id, video_url)
+
+    @staticmethod
+    async def get_or_create_interview_for_session(
+        interview_id: str,
+        candidate_id: Optional[str] = None,
+        candidate_name: Optional[str] = None,
+        job_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Get an existing interview or create a new one for a websocket session.
+        This handles the complex logic of checking for duplicates and creating interviews.
+
+        Args:
+            interview_id: The interview ID
+            candidate_id: Optional candidate ID
+            candidate_name: Optional candidate name
+            job_id: Optional job ID
+
+        Returns:
+            Interview document
+        """
+        # Try to find existing interview
+        interview_doc = await InterviewRepository.find_by_id(interview_id)
+
+        if not interview_doc:
+            # Check for duplicate if job_id provided
+            if candidate_id and job_id:
+                existing_for_job = await InterviewRepository.find_by_candidate_and_job(
+                    candidate_id,
+                    job_id,
+                    ["in_progress", "completed", "under_review", "approved"],
+                )
+                if existing_for_job:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="You have already completed this interview.",
+                    )
+
+            # Create new interview document
+            interview_doc = {
+                "id": interview_id,
+                "status": "in_progress",
+                "created_at": datetime.now(timezone.utc),
+                "transcript": [],
+                "acceptance_status": "pending",
+                "candidate_id": candidate_id,
+                "candidate_name": candidate_name or "Unknown",
+            }
+
+            # Add job information if job_id provided
+            if job_id:
+                job = await JobRepository.find_by_id(job_id)
+                if job:
+                    interview_doc["job_id"] = job_id
+                    interview_doc["job_title"] = job.get("title")
+                    interview_doc["position"] = job.get("title")
+                    interview_doc["interview_type"] = job.get(
+                        "interview_type", "standard"
+                    )
+                    interview_doc["skills"] = job.get("skills")
+                    interview_doc["custom_questions"] = job.get("custom_questions")
+                    interview_doc["custom_exercise_prompt"] = job.get(
+                        "custom_exercise_prompt"
+                    )
+
+            # Save to database
+            await InterviewRepository.create(interview_doc)
+
+        return interview_doc

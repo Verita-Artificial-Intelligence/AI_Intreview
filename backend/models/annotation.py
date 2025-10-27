@@ -1,3 +1,19 @@
+"""
+Annotation Tasks: Tasks created FROM INTERVIEWS for human annotators to review.
+
+This module defines annotation tasks that are created after candidates complete interviews.
+These tasks are assigned to human annotators for quality assurance and data collection.
+
+Use this when:
+- Candidates have completed interviews and you need human QA/review
+- Creating tasks for annotators to evaluate interview performance
+- Tracking annotation work progress and quality ratings
+
+Database Collection: annotation_tasks
+
+Related: See annotation_data.py for enterprise-uploaded datasets (different use case)
+"""
+
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, Literal, List, Dict, Any
 from datetime import datetime, timezone

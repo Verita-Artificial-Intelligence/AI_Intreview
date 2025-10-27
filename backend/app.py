@@ -2,7 +2,7 @@ from fastapi import FastAPI, APIRouter
 from starlette.middleware.cors import CORSMiddleware
 import logging
 from config import CORS_ORIGINS
-from database import shutdown_db_client
+from database import shutdown_db_client, create_indexes
 from routers import (
     auth,
     profile,
@@ -40,6 +40,7 @@ app.add_middleware(
 # Event handlers for database connection
 @app.on_event("startup")
 async def startup():
+    await create_indexes()
     await AdminDataExplorerService.ensure_indexes()
 
 

@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from typing import List, Optional, Dict, Any
 from models import Candidate, CandidateCreate, User
 from utils import prepare_for_mongo, parse_from_mongo
-from database import get_users_collection
+from repositories import CandidateRepository, InterviewRepository
 
 
 class CandidateService:
@@ -71,7 +71,6 @@ class CandidateService:
     @staticmethod
     async def create_candidate(candidate_data: CandidateCreate) -> Candidate:
         """Create a new candidate"""
-        users_collection = get_users_collection()
         candidate = Candidate(**candidate_data.model_dump())
 
         education_entries = CandidateService._build_education_entries(
@@ -95,7 +94,7 @@ class CandidateService:
         if education_entries:
             profile_doc["education"] = education_entries
 
-        existing = await users_collection.find_one({"email": candidate.email})
+        existing = await CandidateRepository.find_by_email(candidate.email)
         if existing:
             existing = parse_from_mongo(existing)
             profile_doc["id"] = existing.get("id", profile_doc["id"])
@@ -107,13 +106,11 @@ class CandidateService:
         prepared_doc = prepare_for_mongo(profile_doc.copy())
 
         if existing:
-            await users_collection.update_one(
-                {"email": candidate.email}, {"$set": prepared_doc}
-            )
+            await CandidateRepository.update_fields(existing["id"], prepared_doc)
         else:
-            await users_collection.insert_one(prepared_doc)
+            await CandidateRepository.create(prepared_doc)
 
-        stored = await users_collection.find_one({"email": candidate.email}, {"_id": 0})
+        stored = await CandidateRepository.find_by_email(candidate.email)
         stored = CandidateService._normalise_user_doc(parse_from_mongo(stored))
 
         # Normalise fields for Candidate schema
@@ -162,7 +159,9 @@ class CandidateService:
     @staticmethod
     async def get_candidates(search: Optional[str] = None) -> List[Candidate]:
         """Get all candidates with optional search filter - queries users with completed profiles"""
-        users_collection = get_users_collection()
+        # Note: We can't use CandidateRepository.find_many() here because it doesn't support
+        # the complex filtering required. We'll need to query directly.
+        from database import db
 
         query = {"profile_completed": True}
 
@@ -178,9 +177,7 @@ class CandidateService:
                 },
             ]
 
-        users = await users_collection.find(
-            query, {"_id": 0, "password_hash": 0}
-        ).to_list(100)
+        users = await db.users.find(query, {"_id": 0, "password_hash": 0}).to_list(100)
 
         # Convert users to candidates format
         candidates = []
@@ -242,11 +239,7 @@ class CandidateService:
     @staticmethod
     async def get_candidate(candidate_id: str) -> Candidate:
         """Get a specific candidate by ID - queries users collection"""
-        users_collection = get_users_collection()
-
-        user_doc = await users_collection.find_one(
-            {"id": candidate_id}, {"_id": 0, "password_hash": 0}
-        )
+        user_doc = await CandidateRepository.find_by_id(candidate_id)
         if not user_doc:
             raise HTTPException(status_code=404, detail="Candidate not found")
 
@@ -273,3 +266,58 @@ class CandidateService:
         )
 
         return candidate
+
+    @staticmethod
+    async def update_education(candidate_id: str, education: Any) -> Dict[str, Any]:
+        """
+        Update candidate's education information.
+        Used by routers that need to update education.
+
+        Args:
+            candidate_id: The candidate ID
+            education: Education data (string, list, or dict)
+
+        Returns:
+            Success status and message
+        """
+        # Verify candidate exists
+        candidate = await CandidateService.get_candidate(candidate_id)
+
+        # Update education
+        modified_count = await CandidateRepository.update_education(
+            candidate_id, education
+        )
+
+        if modified_count == 0:
+            # Check if candidate exists
+            stored = await CandidateRepository.find_by_id(candidate_id)
+            if not stored:
+                return {"success": False, "error": "Candidate not found"}
+
+        return {"success": True, "message": "Education updated successfully"}
+
+    @staticmethod
+    async def delete_candidate(candidate_id: str) -> Dict[str, Any]:
+        """
+        Delete a candidate and all their interviews.
+        Used by routers that need to delete candidates.
+
+        Args:
+            candidate_id: The candidate ID
+
+        Returns:
+            Success status and message
+        """
+        # Delete all interviews for this candidate
+        await InterviewRepository.delete_by_candidate_id(candidate_id)
+
+        # Delete the candidate
+        deleted_count = await CandidateRepository.delete_by_id(candidate_id)
+
+        if deleted_count == 0:
+            return {"success": False, "error": "Candidate not found"}
+
+        return {
+            "success": True,
+            "message": "Candidate and associated interviews deleted successfully",
+        }
