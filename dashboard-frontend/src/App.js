@@ -11,6 +11,7 @@ import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import Candidates from './pages/Candidates'
 import Interviews from './pages/Interviews'
+import Pipeline from './pages/Pipeline'
 import Jobs from './pages/Jobs'
 import Projects from './pages/Projects'
 import ProjectDetail from './pages/ProjectDetail'
@@ -57,6 +58,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Interviews />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pipeline"
+            element={
+              <ProtectedRoute>
+                <Pipeline />
               </ProtectedRoute>
             }
           />

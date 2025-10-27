@@ -30,16 +30,10 @@ export default function Sidebar() {
 
   const navItems = [
     { path: '/', icon: Layers, label: 'Dashboard' },
-    { path: '/candidates', icon: Users, label: 'Candidates' },
-    { path: '/interviews', icon: MessagesSquare, label: 'Interviews' },
     { path: '/jobs', icon: Briefcase, label: 'Jobs' },
-    { path: '/projects', icon: FolderKanban, label: 'Projects' },
-  ]
-
-  const annotationItems = [
-    // { path: '/admin/data-explorer', icon: Table, label: 'Data Explorer' },
-    // { path: '/annotation-data', icon: FileText, label: 'Annotation Data' },
+    { path: '/pipeline', icon: MessagesSquare, label: 'Pipeline' },
     { path: '/annotators', icon: Users, label: 'Annotators' },
+    { path: '/projects', icon: FolderKanban, label: 'Projects' },
   ]
 
   return (
@@ -63,29 +57,6 @@ export default function Sidebar() {
 
         <nav className="px-3 flex-1">
           {navItems.map((item) => {
-            const Icon = item.icon
-            const active = isActive(item.path)
-
-            return (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors mb-1 ${
-                  active
-                    ? 'bg-brand-50 text-brand-600 font-medium'
-                    : 'text-neutral-600 hover:bg-neutral-50'
-                }`}
-              >
-                <Icon className="w-4 h-4 flex-shrink-0" />
-                <span className="flex-1 text-left">{item.label}</span>
-                {active && <ChevronRight className="w-4 h-4" />}
-              </button>
-            )
-          })}
-
-          <div className="border-t border-neutral-200 my-3" />
-
-          {annotationItems.map((item) => {
             const Icon = item.icon
             const active = isActive(item.path)
 
