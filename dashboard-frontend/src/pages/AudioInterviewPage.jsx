@@ -18,7 +18,6 @@ import {
   cardStyles,
   cssGradients,
 } from '@/lib/design-system'
-import CandidateSidebar from '@/components/CandidateSidebar'
 
 const AudioInterviewPage = () => {
   const { interviewId } = useParams()
@@ -245,8 +244,6 @@ const AudioInterviewPage = () => {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <CandidateSidebar showAnnotationTasks={true} />
-
       {/* Main Content */}
       <main className="flex-1 flex flex-col">
         {/* Header */}

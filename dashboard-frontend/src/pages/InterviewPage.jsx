@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { Send, ArrowLeft, CheckCircle } from 'lucide-react'
 import { pageHeader, containers, cssGradients } from '@/lib/design-system'
-import CandidateSidebar from '@/components/CandidateSidebar'
 
 const InterviewPage = () => {
   const { interviewId } = useParams()
@@ -126,8 +125,6 @@ const InterviewPage = () => {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <CandidateSidebar showAnnotationTasks={true} />
-
       {/* Main Content */}
       <main className="flex-1 flex flex-col">
         {/* Header */}

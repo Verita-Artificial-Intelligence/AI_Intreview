@@ -38,6 +38,17 @@ S3_BUCKET = os.environ.get("S3_BUCKET")
 AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
 S3_TEMP_FILE_RETENTION_DAYS = 7  # Temp files auto-deleted after this many days
 
+# AWS SES Configuration
+SES_REGION = os.environ.get("SES_REGION", "us-east-1")
+SES_ACCESS_KEY_ID = os.environ.get("SES_ACCESS_KEY_ID")
+SES_SECRET_ACCESS_KEY = os.environ.get("SES_SECRET_ACCESS_KEY")
+SES_FROM_ADDRESS = os.environ.get("SES_FROM_ADDRESS")
+
+# Email Branding
+COMPANY_NAME = os.environ.get("COMPANY_NAME", "Verita")
+COMPANY_LOGO_URL = os.environ.get("COMPANY_LOGO_URL", "")
+SUPPORT_EMAIL = os.environ.get("SUPPORT_EMAIL", "support@verita.ai")
+
 # AI Interviewer Persona
 AI_INTERVIEWER_PERSONA = {
     "name": "Sarah",
@@ -132,6 +143,17 @@ class Settings:
     S3_BUCKET = S3_BUCKET
     AWS_REGION = AWS_REGION
     S3_TEMP_FILE_RETENTION_DAYS = S3_TEMP_FILE_RETENTION_DAYS
+
+    # AWS SES
+    SES_REGION = SES_REGION
+    SES_ACCESS_KEY_ID = SES_ACCESS_KEY_ID
+    SES_SECRET_ACCESS_KEY = SES_SECRET_ACCESS_KEY
+    SES_FROM_ADDRESS = SES_FROM_ADDRESS
+
+    # Email Branding
+    COMPANY_NAME = COMPANY_NAME
+    COMPANY_LOGO_URL = COMPANY_LOGO_URL
+    SUPPORT_EMAIL = SUPPORT_EMAIL
 
     # AI Persona (convert dict to instruction string)
     AI_INTERVIEWER_PERSONA = f"""You are {AI_INTERVIEWER_PERSONA['name']}, {AI_INTERVIEWER_PERSONA['title']}.

@@ -70,6 +70,8 @@ class Interview(BaseModel):
     custom_exercise_prompt: Optional[str] = None
     resume_text: Optional[str] = None
     acceptance_status: AcceptanceStatus = "pending"
+    accepted_at: Optional[datetime] = None
+    project_id: Optional[str] = None  # Project assignment (if accepted and assigned)
     availability_confirmed: Optional[bool] = None  # Per-job availability confirmation
 
     @field_validator("interview_type", mode="before")

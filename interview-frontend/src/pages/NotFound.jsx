@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { FileQuestion } from 'lucide-react'
 
 const NotFound = () => {
   return (
@@ -15,13 +14,6 @@ const NotFound = () => {
               alt="Verita AI"
               className="w-16 h-16 rounded-lg object-cover"
             />
-          </div>
-
-          {/* Icon */}
-          <div className="flex justify-center mb-6">
-            <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center">
-              <FileQuestion className="w-10 h-10 text-blue-500" />
-            </div>
           </div>
 
           {/* Title */}

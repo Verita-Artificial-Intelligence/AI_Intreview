@@ -37,6 +37,20 @@ from .websocket import (
     SessionReadyMessage,
     SessionState,
 )
+from .project import (
+    Project,
+    ProjectCreate,
+    ProjectUpdate,
+    ProjectStatus,
+    RoleDefinition,
+)
+from .assignment import (
+    Assignment,
+    AssignmentCreate,
+    BulkAssignmentCreate,
+    AssignmentStatus,
+)
+from .email_send import EmailSend, EmailStatus
 
 __all__ = [
     "User",
@@ -85,4 +99,15 @@ __all__ = [
     "MetricsMessage",
     "SessionReadyMessage",
     "SessionState",
+    "Project",
+    "ProjectCreate",
+    "ProjectUpdate",
+    "ProjectStatus",
+    "RoleDefinition",
+    "Assignment",
+    "AssignmentCreate",
+    "BulkAssignmentCreate",
+    "AssignmentStatus",
+    "EmailSend",
+    "EmailStatus",
 ]

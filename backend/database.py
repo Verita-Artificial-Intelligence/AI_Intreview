@@ -69,6 +69,23 @@ async def create_indexes():
     # Candidates collection indexes (users are candidates)
     # No separate candidates collection, using users
 
+    # Projects collection indexes
+    await db.projects.create_index("id", unique=True)
+    await db.projects.create_index("status")
+    await db.projects.create_index("created_at")
+
+    # Assignments collection indexes
+    await db.assignments.create_index("id", unique=True)
+    await db.assignments.create_index([("project_id", 1), ("candidate_id", 1)])
+    await db.assignments.create_index("project_id")
+    await db.assignments.create_index("candidate_id")
+    await db.assignments.create_index("status")
+
+    # Email sends collection indexes
+    await db.email_sends.create_index("id", unique=True)
+    await db.email_sends.create_index("assignment_id")
+    await db.email_sends.create_index("created_at")
+
 
 async def shutdown_db_client():
     """Close MongoDB connection on application shutdown"""

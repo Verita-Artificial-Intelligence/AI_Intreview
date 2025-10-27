@@ -12,7 +12,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import {
-  Users,
   Briefcase,
   Clock,
   CheckCircle,
@@ -20,7 +19,6 @@ import {
   Trash2,
   Search,
   Eye,
-  Star,
   MessagesSquare,
   MoveUpRight,
 } from 'lucide-react'
@@ -55,11 +53,6 @@ const Dashboard = () => {
   const [interviewSearch, setInterviewSearch] = useState('')
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [interviewToDelete, setInterviewToDelete] = useState(null)
-  const [annotatorStats, setAnnotatorStats] = useState([])
-  const [annotatorSearch, setAnnotatorSearch] = useState('')
-  const [completionFilter, setCompletionFilter] = useState('all')
-  const [performanceFilter, setPerformanceFilter] = useState('all')
-  const [annotatorLoading, setAnnotatorLoading] = useState(false)
 
   const getInitials = (name) => {
     if (!name) return 'U'
@@ -72,12 +65,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchData()
-    fetchAnnotatorStats()
   }, [])
-
-  useEffect(() => {
-    fetchAnnotatorStats()
-  }, [annotatorSearch, completionFilter, performanceFilter])
 
   const fetchData = async () => {
     try {
@@ -87,28 +75,6 @@ const Dashboard = () => {
       console.error('Error fetching data:', error)
     } finally {
       setLoading(false)
-    }
-  }
-
-  const fetchAnnotatorStats = async () => {
-    try {
-      setAnnotatorLoading(true)
-      const params = new URLSearchParams()
-      if (annotatorSearch.trim()) params.append('search', annotatorSearch)
-      if (completionFilter !== 'all')
-        params.append('completion_filter', completionFilter)
-      if (performanceFilter !== 'all')
-        params.append('performance_filter', performanceFilter)
-
-      const response = await api.get(
-        `/annotations/annotators/stats?${params.toString()}`
-      )
-      setAnnotatorStats(Array.isArray(response.data) ? response.data : [])
-    } catch (error) {
-      console.error('Error fetching annotator stats:', error)
-      setAnnotatorStats([])
-    } finally {
-      setAnnotatorLoading(false)
     }
   }
 
@@ -376,159 +342,6 @@ const Dashboard = () => {
                   </table>
                 </div>
               </Card>
-            )}
-          </div>
-
-          {/* Annotator Performance Section */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-lg font-semibold text-neutral-900 mb-0.5">
-                  Annotator Performance
-                </h2>
-                <p className="text-sm text-gray-600">
-                  Monitor annotator task completion and quality ratings
-                </p>
-              </div>
-              <Button
-                onClick={() => navigate('/annotators')}
-                variant="link-arrow"
-                className="h-9 text-sm gap-1.5 px-0"
-              >
-                View All Annotators
-                <MoveUpRight className="w-4 h-4" />
-              </Button>
-            </div>
-
-            {/* Search and Filters */}
-            <div className="mb-4 flex gap-3 flex-wrap">
-              <div className="flex-1 min-w-64">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    type="text"
-                    placeholder="Search by annotator name..."
-                    value={annotatorSearch}
-                    onChange={(e) => setAnnotatorSearch(e.target.value)}
-                    className="pl-9 h-10 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 text-sm"
-                  />
-                </div>
-              </div>
-              <Select
-                value={completionFilter}
-                onValueChange={setCompletionFilter}
-              >
-                <SelectTrigger className="w-40 h-10 rounded-lg text-sm">
-                  <SelectValue placeholder="Completion" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Completion</SelectItem>
-                  <SelectItem value="100">100% Complete</SelectItem>
-                  <SelectItem value="75">75% - 99%</SelectItem>
-                  <SelectItem value="50">50% - 74%</SelectItem>
-                  <SelectItem value="0">Below 50%</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select
-                value={performanceFilter}
-                onValueChange={setPerformanceFilter}
-              >
-                <SelectTrigger className="w-40 h-10 rounded-lg text-sm">
-                  <SelectValue placeholder="Performance" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Performance</SelectItem>
-                  <SelectItem value="excellent">Excellent (4.5+)</SelectItem>
-                  <SelectItem value="good">Good (3.5-4.5)</SelectItem>
-                  <SelectItem value="fair">Fair (2.5-3.5)</SelectItem>
-                  <SelectItem value="poor">Poor (&lt;2.5)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Annotator Stats Grid */}
-            {annotatorLoading ? (
-              <p className="text-sm text-gray-600">
-                Loading annotator stats...
-              </p>
-            ) : annotatorStats.length === 0 ? (
-              <Card className="p-8 text-center bg-white border border-gray-200 rounded-lg shadow-sm">
-                <Users
-                  className="w-10 h-10 mx-auto mb-3 text-gray-300"
-                  strokeWidth={1.5}
-                />
-                <p className="text-sm text-gray-600 mb-4">
-                  {annotatorSearch ||
-                  completionFilter !== 'all' ||
-                  performanceFilter !== 'all'
-                    ? 'No annotators found matching your filters'
-                    : 'No annotators yet. Get started by assigning annotation tasks'}
-                </p>
-                {!(
-                  annotatorSearch ||
-                  completionFilter !== 'all' ||
-                  performanceFilter !== 'all'
-                ) && (
-                  <Button
-                    onClick={() => navigate('/annotators')}
-                    variant="outline"
-                    size="sm"
-                    className="rounded-lg font-normal text-xs h-8 px-3"
-                  >
-                    Manage Annotators
-                  </Button>
-                )}
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {annotatorStats.map((annotator) => (
-                  <Card
-                    key={annotator.annotator_id}
-                    className="p-5 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-md flex items-center justify-center text-xs font-semibold text-neutral-900 bg-brand-200 flex-shrink-0">
-                        {getInitials(annotator.name)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-sm text-gray-900 truncate">
-                          {annotator.name}
-                        </h3>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <Star
-                            className={`w-3.5 h-3.5 ${annotator.avg_rating >= 4 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                          />
-                          <span className="text-xs text-gray-600">
-                            {annotator.avg_rating > 0
-                              ? `${annotator.avg_rating}/5`
-                              : 'No ratings'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Tasks:</span>
-                        <span className="font-medium text-gray-900">
-                          {annotator.completed_tasks}/{annotator.total_tasks}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Completion:</span>
-                        <span className="font-medium text-gray-900">
-                          {annotator.completion_rate}%
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
-                        <div
-                          className="bg-blue-500 h-1.5 rounded-full transition-all"
-                          style={{ width: `${annotator.completion_rate}%` }}
-                        />
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
             )}
           </div>
         </div>

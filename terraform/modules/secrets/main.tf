@@ -18,6 +18,12 @@ resource "aws_secretsmanager_secret_version" "app_secrets" {
     documentdb_password        = var.documentdb_password
     clerk_candidate_secret_key = var.clerk_candidate_secret_key
     clerk_admin_secret_key     = var.clerk_admin_secret_key
+    ses_access_key_id          = var.ses_access_key_id
+    ses_secret_access_key      = var.ses_secret_access_key
+    ses_from_address           = var.ses_from_address
+    company_name               = var.company_name
+    company_logo_url           = var.company_logo_url
+    support_email              = var.support_email
   })
 }
 

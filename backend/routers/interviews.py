@@ -127,6 +127,48 @@ async def reject_candidate(interview_id: str):
         return {"success": False, "error": str(e)}
 
 
+@router.post("/{interview_id}/retry-scoring")
+async def retry_scoring(interview_id: str):
+    """
+    Retry AI scoring/analysis for an interview.
+    Useful when analysis failed or needs to be re-run.
+    """
+    try:
+        # Get the interview
+        interview = await InterviewService.get_interview(interview_id)
+        if not interview:
+            raise HTTPException(status_code=404, detail="Interview not found")
+
+        # Check if interview has transcript
+        if not interview.transcript or len(interview.transcript) < 2:
+            raise HTTPException(
+                status_code=400,
+                detail="Interview does not have sufficient transcript data for analysis",
+            )
+
+        logger.info(f"Retrying analysis for interview {interview_id}")
+
+        # Trigger re-analysis
+        analysis_result = await InterviewService.analyze_interview(interview_id)
+
+        # Get updated interview
+        updated_interview = await InterviewService.get_interview(interview_id)
+
+        return {
+            "success": True,
+            "message": "Analysis completed successfully",
+            "interview": updated_interview.model_dump(),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrying analysis: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500, detail=f"Failed to retry analysis: {str(e)}"
+        )
+
+
 @router.patch("/{interview_id}/resume")
 async def update_interview_resume(interview_id: str, data: dict = Body(...)):
     """Update interview with candidate's resume text"""

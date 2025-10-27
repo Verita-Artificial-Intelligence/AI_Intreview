@@ -30,3 +30,13 @@ alert_email = "alerts@yourdomain.com"
 # Domain name for HTTPS (optional for dev, required for prod)
 # domain_name = "api.dev.yourdomain.com"  # dev
 # domain_name = "api.yourdomain.com"      # prod
+
+# AWS SES Email Configuration
+ses_access_key_id     = "AKIAxxxxxxxxxxxxxxxx"
+ses_secret_access_key = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+ses_from_address      = "noreply@yourdomain.com"
+
+# Email Branding (used in assignment emails)
+company_name     = "Your Company"
+company_logo_url = "https://yourdomain.com/logo.png"
+support_email    = "support@yourdomain.com"

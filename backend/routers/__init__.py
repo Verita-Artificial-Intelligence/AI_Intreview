@@ -14,6 +14,9 @@ from . import (
     admin,
     clerk_webhooks,
     migration,
+    annotators,
+    projects,
+    assignments,
 )
 
 __all__ = [

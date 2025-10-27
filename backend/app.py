@@ -19,6 +19,9 @@ from routers import (
     admin,
     clerk_webhooks,
     migration,
+    annotators,
+    projects,
+    assignments,
 )
 from services.admin_data_service import AdminDataExplorerService
 from utils.clerk_auth import init_clerk_jwks_clients
@@ -81,6 +84,9 @@ app.include_router(earnings.router, prefix="/api/earnings", tags=["Earnings"])
 app.include_router(audio.router, prefix="/api/audio", tags=["Audio"])
 app.include_router(uploads.router, prefix="/api", tags=["Uploads"])
 app.include_router(admin.router, prefix="/api", tags=["Admin"])
+app.include_router(annotators.router, prefix="/api/annotators", tags=["Annotators"])
+app.include_router(projects.router, prefix="/api/projects", tags=["Projects"])
+app.include_router(assignments.router, prefix="/api/assignments", tags=["Assignments"])
 
 # Clerk authentication routers
 app.include_router(clerk_webhooks.router, tags=["Clerk Webhooks"])

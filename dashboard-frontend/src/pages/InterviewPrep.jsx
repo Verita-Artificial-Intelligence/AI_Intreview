@@ -26,7 +26,6 @@ import {
   cardStyles,
   cssGradients,
 } from '@/lib/design-system'
-import CandidateSidebar from '@/components/CandidateSidebar'
 
 const InterviewPrep = () => {
   const { interviewId } = useParams()
@@ -370,8 +369,6 @@ const InterviewPrep = () => {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <CandidateSidebar showAnnotationTasks={true} />
-
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
         {/* Header */}

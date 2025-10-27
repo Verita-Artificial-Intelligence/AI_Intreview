@@ -48,3 +48,14 @@ clerk_admin_secret_key = "sk_test_HRTDt3PDEBK4qOydwy1kWX6t9knsoyhcWeuvmguWiT"
 
 # Authorized parties for staging
 clerk_authorized_parties = "http://localhost:3000,http://localhost:3001,https://staging.interview.verita-ai.com,https://staging.dashboard.verita-ai.com"
+
+# AWS SES Email Configuration (Development)
+ses_region           = "us-east-1"
+ses_access_key_id    = "YOUR_SES_ACCESS_KEY_ID_HERE"
+ses_secret_access_key = "YOUR_SES_SECRET_ACCESS_KEY_HERE"
+ses_from_address     = "noreply@staging.verita-ai.com"
+
+# Email Branding
+company_name     = "Verita"
+company_logo_url = "https://staging.verita-ai.com/logo.png"
+support_email    = "support@verita-ai.com"

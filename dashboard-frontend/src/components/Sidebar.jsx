@@ -12,6 +12,7 @@ import {
   MessagesSquare,
   Layers,
   User,
+  FolderKanban,
 } from 'lucide-react'
 import AccountModal from './AccountModal'
 
@@ -32,6 +33,7 @@ export default function Sidebar() {
     { path: '/candidates', icon: Users, label: 'Candidates' },
     { path: '/interviews', icon: MessagesSquare, label: 'Interviews' },
     { path: '/jobs', icon: Briefcase, label: 'Jobs' },
+    { path: '/projects', icon: FolderKanban, label: 'Projects' },
   ]
 
   const annotationItems = [

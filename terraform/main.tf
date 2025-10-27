@@ -84,6 +84,12 @@ module "secrets" {
   documentdb_password        = var.documentdb_password
   clerk_candidate_secret_key = var.clerk_candidate_secret_key
   clerk_admin_secret_key     = var.clerk_admin_secret_key
+  ses_access_key_id          = var.ses_access_key_id
+  ses_secret_access_key      = var.ses_secret_access_key
+  ses_from_address           = var.ses_from_address
+  company_name               = var.company_name
+  company_logo_url           = var.company_logo_url
+  support_email              = var.support_email
 }
 
 # WAF for ALB
@@ -140,6 +146,17 @@ module "ecs" {
 
     # Authorized Parties
     CLERK_AUTHORIZED_PARTIES = var.clerk_authorized_parties
+
+    # AWS SES Email Configuration
+    SES_REGION            = var.ses_region
+    SES_ACCESS_KEY_ID     = var.ses_access_key_id
+    SES_SECRET_ACCESS_KEY = var.ses_secret_access_key
+    SES_FROM_ADDRESS      = var.ses_from_address
+
+    # Email Branding
+    COMPANY_NAME     = var.company_name
+    COMPANY_LOGO_URL = var.company_logo_url
+    SUPPORT_EMAIL    = var.support_email
   }
 
   # Scaling configuration
