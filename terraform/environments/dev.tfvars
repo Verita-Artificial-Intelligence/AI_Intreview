@@ -33,9 +33,12 @@ enable_lifecycle_rules = false
 # HTTPS
 domain_name = "" # Leave empty for HTTP-only in dev, or set to "api.dev.yourdomain.com"
 
-# Sensitive variables (set via environment or terraform.tfvars)
+# Sensitive variables (set via secrets.tfvars)
 # container_image = "123456789.dkr.ecr.us-east-1.amazonaws.com/verita-backend:latest"
 # openai_api_key = "sk-..."
 # jwt_secret = "your-secret-key"
 # documentdb_password = "SecurePassword123!"
 # alert_email = "your-email@example.com"
+#
+# Note: GitHub access for Amplify is handled via manual authorization in AWS Console
+# See: AWS Amplify Console → New app → GitHub → Authorize (one-time setup)
