@@ -103,15 +103,6 @@ const Pipeline = () => {
     return list
   }, [interviews, search, statusFilter, jobFilter, resultFilter, sortBy])
 
-  const getInitials = (name) => {
-    if (!name) return 'U'
-    const parts = name.trim().split(' ')
-    if (parts.length === 1) return parts[0].charAt(0).toUpperCase()
-    return (
-      parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
-    ).toUpperCase()
-  }
-
   const clearFilters = () => {
     setStatusFilter('all')
     setJobFilter('all')
@@ -158,27 +149,20 @@ const Pipeline = () => {
   const columns = [
     createColumn('candidate', 'Candidate', {
       frozen: true,
-      width: 220,
-      minWidth: 180,
+      width: 180,
+      minWidth: 140,
       render: (_, interview) => {
         return (
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-blue-100 flex items-center justify-center text-xs font-medium text-blue-800 flex-shrink-0">
-              {getInitials(interview.candidate_name)}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="font-medium text-gray-900 text-truncate">
-                {interview.candidate_name || 'Unknown'}
-              </div>
-            </div>
+          <div className="font-medium text-gray-900 text-truncate">
+            {interview.candidate_name || 'Unknown'}
           </div>
         )
       },
     }),
     createColumn('job', 'Job', {
       frozen: true,
-      width: 180,
-      minWidth: 140,
+      width: 160,
+      minWidth: 120,
       headerRender: () => (
         <ColumnFilterDropdown
           label="Job"
@@ -202,7 +186,7 @@ const Pipeline = () => {
       ),
     }),
     createColumn('status', 'Status', {
-      width: 140,
+      width: 120,
       className: 'text-left border-l border-gray-200',
       headerRender: () => (
         <ColumnFilterDropdown
@@ -231,7 +215,7 @@ const Pipeline = () => {
       },
     }),
     createColumn('result', 'Result', {
-      width: 120,
+      width: 110,
       className: 'text-left border-l border-gray-200',
       headerRender: () => (
         <ColumnFilterDropdown
@@ -263,7 +247,7 @@ const Pipeline = () => {
       },
     }),
     createColumn('updated', 'Updated', {
-      width: 140,
+      width: 130,
       className: 'text-left border-l border-gray-200',
       headerRender: () => (
         <button
