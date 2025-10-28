@@ -66,7 +66,9 @@ resource "aws_iam_role_policy" "ecs_task_s3_policy" {
         Effect = "Allow"
         Action = [
           "s3:PutObject",
+          "s3:PutObjectTagging",
           "s3:GetObject",
+          "s3:GetObjectTagging",
           "s3:DeleteObject",
           "s3:ListBucket"
         ]
