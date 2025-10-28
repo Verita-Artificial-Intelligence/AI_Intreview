@@ -13,14 +13,6 @@ import {
   SelectValue,
 } from '../components/ui/select'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../components/ui/table'
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -30,6 +22,10 @@ import {
 } from '../components/ui/dialog'
 import { Label } from '../components/ui/label'
 import { Textarea } from '../components/ui/textarea'
+import DataTable, {
+  createColumn,
+  columnRenderers,
+} from '../components/DataTable'
 import { Search, Plus, FolderKanban } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
 
@@ -135,6 +131,75 @@ export default function Projects() {
     })
   }
 
+  // Table columns configuration
+  const columns = [
+    createColumn('name', 'Name', {
+      render: (_, project) => (
+        <div>
+          <div className="font-semibold text-neutral-900">{project.name}</div>
+          {project.description && (
+            <div className="text-xs text-neutral-600 mt-1 line-clamp-1">
+              {project.description}
+            </div>
+          )}
+        </div>
+      ),
+    }),
+    createColumn('status', 'Status', {
+      render: (_, project) => {
+        const statusConfig = {
+          active: {
+            bg: 'bg-green-100',
+            text: 'text-green-800',
+            label: 'Active',
+          },
+          completed: {
+            bg: 'bg-blue-100',
+            text: 'text-blue-800',
+            label: 'Completed',
+          },
+          archived: {
+            bg: 'bg-gray-100',
+            text: 'text-gray-800',
+            label: 'Archived',
+          },
+        }
+        return columnRenderers.status(project.status, statusConfig)
+      },
+    }),
+    createColumn('capacity', 'Assigned / Capacity', {
+      render: (_, project) =>
+        columnRenderers.progress(
+          project.assigned_count || 0,
+          project.capacity || 0,
+          { showText: true, color: 'blue' }
+        ),
+    }),
+    createColumn('updated_at', 'Last Updated', {
+      render: (_, project) => (
+        <span className="text-sm text-gray-600">
+          {formatDate(project.updated_at)}
+        </span>
+      ),
+    }),
+  ]
+
+  const handleRowClick = (project) => {
+    navigate(`/projects/${project.id}`)
+  }
+
+  const paginationConfig = {
+    page,
+    totalPages,
+    pageSize,
+    total,
+    onPageChange: setPage,
+    onPageSizeChange: (newSize) => {
+      setPageSize(newSize)
+      setPage(1)
+    },
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <Sidebar />
@@ -190,110 +255,35 @@ export default function Projects() {
             </Select>
           </div>
 
-          {/* Table */}
-          {loading ? (
-            <p className="text-sm text-gray-600">Loading...</p>
-          ) : projects.length === 0 ? (
-            <Card className="p-8 text-center bg-white border border-gray-200 rounded-lg shadow-sm">
-              <FolderKanban
-                className="w-10 h-10 mx-auto mb-3 text-gray-300"
-                strokeWidth={1.5}
-              />
-              <p className="text-sm text-gray-600 mb-4">
-                No projects yet. Create your first project to get started.
-              </p>
-              <Button
-                onClick={() => setCreateDialogOpen(true)}
-                variant="outline"
-                className="rounded-lg"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Project
-              </Button>
-            </Card>
-          ) : (
-            <Card className="overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Assigned / Capacity</TableHead>
-                    <TableHead>Last Updated</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {projects.map((project) => (
-                    <TableRow
-                      key={project.id}
-                      className="cursor-pointer hover:bg-gray-50"
-                      onClick={() => navigate(`/projects/${project.id}`)}
-                    >
-                      <TableCell className="font-medium">
-                        {project.name}
-                      </TableCell>
-                      <TableCell>{getStatusBadge(project.status)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">
-                            {project.assigned_count} / {project.capacity}
-                          </span>
-                          <div className="w-24 bg-gray-200 rounded-full h-2">
-                            <div
-                              className="bg-blue-500 h-2 rounded-full transition-all"
-                              style={{
-                                width: `${Math.min(
-                                  (project.assigned_count / project.capacity) *
-                                    100,
-                                  100
-                                )}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm text-gray-600">
-                        {formatDate(project.updated_at)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Card>
-          )}
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                Showing {(page - 1) * pageSize + 1} to{' '}
-                {Math.min(page * pageSize, total)} of {total} results
-              </div>
-              <div className="flex items-center gap-2">
+          {/* Projects Table */}
+          <DataTable
+            columns={columns}
+            data={projects}
+            onRowClick={handleRowClick}
+            loading={loading}
+            pagination={paginationConfig}
+            emptyState={
+              <div className="p-10 text-center bg-surface border border-neutral-200 rounded-xl shadow-card">
+                <FolderKanban
+                  className="w-10 h-10 mx-auto mb-3 text-gray-300"
+                  strokeWidth={1.5}
+                />
+                <p className="text-sm text-neutral-600 mb-3">
+                  No projects yet. Create your first project to get started.
+                </p>
                 <Button
+                  onClick={() => setCreateDialogOpen(true)}
                   variant="outline"
                   size="sm"
-                  onClick={() => setPage(page - 1)}
-                  disabled={page === 1}
-                  className="h-9"
+                  className="rounded-lg font-normal text-xs h-8 px-3"
                 >
-                  Previous
-                </Button>
-                <div className="text-sm text-gray-600">
-                  Page {page} of {totalPages}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(page + 1)}
-                  disabled={page === totalPages}
-                  className="h-9"
-                >
-                  Next
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Project
                 </Button>
               </div>
-            </div>
-          )}
+            }
+            size="md"
+          />
         </div>
       </main>
 

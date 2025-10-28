@@ -13,14 +13,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -36,6 +28,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import DataTable, {
+  createColumn,
+  columnRenderers,
+} from '@/components/DataTable'
 import {
   Search,
   ChevronLeft,
@@ -186,6 +182,89 @@ export default function Annotators() {
     })
   }
 
+  // Table columns configuration
+  const columns = [
+    createColumn('name', 'Name', {
+      render: (_, item) => (
+        <div className="font-medium text-neutral-900">{item.candidateName}</div>
+      ),
+    }),
+    createColumn('email', 'Email', {
+      render: (_, item) => (
+        <span className="text-sm text-neutral-600">{item.candidateEmail}</span>
+      ),
+    }),
+    createColumn('job', 'Job Posting', {
+      render: (_, item) => <span className="text-sm">{item.jobTitle}</span>,
+    }),
+    createColumn('projects', 'Projects', {
+      render: (_, item) => {
+        if (item.projectCount > 0) {
+          return (
+            <Badge
+              variant="secondary"
+              className="text-xs border-brand-200 text-brand-700 bg-brand-50"
+            >
+              {item.projectCount} project{item.projectCount !== 1 ? 's' : ''}
+            </Badge>
+          )
+        }
+        return <span className="text-neutral-400">Unassigned</span>
+      },
+    }),
+    createColumn('score', 'AI Score', {
+      render: (_, item) => renderScore(item),
+    }),
+    createColumn('acceptedDate', 'Accepted Date', {
+      render: (_, item) => (
+        <span className="text-sm text-neutral-600">
+          {formatDate(item.acceptedDate)}
+        </span>
+      ),
+    }),
+    createColumn('lastActivity', 'Last Activity', {
+      render: (_, item) => (
+        <span className="text-sm text-neutral-600">
+          {formatDate(item.lastActivity)}
+        </span>
+      ),
+    }),
+    createColumn('actions', 'Actions', {
+      className: 'text-right',
+      render: (_, item) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => navigate(`/candidates`)}>
+              View Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => navigate(`/admin/review/${item.interviewId}`)}
+            >
+              Open Interview Report
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    }),
+  ]
+
+  const paginationConfig = {
+    page,
+    totalPages,
+    pageSize,
+    total,
+    onPageChange: setPage,
+    onPageSizeChange: (newSize) => {
+      setPageSize(newSize)
+      setPage(1)
+    },
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <Sidebar />
@@ -256,152 +335,26 @@ export default function Annotators() {
             </Select>
           </div>
 
-          {/* Table */}
-          {loading ? (
-            <p className="text-sm text-gray-600">Loading...</p>
-          ) : items.length === 0 ? (
-            <Card className="p-10 text-center bg-surface border border-neutral-200 rounded-xl shadow-card">
-              <p className="text-sm text-neutral-600 mb-3">
-                No accepted annotators found. Only candidates who have been
-                explicitly accepted as annotators appear here.
-              </p>
-              <p className="text-xs text-neutral-500">
-                Regular candidates (not yet accepted as annotators) are shown in
-                the Candidates view.
-              </p>
-            </Card>
-          ) : (
-            <Card className="overflow-hidden border border-neutral-200 rounded-xl shadow-card">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-neutral-50">
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Job Posting</TableHead>
-                    <TableHead>Projects</TableHead>
-                    <TableHead>AI Score</TableHead>
-                    <TableHead>Accepted Date</TableHead>
-                    <TableHead>Last Activity</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {items.map((item) => (
-                    <TableRow
-                      key={item.interviewId}
-                      className="hover:bg-neutral-50"
-                    >
-                      <TableCell className="font-medium">
-                        {item.candidateName}
-                      </TableCell>
-                      <TableCell className="text-sm text-neutral-600">
-                        {item.candidateEmail}
-                      </TableCell>
-                      <TableCell className="text-sm">{item.jobTitle}</TableCell>
-                      <TableCell className="text-sm">
-                        {item.projectCount > 0 ? (
-                          <Badge
-                            variant="secondary"
-                            className="text-xs border-brand-200 text-brand-700 bg-brand-50"
-                          >
-                            {item.projectCount} project
-                            {item.projectCount !== 1 ? 's' : ''}
-                          </Badge>
-                        ) : (
-                          <span className="text-neutral-400">Unassigned</span>
-                        )}
-                      </TableCell>
-                      <TableCell>{renderScore(item)}</TableCell>
-                      <TableCell className="text-sm text-neutral-600">
-                        {formatDate(item.acceptedDate)}
-                      </TableCell>
-                      <TableCell className="text-sm text-neutral-600">
-                        {formatDate(item.lastActivity)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => navigate(`/candidates`)}
-                            >
-                              View Profile
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                navigate(`/admin/review/${item.interviewId}`)
-                              }
-                            >
-                              Open Interview Report
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Card>
-          )}
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="mt-6 flex items-center justify-between bg-neutral-50 border border-neutral-200 rounded-lg px-4 py-3">
-              <div className="text-sm text-neutral-600">
-                Showing {(page - 1) * pageSize + 1} to{' '}
-                {Math.min(page * pageSize, total)} of {total} results
+          {/* Annotators Table */}
+          <DataTable
+            columns={columns}
+            data={items}
+            loading={loading}
+            pagination={paginationConfig}
+            emptyState={
+              <div className="p-10 text-center bg-surface border border-neutral-200 rounded-xl shadow-card">
+                <p className="text-sm text-neutral-600 mb-3">
+                  No accepted annotators found. Only candidates who have been
+                  explicitly accepted as annotators appear here.
+                </p>
+                <p className="text-xs text-neutral-500">
+                  Regular candidates (not yet accepted as annotators) are shown
+                  in the Candidates view.
+                </p>
               </div>
-              <div className="flex items-center gap-2">
-                <Select
-                  value={pageSize.toString()}
-                  onValueChange={(val) => {
-                    setPageSize(parseInt(val))
-                    setPage(1)
-                  }}
-                >
-                  <SelectTrigger className="w-28 h-9 text-sm border-neutral-300 focus:border-brand-500">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="25">25 / page</SelectItem>
-                    <SelectItem value="50">50 / page</SelectItem>
-                    <SelectItem value="100">100 / page</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(page - 1)}
-                  disabled={page === 1}
-                  className="h-9 border-neutral-300 hover:bg-neutral-100"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
-                </Button>
-                <div className="text-sm text-gray-600">
-                  Page {page} of {totalPages}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(page + 1)}
-                  disabled={page === totalPages}
-                  className="h-9 border-neutral-300 hover:bg-neutral-100"
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
+            }
+            size="md"
+          />
         </div>
       </main>
 

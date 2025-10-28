@@ -8,6 +8,8 @@ import {
   FileText,
   MessagesSquare,
   Pencil,
+  MoreVertical,
+  Eye,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -22,6 +24,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import DataTable, {
+  createColumn,
+  columnRenderers,
+} from '@/components/DataTable'
 import Sidebar from '@/components/Sidebar'
 import JobForm from '@/components/JobForm'
 
@@ -221,6 +233,117 @@ const Jobs = () => {
     }
   }
 
+  // Table columns configuration
+  const columns = [
+    createColumn('title', 'Job Title', {
+      render: (_, job) => (
+        <div>
+          <div className="font-semibold text-neutral-900">{job.title}</div>
+          <div className="text-xs text-neutral-600 mt-1">
+            {job.position_type}
+          </div>
+        </div>
+      ),
+    }),
+    createColumn('description', 'Description', {
+      render: (_, job) => (
+        <div className="max-w-xs">
+          <p className="text-sm text-neutral-600 line-clamp-2">
+            {job.description}
+          </p>
+        </div>
+      ),
+    }),
+    createColumn('interview_type', 'Interview Type', {
+      render: (_, job) => (
+        <div className="flex items-center gap-2">
+          <FileText className="w-4 h-4 text-neutral-400" />
+          <span className="text-xs text-neutral-600">
+            {getInterviewTypeLabel(job.interview_type)}
+          </span>
+        </div>
+      ),
+    }),
+    createColumn('skills', 'Skills', {
+      render: (_, job) => {
+        if (!job.skills || job.skills.length === 0) {
+          return <span className="text-sm text-gray-400">-</span>
+        }
+
+        return (
+          <div className="flex flex-wrap gap-1">
+            {job.skills.slice(0, 2).map((skill, idx) => (
+              <span
+                key={idx}
+                className="px-2 py-1 bg-neutral-100 text-neutral-700 rounded text-xs"
+              >
+                {skill.name}
+              </span>
+            ))}
+            {job.skills.length > 2 && (
+              <span className="px-2 py-1 bg-neutral-100 text-neutral-700 rounded text-xs">
+                +{job.skills.length - 2} more
+              </span>
+            )}
+          </div>
+        )
+      },
+    }),
+    createColumn('status', 'Status', {
+      render: (_, job) => {
+        const statusConfig = {
+          pending: {
+            bg: 'bg-blue-100',
+            text: 'text-blue-800',
+            label: 'Pending',
+          },
+          in_progress: {
+            bg: 'bg-yellow-100',
+            text: 'text-yellow-800',
+            label: 'In Progress',
+          },
+          archived: {
+            bg: 'bg-gray-100',
+            text: 'text-gray-800',
+            label: 'Archived',
+          },
+        }
+        return columnRenderers.status(job.status, statusConfig)
+      },
+    }),
+    createColumn('actions', 'Actions', {
+      className: 'text-right',
+      render: (_, job) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleEditJob(job)}>
+              <Pencil className="w-4 h-4 mr-2" />
+              Edit Job
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleViewInterviews(job.id)}>
+              <Eye className="w-4 h-4 mr-2" />
+              View Interviews
+            </DropdownMenuItem>
+            {getNextStatus(job.status) && (
+              <DropdownMenuItem onClick={() => handleStatusChange(job)}>
+                {getNextStatusLabel(job.status)}
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    }),
+  ]
+
+  const handleRowClick = (job) => {
+    handleEditJob(job)
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <Sidebar />
@@ -266,146 +389,47 @@ const Jobs = () => {
             </div>
           )}
 
-          {/* Jobs Grid */}
-          {loading ? (
-            <p className="text-sm text-gray-600">Loading jobs...</p>
-          ) : filteredJobs.length === 0 ? (
-            <Card className="p-8 text-center bg-white border border-gray-200 rounded-lg shadow-sm">
-              <MessagesSquare
-                className="w-10 h-10 mx-auto mb-3 text-gray-300"
-                strokeWidth={1.5}
-              />
-              <p className="text-sm text-gray-600 mb-4">
-                {searchQuery
-                  ? 'No jobs found matching your search'
-                  : 'No jobs yet. Create your first job posting to get started'}
-              </p>
-              {!searchQuery ? (
-                <Button
-                  onClick={() => setShowJobForm(true)}
-                  variant="outline"
-                  size="sm"
-                  className="rounded-lg font-normal text-xs h-8 px-3"
-                >
-                  <Plus className="w-3.5 h-3.5 mr-1.5" />
-                  Create Your First Job
-                </Button>
-              ) : (
-                <Button
-                  onClick={() => setSearchQuery('')}
-                  variant="outline"
-                  size="sm"
-                  className="rounded-lg font-normal text-xs h-8 px-3"
-                >
-                  Clear Search
-                </Button>
-              )}
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredJobs.map((job) => (
-                <Card
-                  key={job.id}
-                  className="p-6 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow relative flex flex-col"
-                >
-                  {/* Job Details */}
-                  <div className="mb-3 flex-1">
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="p-2.5 bg-neutral-100 border border-neutral-200 rounded-lg flex-shrink-0">
-                        <Briefcase className="w-5 h-5 text-neutral-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <h3 className="font-semibold text-lg text-neutral-900">
-                            {job.title}
-                          </h3>
-                          {(() => {
-                            const badge = getStatusBadge(job.status)
-                            return (
-                              <span
-                                className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${badge.bg} ${badge.text} flex-shrink-0`}
-                              >
-                                {badge.label}
-                              </span>
-                            )
-                          })()}
-                        </div>
-                        <p className="text-sm text-neutral-600">
-                          {job.position_type}
-                        </p>
-                      </div>
-                    </div>
-
-                    <p className="text-sm text-neutral-600 line-clamp-3 mb-4">
-                      {job.description}
-                    </p>
-
-                    {/* Interview Type Badge */}
-                    <div className="flex items-center gap-2 mb-4">
-                      <FileText className="w-4 h-4 text-neutral-400" />
-                      <span className="text-xs text-neutral-600">
-                        {getInterviewTypeLabel(job.interview_type)}
-                      </span>
-                    </div>
-
-                    {/* Skills */}
-                    {job.skills && job.skills.length > 0 && (
-                      <div>
-                        <p className="text-xs font-medium text-neutral-700 mb-2">
-                          Skills to assess:
-                        </p>
-                        <div className="flex flex-wrap gap-1">
-                          {job.skills.slice(0, 3).map((skill, idx) => (
-                            <span
-                              key={idx}
-                              className="px-2 py-1 bg-neutral-100 text-neutral-700 rounded text-xs"
-                            >
-                              {skill.name}
-                            </span>
-                          ))}
-                          {job.skills.length > 3 && (
-                            <span className="px-2 py-1 bg-neutral-100 text-neutral-700 rounded text-xs">
-                              +{job.skills.length - 3} more
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="space-y-2">
-                    <Button
-                      onClick={() => handleEditJob(job)}
-                      variant="outline"
-                      size="sm"
-                      className="w-full rounded-lg"
-                    >
-                      <Pencil className="w-3.5 h-3.5 mr-2" />
-                      Edit Job
-                    </Button>
-                    <Button
-                      onClick={() => handleViewInterviews(job.id)}
-                      variant="outline"
-                      size="sm"
-                      className="w-full rounded-lg"
-                    >
-                      View Interviews
-                    </Button>
-                    {getNextStatus(job.status) && (
-                      <Button
-                        onClick={() => handleStatusChange(job)}
-                        size="sm"
-                        className="w-full rounded-lg bg-brand-500 hover:bg-brand-600 text-white"
-                      >
-                        {getNextStatusLabel(job.status)}
-                      </Button>
-                    )}
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
+          {/* Jobs Table */}
+          <DataTable
+            columns={columns}
+            data={filteredJobs}
+            onRowClick={handleRowClick}
+            loading={loading}
+            emptyState={
+              <div className="p-10 text-center bg-surface border border-neutral-200 rounded-xl shadow-card">
+                <MessagesSquare
+                  className="w-10 h-10 mx-auto mb-3 text-gray-300"
+                  strokeWidth={1.5}
+                />
+                <p className="text-sm text-neutral-600 mb-3">
+                  {searchQuery
+                    ? 'No jobs found matching your search'
+                    : 'No jobs yet. Create your first job posting to get started'}
+                </p>
+                {!searchQuery ? (
+                  <Button
+                    onClick={() => setShowJobForm(true)}
+                    variant="outline"
+                    size="sm"
+                    className="rounded-lg font-normal text-xs h-8 px-3"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1.5" />
+                    Create Your First Job
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => setSearchQuery('')}
+                    variant="outline"
+                    size="sm"
+                    className="rounded-lg font-normal text-xs h-8 px-3"
+                  >
+                    Clear Search
+                  </Button>
+                )}
+              </div>
+            }
+            size="md"
+          />
         </div>
       </main>
 

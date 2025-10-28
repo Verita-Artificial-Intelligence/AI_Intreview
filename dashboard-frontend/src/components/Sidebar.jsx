@@ -39,7 +39,7 @@ export default function Sidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex fixed left-0 top-0 h-screen w-64 bg-white border-r border-neutral-200 overflow-y-auto flex-col">
+      <aside className="hidden lg:flex fixed left-0 top-0 h-screen w-[212px] bg-white border-r border-neutral-200 overflow-y-auto flex-col">
         <div className="p-6">
           <div className="flex items-center gap-3 mb-1">
             <img

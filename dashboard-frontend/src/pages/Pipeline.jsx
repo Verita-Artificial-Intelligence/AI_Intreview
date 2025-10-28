@@ -2,20 +2,20 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import api from '@/utils/api'
 import Sidebar from '@/components/Sidebar'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import DataTable, {
+  createColumn,
+  columnRenderers,
+} from '@/components/DataTable'
+import CompactToolbar, { createActiveFilter } from '@/components/CompactToolbar'
+import ColumnFilterDropdown from '@/components/ColumnFilterDropdown'
 import {
-  Users,
   MessagesSquare,
-  Search,
-  Filter,
-  X,
   Briefcase,
-  Trash2,
-  Calendar,
+  Clock,
+  ChevronRight,
+  Search,
 } from 'lucide-react'
-import { getStatusClass, getStatusLabel } from '@/lib/design-system'
+import { getStatusLabel } from '@/lib/design-system'
 
 const Pipeline = () => {
   const navigate = useNavigate()
@@ -25,13 +25,16 @@ const Pipeline = () => {
   const [interviews, setInterviews] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState(
-    searchParams.get('status') || ''
-  )
+  const statusParam = searchParams.get('status')
+  const candidateParam = searchParams.get('candidate')
+  const jobParam = searchParams.get('job')
+
+  const [statusFilter, setStatusFilter] = useState(statusParam || 'all')
   const [candidateFilter, setCandidateFilter] = useState(
-    searchParams.get('candidate') || ''
+    candidateParam || 'all'
   )
-  const [jobFilter, setJobFilter] = useState(searchParams.get('job') || '')
+  const [jobFilter, setJobFilter] = useState(jobParam || 'all')
+  const [density] = useState('compact')
 
   useEffect(() => {
     fetchData()
@@ -58,17 +61,17 @@ const Pipeline = () => {
     let list = [...interviews]
 
     // Apply status filter
-    if (statusFilter) {
+    if (statusFilter && statusFilter !== 'all') {
       list = list.filter((i) => (i.status || '').toLowerCase() === statusFilter)
     }
 
     // Apply candidate filter
-    if (candidateFilter) {
+    if (candidateFilter && candidateFilter !== 'all') {
       list = list.filter((i) => i.candidate_id === candidateFilter)
     }
 
     // Apply job filter
-    if (jobFilter) {
+    if (jobFilter && jobFilter !== 'all') {
       list = list.filter((i) => i.job_id === jobFilter)
     }
 
@@ -96,22 +99,26 @@ const Pipeline = () => {
   }
 
   const clearFilters = () => {
-    setStatusFilter('')
-    setCandidateFilter('')
-    setJobFilter('')
+    setStatusFilter('all')
+    setCandidateFilter('all')
+    setJobFilter('all')
     setSearch('')
     setSearchParams({})
   }
 
   const hasActiveFilters =
-    statusFilter || candidateFilter || jobFilter || search
+    (statusFilter && statusFilter !== 'all') ||
+    (candidateFilter && candidateFilter !== 'all') ||
+    (jobFilter && jobFilter !== 'all') ||
+    Boolean(search)
 
   // Sync URL params with filters
   useEffect(() => {
     const next = new URLSearchParams()
-    if (statusFilter) next.set('status', statusFilter)
-    if (candidateFilter) next.set('candidate', candidateFilter)
-    if (jobFilter) next.set('job', jobFilter)
+    if (statusFilter && statusFilter !== 'all') next.set('status', statusFilter)
+    if (candidateFilter && candidateFilter !== 'all')
+      next.set('candidate', candidateFilter)
+    if (jobFilter && jobFilter !== 'all') next.set('job', jobFilter)
     setSearchParams(next)
   }, [statusFilter, candidateFilter, jobFilter, setSearchParams])
 
@@ -137,254 +144,200 @@ const Pipeline = () => {
     }
   }
 
+  // Production table columns - optimized order and layout
+  const columns = [
+    createColumn('candidate', 'Candidate', {
+      frozen: true,
+      width: 220,
+      minWidth: 180,
+      headerRender: () => (
+        <ColumnFilterDropdown
+          label="Candidate"
+          value={candidateFilter}
+          options={[
+            { value: 'all', label: 'All Candidates' },
+            ...candidates.map((c) => ({ value: c.id, label: c.name })),
+          ]}
+          onChange={setCandidateFilter}
+          searchable={true}
+          placeholder="Search candidates..."
+        />
+      ),
+      render: (_, interview) => (
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded bg-blue-100 flex items-center justify-center text-xs font-medium text-blue-800 flex-shrink-0">
+            {getInitials(interview.candidate_name)}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="font-medium text-gray-900 text-truncate">
+              {interview.candidate_name || 'Unknown'}
+            </div>
+            <div className="text-xs text-gray-500 flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {columnRenderers.date(interview.created_at)}
+            </div>
+          </div>
+        </div>
+      ),
+    }),
+    createColumn('job', 'Job', {
+      frozen: true,
+      width: 180,
+      minWidth: 140,
+      headerRender: () => (
+        <ColumnFilterDropdown
+          label="Job"
+          value={jobFilter}
+          options={[
+            { value: 'all', label: 'All Jobs' },
+            ...jobs.map((j) => ({ value: j.id, label: j.title })),
+          ]}
+          onChange={setJobFilter}
+          searchable={true}
+          placeholder="Search jobs..."
+        />
+      ),
+      render: (_, interview) => (
+        <div
+          className="text-sm text-gray-900 text-truncate"
+          title={interview.job_title}
+        >
+          {interview.job_title || 'Unknown'}
+        </div>
+      ),
+    }),
+    createColumn('status', 'Status', {
+      width: 140,
+      className: 'text-center',
+      headerRender: () => (
+        <ColumnFilterDropdown
+          label="Status"
+          value={statusFilter}
+          options={[
+            { value: 'all', label: 'All Statuses' },
+            { value: 'completed', label: 'Completed' },
+            { value: 'in_progress', label: 'In Progress' },
+            { value: 'scheduled', label: 'Scheduled' },
+            { value: 'pending', label: 'Pending' },
+          ]}
+          onChange={setStatusFilter}
+          searchable={false}
+        />
+      ),
+      render: (_, interview) => {
+        const statusConfig = {
+          completed: { bg: 'badge-green', text: '', label: 'Completed' },
+          in_progress: { bg: 'badge-yellow', text: '', label: 'In Progress' },
+          scheduled: { bg: 'badge-blue', text: '', label: 'Scheduled' },
+          pending: { bg: 'badge-gray', text: '', label: 'Pending' },
+        }
+        const config = statusConfig[interview.status] || statusConfig.pending
+        return <span className={`badge ${config.bg}`}>{config.label}</span>
+      },
+    }),
+    createColumn('result', 'Result', {
+      width: 120,
+      className: 'text-center',
+      render: (_, interview) => {
+        if (!interview.acceptance_status)
+          return <span className="text-xs text-gray-400">—</span>
+
+        const resultConfig = {
+          accepted: { class: 'badge-green', label: 'Accepted' },
+          rejected: { class: 'badge-red', label: 'Rejected' },
+          pending: { class: 'badge-gray', label: 'Pending' },
+        }
+
+        const config =
+          resultConfig[interview.acceptance_status] || resultConfig.pending
+        return <span className={`badge ${config.class}`}>{config.label}</span>
+      },
+    }),
+    createColumn('updated', 'Updated', {
+      width: 100,
+      className: 'text-right',
+      render: (_, interview) => (
+        <span
+          className="text-xs text-gray-500"
+          title={new Date(interview.created_at).toLocaleString()}
+        >
+          {columnRenderers.date(interview.created_at)}
+        </span>
+      ),
+    }),
+    createColumn('actions', '', {
+      width: 44,
+      className: 'text-right pr-4',
+      render: () => (
+        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+      ),
+    }),
+  ]
+
+  const handleRowClick = (interview) => {
+    setCandidateFilter(interview.candidate_id || 'all')
+    setJobFilter(interview.job_id || 'all')
+  }
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       <Sidebar />
-      <main className="lg:ml-64 overflow-y-auto pb-16 lg:pb-0">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          {/* Header */}
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-neutral-900 mb-1">
-                Pipeline
-              </h1>
-              <p className="text-sm text-gray-500">
-                {filteredInterviews.length} interview
-                {filteredInterviews.length !== 1 ? 's' : ''}
-                {hasActiveFilters && ' (filtered)'}
-              </p>
+      <main className="lg:ml-[212px] flex min-h-screen max-h-screen flex-col overflow-hidden bg-white">
+        <div className="sticky top-0 z-40 border-b border-gray-200 bg-white">
+          <div className="flex items-center justify-between px-6 lg:px-8 py-4">
+            <div className="space-y-1">
+              <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">
+                Interviews
+              </div>
+              <div className="flex items-baseline gap-2">
+                <h1 className="text-[22px] font-semibold text-gray-900">
+                  Pipeline
+                </h1>
+                <span className="text-sm text-gray-500">
+                  {filteredInterviews.length} result
+                  {filteredInterviews.length !== 1 ? 's' : ''}
+                  {hasActiveFilters && ' • filtered'}
+                </span>
+              </div>
             </div>
-            {hasActiveFilters && (
-              <Button
-                onClick={clearFilters}
-                variant="outline"
-                className="h-9 text-sm rounded-lg border-gray-300 hover:bg-gray-50"
-              >
-                <X className="w-4 h-4 mr-2" /> Clear Filters
-              </Button>
-            )}
+            <div className="flex-1 px-8">
+              <div className="relative mx-auto w-full max-w-2xl">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Ask anything about candidates, jobs, or interviews..."
+                  className="w-full h-11 rounded-full border border-gray-200 bg-white pl-12 pr-14 text-sm text-gray-800 placeholder:text-gray-400 shadow-sm transition-all focus:border-gray-900 focus:shadow-md focus:outline-none"
+                />
+                <button className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-gray-900 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-white shadow hover:bg-gray-800 transition-colors">
+                  Generate
+                </button>
+              </div>
+            </div>
+            <div className="hidden text-xs text-gray-500 md:block">
+              Compact view
+            </div>
           </div>
+        </div>
 
-          {/* Filters Bar - Linear Style */}
-          <div className="mb-6 flex flex-wrap items-center gap-3">
-            {/* Search */}
-            <div className="relative flex-1 min-w-[240px] max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                type="text"
-                placeholder="Search interviews..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 h-9 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 text-sm"
-              />
-            </div>
-
-            {/* Status Filter */}
-            <select
-              className="h-9 rounded-lg border border-gray-300 text-sm px-3 bg-white hover:bg-gray-50 cursor-pointer transition-colors"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="">Status: All</option>
-              <option value="completed">Status: Completed</option>
-              <option value="in_progress">Status: In Progress</option>
-              <option value="scheduled">Status: Scheduled</option>
-              <option value="pending">Status: Pending</option>
-            </select>
-
-            {/* Candidate Filter */}
-            <select
-              className="h-9 rounded-lg border border-gray-300 text-sm px-3 bg-white hover:bg-gray-50 cursor-pointer transition-colors"
-              value={candidateFilter}
-              onChange={(e) => setCandidateFilter(e.target.value)}
-            >
-              <option value="">Candidate: All</option>
-              {candidates.map((candidate) => (
-                <option key={candidate.id} value={candidate.id}>
-                  {candidate.name}
-                </option>
-              ))}
-            </select>
-
-            {/* Job Filter */}
-            <select
-              className="h-9 rounded-lg border border-gray-300 text-sm px-3 bg-white hover:bg-gray-50 cursor-pointer transition-colors"
-              value={jobFilter}
-              onChange={(e) => setJobFilter(e.target.value)}
-            >
-              <option value="">Job: All</option>
-              {jobs.map((job) => (
-                <option key={job.id} value={job.id}>
-                  {job.title}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Active Filters Pills */}
-          {hasActiveFilters && (
-            <div className="mb-4 flex flex-wrap items-center gap-2">
-              {statusFilter && (
-                <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full">
-                  Status: {getStatusLabel(statusFilter)}
-                  <button
-                    onClick={() => setStatusFilter('')}
-                    className="hover:bg-blue-100 rounded-full p-0.5"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              )}
-              {candidateFilter && (
-                <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-50 text-purple-700 text-xs font-medium rounded-full">
-                  Candidate: {getCandidateName(candidateFilter)}
-                  <button
-                    onClick={() => setCandidateFilter('')}
-                    className="hover:bg-purple-100 rounded-full p-0.5"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              )}
-              {jobFilter && (
-                <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full">
-                  Job: {getJobTitle(jobFilter)}
-                  <button
-                    onClick={() => setJobFilter('')}
-                    className="hover:bg-green-100 rounded-full p-0.5"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Interviews List */}
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <p className="text-sm text-gray-600">Loading interviews...</p>
-            </div>
-          ) : filteredInterviews.length === 0 ? (
-            <Card className="p-12 text-center bg-white border border-gray-200 rounded-lg shadow-sm">
-              <MessagesSquare
-                className="w-12 h-12 mx-auto mb-4 text-gray-300"
-                strokeWidth={1.5}
-              />
-              <p className="text-sm text-gray-600 mb-2">
+        <div className="flex-1 overflow-y-auto">
+          <DataTable
+            columns={columns}
+            data={filteredInterviews}
+            onRowClick={handleRowClick}
+            loading={loading}
+            density={density}
+            frozenColumns={['candidate', 'job']}
+            emptyState={
+              <div className="py-20 text-center text-sm text-gray-500">
+                <MessagesSquare className="w-8 h-8 mx-auto mb-3 text-gray-300" />
                 {hasActiveFilters
                   ? 'No interviews match your filters'
                   : 'No interviews yet'}
-              </p>
-              {hasActiveFilters && (
-                <Button
-                  onClick={clearFilters}
-                  variant="outline"
-                  size="sm"
-                  className="mt-4 rounded-lg font-normal text-xs h-8 px-3"
-                >
-                  Clear Filters
-                </Button>
-              )}
-            </Card>
-          ) : (
-            <div className="space-y-2">
-              {filteredInterviews.map((interview) => (
-                <Card
-                  key={interview.id}
-                  className="p-4 bg-white border border-gray-200 rounded-lg hover:border-brand-300 hover:shadow-sm transition-all cursor-pointer group relative"
-                  onClick={() => {
-                    if (interview.status === 'completed') {
-                      navigate(`/admin/review/${interview.id}`)
-                    } else {
-                      navigate(`/interview/${interview.id}`)
-                    }
-                  }}
-                >
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onDeleteInterview(interview.id)
-                    }}
-                    className="absolute top-3 right-3 p-1.5 rounded-lg text-neutral-400 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                    title="Delete interview"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-
-                  <div className="flex items-start gap-4">
-                    {/* Avatar */}
-                    <div className="w-10 h-10 rounded-md flex items-center justify-center text-sm font-bold text-neutral-900 bg-brand-200 flex-shrink-0">
-                      {getInitials(interview.candidate_name)}
-                    </div>
-
-                    {/* Main Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-3 mb-2">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-base text-neutral-900 truncate mb-1">
-                            {interview.candidate_name || 'Unknown Candidate'}
-                          </h3>
-                          <div className="flex items-center gap-3 text-sm text-neutral-600">
-                            {interview.job_title && (
-                              <span className="flex items-center gap-1">
-                                <Briefcase className="w-3.5 h-3.5" />
-                                {interview.job_title}
-                              </span>
-                            )}
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3.5 h-3.5" />
-                              {new Date(
-                                interview.created_at
-                              ).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Status Badge */}
-                        <span
-                          className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStatusClass(
-                            interview.status
-                          )}`}
-                        >
-                          {getStatusLabel(interview.status)}
-                        </span>
-                      </div>
-
-                      {/* Summary (if completed) */}
-                      {interview.status === 'completed' &&
-                        interview.summary && (
-                          <p className="text-sm text-neutral-700 line-clamp-2 mt-2">
-                            {interview.summary}
-                          </p>
-                        )}
-
-                      {/* Acceptance Status (if exists) */}
-                      {interview.acceptance_status && (
-                        <div className="mt-2">
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                              interview.acceptance_status === 'accepted'
-                                ? 'bg-green-50 text-green-700'
-                                : interview.acceptance_status === 'rejected'
-                                  ? 'bg-red-100 text-red-700'
-                                  : 'bg-gray-100 text-gray-700'
-                            }`}
-                          >
-                            {interview.acceptance_status === 'accepted'
-                              ? 'Accepted'
-                              : interview.acceptance_status === 'rejected'
-                                ? 'Rejected'
-                                : 'Pending Review'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
+              </div>
+            }
+          />
         </div>
       </main>
     </div>
