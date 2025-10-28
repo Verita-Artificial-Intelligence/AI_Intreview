@@ -7,6 +7,12 @@ import re
 from openai import AsyncOpenAI
 from models import Interview, InterviewCreate, ChatMessage, SkillDefinition
 from utils import prepare_for_mongo, parse_from_mongo
+from utils.status_workflows import (
+    validate_status_transition,
+    get_cascade_entities,
+    WorkflowType,
+    StatusValidationError,
+)
 from database import db
 from repositories import InterviewRepository, JobRepository, CandidateRepository
 from config import OPENAI_API_KEY
@@ -475,6 +481,147 @@ Summary:""",
 
         # Return updated interview
         return await InterviewService.get_interview(interview_id)
+
+    @staticmethod
+    async def update_interview(
+        interview_id: str, update_data: Dict[str, Any]
+    ) -> Interview:
+        """
+        Generic update method for interview fields with status validation and cascade logic.
+
+        Args:
+            interview_id: The interview ID
+            update_data: Dictionary of fields to update
+
+        Returns:
+            Updated interview object
+        """
+        # Verify interview exists
+        interview = await InterviewService.get_interview(interview_id)
+
+        # Filter out None values
+        update_data = {k: v for k, v in update_data.items() if v is not None}
+
+        if not update_data:
+            logger.warning(f"No fields to update for interview {interview_id}")
+            return interview
+
+        # Validate status transitions if status fields are being updated
+        if "status" in update_data:
+            valid, error = validate_status_transition(
+                WorkflowType.INTERVIEW, interview.status, update_data["status"]
+            )
+            if not valid:
+                raise HTTPException(status_code=400, detail=error)
+
+        if "acceptance_status" in update_data:
+            valid, error = validate_status_transition(
+                WorkflowType.ACCEPTANCE,
+                interview.acceptance_status,
+                update_data["acceptance_status"],
+            )
+            if not valid:
+                raise HTTPException(status_code=400, detail=error)
+
+            # Handle acceptance status cascade logic
+            new_acceptance_status = update_data["acceptance_status"]
+            if new_acceptance_status == "accepted":
+                logger.info(
+                    f"Interview {interview_id} accepted, will cascade to assignments"
+                )
+                # Cascade logic handled after update
+            elif new_acceptance_status == "rejected":
+                logger.info(
+                    f"Interview {interview_id} rejected, will cascade to assignments"
+                )
+
+        # Perform update
+        modified_count = await InterviewRepository.update_fields(
+            interview_id, update_data
+        )
+
+        if modified_count == 0:
+            logger.warning(f"Interview {interview_id} not updated")
+
+        # Handle cascading changes for acceptance status
+        if "acceptance_status" in update_data:
+            await InterviewService._handle_acceptance_cascade(
+                interview_id, interview, update_data["acceptance_status"]
+            )
+
+        # Return updated interview
+        return await InterviewService.get_interview(interview_id)
+
+    @staticmethod
+    async def _handle_acceptance_cascade(
+        interview_id: str, interview: Interview, new_acceptance_status: str
+    ):
+        """
+        Handle cascade logic when acceptance status changes.
+
+        Args:
+            interview_id: The interview ID
+            interview: The interview object (before update)
+            new_acceptance_status: The new acceptance status
+        """
+        if new_acceptance_status == "accepted":
+            # Create or activate assignment if project_id exists
+            if interview.project_id:
+                try:
+                    from repositories.assignment_repository import AssignmentRepository
+                    from models.assignment import Assignment
+
+                    # Check if assignment already exists
+                    existing_assignment = await AssignmentRepository.find_by_interview(
+                        interview_id
+                    )
+
+                    if existing_assignment:
+                        # Reactivate if it was removed
+                        if existing_assignment.get("status") == "removed":
+                            await AssignmentRepository.update_fields(
+                                existing_assignment["id"], {"status": "active"}
+                            )
+                            logger.info(
+                                f"Reactivated assignment for interview {interview_id}"
+                            )
+                    else:
+                        # Create new assignment
+                        assignment = Assignment(
+                            project_id=interview.project_id,
+                            candidate_id=interview.candidate_id,
+                            interview_id=interview_id,
+                            status="active",
+                        )
+                        await AssignmentRepository.create(
+                            prepare_for_mongo(assignment.model_dump())
+                        )
+                        logger.info(
+                            f"Created assignment for interview {interview_id} in project {interview.project_id}"
+                        )
+                except Exception as e:
+                    logger.error(f"Error creating/activating assignment: {e}")
+
+        elif new_acceptance_status == "rejected":
+            # Remove assignment if it exists
+            if interview.project_id:
+                try:
+                    from repositories.assignment_repository import AssignmentRepository
+
+                    existing_assignment = await AssignmentRepository.find_by_interview(
+                        interview_id
+                    )
+
+                    if (
+                        existing_assignment
+                        and existing_assignment.get("status") == "active"
+                    ):
+                        await AssignmentRepository.update_fields(
+                            existing_assignment["id"], {"status": "removed"}
+                        )
+                        logger.info(f"Removed assignment for interview {interview_id}")
+                except Exception as e:
+                    logger.error(f"Error removing assignment: {e}")
 
     @staticmethod
     async def update_transcript_and_complete(

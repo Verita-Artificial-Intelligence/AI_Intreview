@@ -7,10 +7,13 @@ import DataTable, {
   columnRenderers,
 } from '@/components/DataTable'
 import ColumnFilterDropdown from '@/components/ColumnFilterDropdown'
+import InterviewDetailSheetNew from '@/components/InterviewDetailSheetNew'
+import { useSheetState } from '@/hooks/useSheetState'
 import { MessagesSquare } from 'lucide-react'
 
 const Pipeline = () => {
   const [searchParams, setSearchParams] = useSearchParams()
+  const { isOpen, sheetType, entityId, openSheet, closeSheet } = useSheetState()
   const [candidates, setCandidates] = useState([])
   const [jobs, setJobs] = useState([])
   const [interviews, setInterviews] = useState([])
@@ -105,12 +108,30 @@ const Pipeline = () => {
 
   // Sync URL params with filters
   useEffect(() => {
-    const next = new URLSearchParams()
-    if (statusFilter && statusFilter !== 'all') next.set('status', statusFilter)
-    if (jobFilter && jobFilter !== 'all') next.set('job', jobFilter)
-    if (resultFilter && resultFilter !== 'all') next.set('result', resultFilter)
+    // IMPORTANT: Start with existing params to preserve sheet state
+    const next = new URLSearchParams(searchParams)
+
+    // Update filter params
+    if (statusFilter && statusFilter !== 'all') {
+      next.set('status', statusFilter)
+    } else {
+      next.delete('status')
+    }
+
+    if (jobFilter && jobFilter !== 'all') {
+      next.set('job', jobFilter)
+    } else {
+      next.delete('job')
+    }
+
+    if (resultFilter && resultFilter !== 'all') {
+      next.set('result', resultFilter)
+    } else {
+      next.delete('result')
+    }
+
     setSearchParams(next)
-  }, [statusFilter, jobFilter, resultFilter, setSearchParams])
+  }, [statusFilter, jobFilter, resultFilter, searchParams, setSearchParams])
 
   // Production table columns - optimized order and layout
   const columns = [
@@ -118,18 +139,28 @@ const Pipeline = () => {
       frozen: true,
       width: 220,
       minWidth: 180,
-      render: (_, interview) => (
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded bg-blue-100 flex items-center justify-center text-xs font-medium text-blue-800 flex-shrink-0">
-            {getInitials(interview.candidate_name)}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="font-medium text-gray-900 text-truncate">
-              {interview.candidate_name || 'Unknown'}
+      render: (_, interview) => {
+        const candidate = candidates.find(
+          (c) => c.id === interview.candidate_id
+        )
+        return (
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded bg-blue-100 flex items-center justify-center text-xs font-medium text-blue-800 flex-shrink-0">
+              {getInitials(interview.candidate_name)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="font-medium text-gray-900 text-truncate">
+                {interview.candidate_name || 'Unknown'}
+              </div>
+              {candidate?.country && (
+                <div className="text-xs text-gray-500 text-truncate">
+                  {candidate.country}
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      ),
+        )
+      },
     }),
     createColumn('job', 'Job', {
       frozen: true,
@@ -244,6 +275,7 @@ const Pipeline = () => {
         loading={loading}
         density={density}
         frozenColumns={['candidate', 'job']}
+        onRowClick={(interview) => openSheet('interview', interview.id)}
         emptyState={
           <div className="py-20 text-center text-sm text-gray-500">
             <MessagesSquare className="w-8 h-8 mx-auto mb-3 text-gray-300" />
@@ -252,6 +284,19 @@ const Pipeline = () => {
               : 'No interviews yet'}
           </div>
         }
+      />
+
+      {/* Interview Detail Sheet */}
+      <InterviewDetailSheetNew
+        open={isOpen && sheetType === 'interview'}
+        onOpenChange={(nextOpen) => {
+          // Only close the sheet if it's actually open and we're trying to close it
+          // This prevents premature closing during the opening transition
+          if (!nextOpen && isOpen && sheetType === 'interview') {
+            closeSheet()
+          }
+        }}
+        interviewId={entityId}
       />
     </DashboardLayout>
   )

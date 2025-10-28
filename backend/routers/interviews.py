@@ -1,7 +1,7 @@
 import asyncio
 from fastapi import APIRouter, File, UploadFile, Form, Query, Body, HTTPException
 from typing import List, Optional
-from models import Interview, InterviewCreate
+from models import Interview, InterviewCreate, InterviewUpdate
 from models.annotation import AnnotationTask
 from services import InterviewService
 from services.resume_service import ResumeService
@@ -47,6 +47,23 @@ async def get_interviews(
 async def get_interview(interview_id: str):
     """Get a specific interview by ID"""
     return await InterviewService.get_interview(interview_id)
+
+
+@router.patch("/{interview_id}", response_model=Interview)
+async def update_interview(interview_id: str, update_data: InterviewUpdate):
+    """
+    Update interview fields.
+    Supports partial updates - only provided fields will be updated.
+    """
+    try:
+        return await InterviewService.update_interview(
+            interview_id, update_data.model_dump(exclude_unset=True)
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating interview: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.delete("/{interview_id}")

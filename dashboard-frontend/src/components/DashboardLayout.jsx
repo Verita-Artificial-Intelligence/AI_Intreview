@@ -10,7 +10,8 @@ import Sidebar from './Sidebar'
  * @param {string} props.search - Search input value
  * @param {Function} props.onSearchChange - Search input change handler
  * @param {string} props.searchPlaceholder - Placeholder text for search input
- * @param {React.ReactNode} props.actionButton - Optional action button (e.g., Create Job, Create Project)
+ * @param {React.ReactNode} props.actionButton - Optional action button (e.g., Create Job, Create Project) - positioned on the right
+ * @param {React.ReactNode} props.leftActions - Optional left-side actions (e.g., bulk actions when items selected)
  * @param {string} props.className - Additional classes for main content area
  */
 export default function DashboardLayout({
@@ -19,6 +20,7 @@ export default function DashboardLayout({
   onSearchChange,
   searchPlaceholder = 'Ask anything...',
   actionButton,
+  leftActions,
   className = '',
 }) {
   return (
@@ -28,6 +30,13 @@ export default function DashboardLayout({
         {/* Unified search header */}
         <div className="sticky top-0 z-40 border-b border-gray-200 bg-white shadow-sm">
           <div className="relative flex items-center justify-center px-6 lg:px-8 py-4">
+            {/* Optional left actions slot - positioned absolutely on the left */}
+            {leftActions && (
+              <div className="absolute left-6 lg:left-8 flex-shrink-0">
+                {leftActions}
+              </div>
+            )}
+
             <div className="relative w-full max-w-2xl">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
@@ -35,11 +44,8 @@ export default function DashboardLayout({
                 value={search}
                 onChange={onSearchChange}
                 placeholder={searchPlaceholder}
-                className="w-full h-11 rounded-full border border-gray-200 bg-white pl-12 pr-14 text-sm text-gray-800 placeholder:text-gray-400 shadow-sm transition-all focus:border-gray-900 focus:shadow-md focus:outline-none"
+                className="w-full h-11 rounded-full border border-gray-200 bg-white pl-12 pr-4 text-sm text-gray-800 placeholder:text-gray-400 shadow-sm transition-all focus:border-gray-900 focus:shadow-md focus:outline-none"
               />
-              <button className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-gray-900 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-white shadow hover:bg-gray-800 transition-colors">
-                Generate
-              </button>
             </div>
 
             {/* Optional action button slot - positioned absolutely on the right */}

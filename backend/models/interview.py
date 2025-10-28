@@ -94,3 +94,19 @@ class InterviewCreate(BaseModel):
     skills: Optional[List[SkillDefinition]] = None
     custom_questions: Optional[List[str]] = None
     custom_exercise_prompt: Optional[str] = None
+
+
+class InterviewUpdate(BaseModel):
+    """Model for partial updates to interviews"""
+
+    model_config = ConfigDict(extra="ignore")
+    status: Optional[InterviewStatus] = None
+    acceptance_status: Optional[AcceptanceStatus] = None
+    candidate_name: Optional[str] = None
+    position: Optional[str] = None
+    summary: Optional[str] = None
+    analysis_status: Optional[AnalysisStatus] = None
+    video_processing_status: Optional[VideoProcessingStatus] = None
+    project_id: Optional[str] = None
+    availability_confirmed: Optional[bool] = None
+    resume_text: Optional[str] = None

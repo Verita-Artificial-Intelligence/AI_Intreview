@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, HTTPException
 from typing import List, Optional
-from models import Candidate, CandidateCreate
+from models import Candidate, CandidateCreate, CandidateUpdate
 from services import CandidateService
 import logging
 
@@ -24,6 +24,23 @@ async def get_candidates(search: Optional[str] = None):
 async def get_candidate(candidate_id: str):
     """Get a specific candidate by ID"""
     return await CandidateService.get_candidate(candidate_id)
+
+
+@router.patch("/{candidate_id}", response_model=Candidate)
+async def update_candidate(candidate_id: str, update_data: CandidateUpdate):
+    """
+    Update candidate fields.
+    Supports partial updates - only provided fields will be updated.
+    """
+    try:
+        return await CandidateService.update_candidate(
+            candidate_id, update_data.model_dump(exclude_unset=True)
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating candidate: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.patch("/{candidate_id}/education")

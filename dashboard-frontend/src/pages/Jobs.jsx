@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import api from '@/utils/api'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus, FileText, MessagesSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import DataTable, {
@@ -9,16 +9,22 @@ import DataTable, {
 } from '@/components/DataTable'
 import ColumnFilterDropdown from '@/components/ColumnFilterDropdown'
 import DashboardLayout from '@/components/DashboardLayout'
-import JobForm from '@/components/JobForm'
+import JobSheet from '@/components/JobSheet'
+import JobDetailSheetNew from '@/components/JobDetailSheetNew'
+import JobApplicationsSheet from '@/components/JobApplicationsSheet'
+import { SimpleSheetContainer } from '@/components/sheets/SheetContainer'
+import { useSheetState } from '@/hooks/useSheetState'
 
 const Jobs = () => {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { isOpen, sheetType, entityId, openSheet, closeSheet } = useSheetState()
   const [jobs, setJobs] = useState([])
   const [filteredJobs, setFilteredJobs] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [showJobForm, setShowJobForm] = useState(false)
   const [editingJob, setEditingJob] = useState(null)
+  const [isDeepLink, setIsDeepLink] = useState(false)
 
   // Column filters
   const [titleFilter, setTitleFilter] = useState('all')
@@ -26,9 +32,46 @@ const Jobs = () => {
   const [skillsFilter, setSkillsFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
 
+  // Deep link support: Open sheet if job parameter is in URL on initial load
+  useEffect(() => {
+    const jobParam = searchParams.get('job')
+    const hasSheetParam = searchParams.get('sheet')
+
+    // If there's a job param but no sheet param, this is a deep link
+    if (jobParam && !hasSheetParam) {
+      setIsDeepLink(true)
+      setTitleFilter(jobParam)
+      // Open the sheet for this job without animation
+      openSheet('job', jobParam, { replace: true })
+    }
+  }, []) // Only run on mount
+
+  // Read URL params on mount and update filters
+  useEffect(() => {
+    const jobParam = searchParams.get('job')
+    if (jobParam) {
+      setTitleFilter(jobParam)
+    }
+  }, [searchParams]) // Run when searchParams changes
+
   useEffect(() => {
     fetchJobs()
   }, [])
+
+  // Sync URL params with filters (preserving sheet state)
+  useEffect(() => {
+    // IMPORTANT: Start with existing params to preserve sheet state
+    const next = new URLSearchParams(searchParams)
+
+    // Update job filter param
+    if (titleFilter && titleFilter !== 'all') {
+      next.set('job', titleFilter)
+    } else {
+      next.delete('job')
+    }
+
+    setSearchParams(next, { replace: true })
+  }, [titleFilter, searchParams, setSearchParams])
 
   useEffect(() => {
     let filtered = [...jobs]
@@ -93,16 +136,24 @@ const Jobs = () => {
 
   const handleSubmitJob = async (jobData, jobId = null) => {
     try {
-      if (jobId) {
+      if (jobId && jobId !== 'new') {
         // Update existing job
         await api.put(`/jobs/${jobId}`, jobData)
+        // Clear edit mode to show view mode
+        setEditingJob(null)
+        // Clear edit mode from URL
+        const newParams = new URLSearchParams(window.location.search)
+        newParams.delete('mode')
+        window.history.replaceState(
+          {},
+          '',
+          `${window.location.pathname}?${newParams.toString()}`
+        )
       } else {
         // Create new job
         await api.post('/jobs', jobData)
       }
       fetchJobs()
-      setShowJobForm(false)
-      setEditingJob(null)
     } catch (error) {
       console.error(
         jobId ? 'Error updating job:' : 'Error creating job:',
@@ -110,16 +161,6 @@ const Jobs = () => {
       )
       throw error
     }
-  }
-
-  const handleEditJob = (job) => {
-    setEditingJob(job)
-    setShowJobForm(true)
-  }
-
-  const handleCloseJobForm = () => {
-    setShowJobForm(false)
-    setEditingJob(null)
   }
 
   // Centralized interview type labels (matching backend/config/interview_type_definitions.py)
@@ -277,8 +318,62 @@ const Jobs = () => {
   ]
 
   const handleRowClick = (job) => {
-    handleEditJob(job)
+    setEditingJob(null) // Clear edit mode when opening a different job
+    openSheet('job', job.id)
   }
+
+  const handleEditJob = (job) => {
+    setEditingJob(job)
+    // Update URL to show edit mode
+    const newParams = new URLSearchParams(window.location.search)
+    newParams.set('mode', 'edit')
+    window.history.replaceState(
+      {},
+      '',
+      `${window.location.pathname}?${newParams.toString()}`
+    )
+  }
+
+  const handleCancelEdit = () => {
+    setEditingJob(null)
+    // Clear edit mode from URL
+    const newParams = new URLSearchParams(window.location.search)
+    newParams.delete('mode')
+    window.history.replaceState(
+      {},
+      '',
+      `${window.location.pathname}?${newParams.toString()}`
+    )
+  }
+
+  // Reset edit mode when sheet closes
+  useEffect(() => {
+    if (!isOpen) {
+      setEditingJob(null)
+      // Clear edit mode from URL
+      const newParams = new URLSearchParams(window.location.search)
+      if (newParams.has('mode')) {
+        newParams.delete('mode')
+        window.history.replaceState(
+          {},
+          '',
+          `${window.location.pathname}?${newParams.toString()}`
+        )
+      }
+    }
+  }, [isOpen])
+
+  // Sync edit mode with URL on mount/change
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const mode = params.get('mode')
+    if (mode === 'edit' && entityId && entityId !== 'new' && !editingJob) {
+      const job = jobs.find((j) => j.id === entityId)
+      if (job) {
+        setEditingJob(job)
+      }
+    }
+  }, [entityId, jobs, editingJob])
 
   return (
     <DashboardLayout
@@ -287,7 +382,7 @@ const Jobs = () => {
       searchPlaceholder="Search jobs by title, type, or description..."
       actionButton={
         <Button
-          onClick={() => setShowJobForm(true)}
+          onClick={() => openSheet('job', 'new')}
           type="button"
           className="rounded-lg bg-brand-500 hover:bg-brand-600 text-white"
         >
@@ -316,7 +411,7 @@ const Jobs = () => {
             </p>
             {!searchQuery ? (
               <Button
-                onClick={() => setShowJobForm(true)}
+                onClick={() => openSheet('job', 'new')}
                 variant="outline"
                 size="sm"
                 className="rounded-lg font-normal text-xs h-8 px-3"
@@ -338,14 +433,147 @@ const Jobs = () => {
         }
       />
 
-      {/* Job Form Modal */}
-      <JobForm
-        open={showJobForm}
-        onClose={handleCloseJobForm}
+      {/* Job Sheet - unified wrapper */}
+      <JobSheetWrapper
+        isOpen={isOpen && sheetType === 'job'}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeSheet()
+            setIsDeepLink(false) // Reset deep link flag when closing
+          }
+        }}
+        entityId={entityId}
+        editingJob={editingJob}
+        onEdit={handleEditJob}
         onSubmit={handleSubmitJob}
-        job={editingJob}
+        onCancelEdit={handleCancelEdit}
+        isDeepLink={isDeepLink}
+      />
+
+      {/* Job Applications Sheet - Drill-down */}
+      <JobApplicationsSheet
+        open={isOpen && sheetType === 'job-applications'}
+        onOpenChange={(open) => {
+          if (!open) closeSheet()
+        }}
+        jobId={entityId}
       />
     </DashboardLayout>
+  )
+}
+
+/**
+ * Unified wrapper that keeps a single Sheet instance and swaps content
+ * This prevents the jarring animation when switching between view and edit modes
+ */
+function JobSheetWrapper({
+  isOpen,
+  onOpenChange,
+  entityId,
+  editingJob,
+  onEdit,
+  onSubmit,
+  onCancelEdit,
+  isDeepLink,
+}) {
+  const { breadcrumbs, navigateBack } = useSheetState()
+  const [job, setJob] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (isOpen && entityId && entityId !== 'new') {
+      fetchJobData()
+    }
+  }, [isOpen, entityId])
+
+  const fetchJobData = async () => {
+    try {
+      setLoading(true)
+      const response = await api.get(`/jobs/${entityId}`)
+      setJob(response.data)
+    } catch (error) {
+      console.error('Error fetching job:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSubmit = async (jobData, jobId) => {
+    await onSubmit(jobData, jobId)
+    // Refetch job data to show updated values
+    if (jobId) {
+      await fetchJobData()
+    }
+  }
+
+  // Determine which content to show
+  const isEditMode = entityId === 'new' || editingJob
+  const title =
+    entityId === 'new' ? 'Create Job' : editingJob ? 'Edit Job' : 'Job Details'
+
+  // Add edit mode breadcrumb manually if in edit mode
+  const displayBreadcrumbs = editingJob
+    ? [
+        ...breadcrumbs.filter((b) => !b.isCurrent),
+        // Add the current job breadcrumb but mark it as NOT current (so it's clickable)
+        { ...breadcrumbs.find((b) => b.isCurrent), isCurrent: false },
+        // Add edit breadcrumb as current
+        { type: 'edit', label: 'Edit', isCurrent: true },
+      ]
+    : breadcrumbs
+
+  const handleBreadcrumbClick = (crumb) => {
+    if (crumb.type === 'edit') {
+      // Clicking Edit breadcrumb (shouldn't happen as it's current)
+      return
+    } else if (editingJob) {
+      // In edit mode, clicking Job breadcrumb goes back to view mode
+      onCancelEdit()
+    } else {
+      // Use default breadcrumb navigation for drill-downs
+      navigateBack()
+    }
+  }
+
+  return (
+    <SimpleSheetContainer
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      title={title}
+      customBreadcrumbs={
+        displayBreadcrumbs.length > 0 ? displayBreadcrumbs : null
+      }
+      onBreadcrumbNavigate={handleBreadcrumbClick}
+      disableAnimations={isDeepLink}
+    >
+      {isEditMode ? (
+        <JobSheet
+          open={isOpen}
+          onOpenChange={onOpenChange}
+          job={editingJob}
+          onSubmit={handleSubmit}
+          onCancel={editingJob ? onCancelEdit : undefined}
+          isWrapper={true}
+        />
+      ) : loading ? (
+        <div className="flex items-center justify-center py-12">
+          <p className="text-sm text-gray-600">Loading job details...</p>
+        </div>
+      ) : job ? (
+        <JobDetailSheetNew
+          open={isOpen}
+          onOpenChange={onOpenChange}
+          jobId={entityId}
+          onEdit={onEdit}
+          isWrapper={true}
+          initialJob={job}
+        />
+      ) : (
+        <div className="flex items-center justify-center py-12">
+          <p className="text-sm text-gray-600">Job not found</p>
+        </div>
+      )}
+    </SimpleSheetContainer>
   )
 }
 

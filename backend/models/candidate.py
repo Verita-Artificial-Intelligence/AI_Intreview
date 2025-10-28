@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
-from typing import List
+from typing import List, Optional
 from datetime import datetime, timezone
 import uuid
 
@@ -25,3 +25,16 @@ class CandidateCreate(BaseModel):
     position: str
     bio: str
     education: str = ""
+
+
+class CandidateUpdate(BaseModel):
+    """Model for partial updates to candidates"""
+
+    model_config = ConfigDict(extra="ignore")
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    skills: Optional[List[str]] = None
+    experience_years: Optional[int] = None
+    position: Optional[str] = None
+    bio: Optional[str] = None
+    education: Optional[str] = None

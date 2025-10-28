@@ -27,11 +27,15 @@ import DataTable, {
   columnRenderers,
 } from '../components/DataTable'
 import ColumnFilterDropdown from '../components/ColumnFilterDropdown'
+import ProjectDetailSheetNew from '../components/ProjectDetailSheetNew'
+import AnnotatorProfileSheetNew from '../components/AnnotatorProfileSheetNew'
+import { useSheetState } from '@/hooks/useSheetState'
 import { Plus, FolderKanban } from 'lucide-react'
 import DashboardLayout from '../components/DashboardLayout'
 
 export default function Projects() {
   const navigate = useNavigate()
+  const { isOpen, sheetType, entityId, openSheet, closeSheet } = useSheetState()
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
@@ -198,7 +202,7 @@ export default function Projects() {
   ]
 
   const handleRowClick = (project) => {
-    navigate(`/projects/${project.id}`)
+    openSheet('project', project.id)
   }
 
   const paginationConfig = {
@@ -327,6 +331,24 @@ export default function Projects() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Project Detail Sheet */}
+      <ProjectDetailSheetNew
+        open={isOpen && sheetType === 'project'}
+        onOpenChange={(open) => {
+          if (!open) closeSheet()
+        }}
+        projectId={entityId}
+      />
+
+      {/* Annotator Profile Sheet */}
+      <AnnotatorProfileSheetNew
+        open={isOpen && sheetType === 'annotator'}
+        onOpenChange={(open) => {
+          if (!open) closeSheet()
+        }}
+        candidateId={entityId}
+      />
     </DashboardLayout>
   )
 }

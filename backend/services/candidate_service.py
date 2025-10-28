@@ -268,6 +268,40 @@ class CandidateService:
         return candidate
 
     @staticmethod
+    async def update_candidate(
+        candidate_id: str, update_data: Dict[str, Any]
+    ) -> Candidate:
+        """
+        Generic update method for candidate fields.
+
+        Args:
+            candidate_id: The candidate ID
+            update_data: Dictionary of fields to update
+
+        Returns:
+            Updated candidate object
+        """
+        # Verify candidate exists
+        candidate = await CandidateService.get_candidate(candidate_id)
+
+        # Filter out None values
+        update_data = {k: v for k, v in update_data.items() if v is not None}
+
+        if not update_data:
+            return candidate
+
+        # Perform update
+        modified_count = await CandidateRepository.update_fields(
+            candidate_id, update_data
+        )
+
+        if modified_count == 0:
+            raise HTTPException(status_code=404, detail="Candidate not found")
+
+        # Return updated candidate
+        return await CandidateService.get_candidate(candidate_id)
+
+    @staticmethod
     async def update_education(candidate_id: str, education: Any) -> Dict[str, Any]:
         """
         Update candidate's education information.

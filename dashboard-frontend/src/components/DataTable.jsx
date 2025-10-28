@@ -49,20 +49,63 @@ export default function DataTable({
   hoverable = true,
   density = 'compact',
   selectable = false,
+  selectedRows = [],
+  onSelectionChange,
   stickyHeader = true,
   frozenColumns = [],
 }) {
   const headerRef = useRef(null)
   const bodyRef = useRef(null)
   const [scrollbarWidth, setScrollbarWidth] = useState(0)
+
+  // Merge checkbox column if selectable
+  const effectiveColumns = selectable
+    ? [
+        {
+          key: '__selection__',
+          label: '',
+          width: 48,
+          minWidth: 48,
+          frozen: true,
+        },
+        ...columns,
+      ]
+    : columns
+
   const [columnWidths, setColumnWidths] = useState(() => {
     const widths = {}
-    columns.forEach((col) => {
+    effectiveColumns.forEach((col) => {
       widths[col.key] = col.width || 160
     })
     return widths
   })
   const resizingRef = useRef(null)
+
+  // Selection handlers
+  const handleSelectAll = (checked) => {
+    if (!onSelectionChange) return
+    if (checked) {
+      // Select all rows on current page
+      const allIds = data.map((row) => row.id).filter(Boolean)
+      onSelectionChange(allIds)
+    } else {
+      onSelectionChange([])
+    }
+  }
+
+  const handleSelectRow = (rowId, checked) => {
+    if (!onSelectionChange) return
+    if (checked) {
+      onSelectionChange([...selectedRows, rowId])
+    } else {
+      onSelectionChange(selectedRows.filter((id) => id !== rowId))
+    }
+  }
+
+  const isAllSelected =
+    data.length > 0 && data.every((row) => selectedRows.includes(row.id))
+  const isSomeSelected =
+    data.some((row) => selectedRows.includes(row.id)) && !isAllSelected
 
   // Handle column resizing
   const handleMouseDown = (columnKey, e) => {
@@ -136,14 +179,32 @@ export default function DataTable({
 
   // Calculate frozen column positions
   const getFrozenColumnStyle = (columnIndex, isHeader = false) => {
+    const columnKey = effectiveColumns[columnIndex]?.key
+
+    // Selection column is always frozen if present
+    if (columnKey === '__selection__') {
+      const zIndex = isHeader ? 40 : 10
+      return {
+        position: 'sticky',
+        left: '0px',
+        ...(isHeader ? { backgroundColor: '#fff' } : {}),
+        zIndex,
+        borderRight: '1px solid var(--gray-200)',
+      }
+    }
+
     if (!frozenColumns.length) return {}
 
-    const columnKey = columns[columnIndex]?.key
     const frozenIndex = frozenColumns.indexOf(columnKey)
 
     if (frozenIndex === -1) return {}
 
     let leftPosition = 0
+
+    // Add width of selection column if present
+    if (selectable) {
+      leftPosition += columnWidths['__selection__'] || 48
+    }
 
     // Add widths of previous frozen columns
     for (let i = 0; i < frozenIndex; i++) {
@@ -212,7 +273,7 @@ export default function DataTable({
           style={{ tableLayout: 'fixed' }}
         >
           <colgroup>
-            {columns.map((column) => (
+            {effectiveColumns.map((column) => (
               <col
                 key={`header-${column.key}`}
                 style={{
@@ -224,7 +285,7 @@ export default function DataTable({
           </colgroup>
           <TableHeader>
             <TableRow className="bg-white">
-              {columns.map((column, index) => (
+              {effectiveColumns.map((column, index) => (
                 <TableHead
                   key={column.key}
                   className={`font-medium text-gray-600 text-[11px] bg-white relative ${column.className || ''}`}
@@ -234,17 +295,28 @@ export default function DataTable({
                     ...getFrozenColumnStyle(index, true),
                   }}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      {column.headerRender
-                        ? column.headerRender()
-                        : column.label}
+                  {column.key === '__selection__' ? (
+                    <div className="flex items-center justify-center">
+                      <Checkbox
+                        checked={isAllSelected}
+                        onCheckedChange={handleSelectAll}
+                        className="checkbox-black"
+                        aria-label="Select all rows"
+                      />
                     </div>
-                    <div
-                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 hover:opacity-50"
-                      onMouseDown={(e) => handleMouseDown(column.key, e)}
-                    />
-                  </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        {column.headerRender
+                          ? column.headerRender()
+                          : column.label}
+                      </div>
+                      <div
+                        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 hover:opacity-50"
+                        onMouseDown={(e) => handleMouseDown(column.key, e)}
+                      />
+                    </div>
+                  )}
                 </TableHead>
               ))}
             </TableRow>
@@ -259,7 +331,7 @@ export default function DataTable({
           style={{ tableLayout: 'fixed' }}
         >
           <colgroup>
-            {columns.map((column) => (
+            {effectiveColumns.map((column) => (
               <col
                 key={`body-${column.key}`}
                 style={{
@@ -271,6 +343,7 @@ export default function DataTable({
           </colgroup>
           <TableBody>
             {data.map((row, rowIndex) => {
+              const isRowSelected = selectedRows.includes(row.id)
               return (
                 <TableRow
                   key={row.id || rowIndex}
@@ -279,22 +352,49 @@ export default function DataTable({
                     transition-colors duration-100
                     ${hoverable ? 'hover:bg-gray-50/90' : ''}
                     ${onRowClick ? 'cursor-pointer' : ''}
+                    ${isRowSelected ? 'bg-blue-50/50' : ''}
                   `}
-                  onClick={() => onRowClick?.(row, rowIndex)}
+                  onClick={(e) => {
+                    // Don't trigger row click when clicking checkbox
+                    if (e.target.closest('[data-checkbox]')) return
+                    onRowClick?.(row, rowIndex)
+                  }}
                 >
-                  {columns.map((column, colIndex) => (
-                    <TableCell
-                      key={column.key}
-                      className={`${column.className || ''} ${frozenColumns.includes(column.key) ? 'bg-white group-hover:bg-gray-50/90' : ''}`}
-                      style={{
-                        ...getFrozenColumnStyle(colIndex),
-                      }}
-                    >
-                      {column.render
-                        ? column.render(row[column.key], row, rowIndex)
-                        : row[column.key]}
-                    </TableCell>
-                  ))}
+                  {effectiveColumns.map((column, colIndex) => {
+                    const isFrozenColumn =
+                      column.key === '__selection__' ||
+                      frozenColumns.includes(column.key)
+                    return (
+                      <TableCell
+                        key={column.key}
+                        className={`${column.className || ''} ${isFrozenColumn ? 'bg-white group-hover:bg-gray-50/90' : ''} ${isRowSelected && isFrozenColumn ? 'bg-blue-50/50 group-hover:bg-blue-50/50' : ''}`}
+                        style={{
+                          ...getFrozenColumnStyle(colIndex),
+                        }}
+                      >
+                        {column.key === '__selection__' ? (
+                          <div
+                            className="flex items-center justify-center"
+                            data-checkbox
+                          >
+                            <Checkbox
+                              checked={isRowSelected}
+                              onCheckedChange={(checked) =>
+                                handleSelectRow(row.id, checked)
+                              }
+                              className="checkbox-black"
+                              aria-label={`Select row ${rowIndex + 1}`}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                        ) : column.render ? (
+                          column.render(row[column.key], row, rowIndex)
+                        ) : (
+                          row[column.key]
+                        )}
+                      </TableCell>
+                    )
+                  })}
                 </TableRow>
               )
             })}

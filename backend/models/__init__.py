@@ -1,6 +1,6 @@
 from .user import User, UserCreate, UserLogin, ProfileComplete
-from .candidate import Candidate, CandidateCreate
-from .interview import Interview, InterviewCreate
+from .candidate import Candidate, CandidateCreate, CandidateUpdate
+from .interview import Interview, InterviewCreate, InterviewUpdate
 from .chat import ChatMessage, ChatRequest
 from .audio import TTSRequest, TTSResponse, STTResponse
 from .job import (
@@ -59,8 +59,10 @@ __all__ = [
     "ProfileComplete",
     "Candidate",
     "CandidateCreate",
+    "CandidateUpdate",
     "Interview",
     "InterviewCreate",
+    "InterviewUpdate",
     "InterviewType",
     "SkillDefinition",
     "ChatMessage",

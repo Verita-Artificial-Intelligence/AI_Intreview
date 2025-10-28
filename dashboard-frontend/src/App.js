@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import MobileBlocker from './components/MobileBlocker'
 import '@/App.css'
 
 // Admin auth
@@ -33,151 +34,153 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          {/* Admin auth routes - wildcard to handle SSO callbacks */}
-          <Route path="/login/*" element={<Login />} />
-          <Route path="/signup/*" element={<Signup />} />
-          {/* Admin routes - all require authentication */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/candidates"
-            element={
-              <ProtectedRoute>
-                <Candidates />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/interviews"
-            element={
-              <ProtectedRoute>
-                <Interviews />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/pipeline"
-            element={
-              <ProtectedRoute>
-                <Pipeline />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/jobs"
-            element={
-              <ProtectedRoute>
-                <Jobs />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/projects"
-            element={
-              <ProtectedRoute>
-                <Projects />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/projects/:projectId"
-            element={
-              <ProtectedRoute>
-                <ProjectDetail />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/data-explorer"
-            element={
-              <ProtectedRoute>
-                <AdminDataExplorer />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/annotation-data"
-            element={
-              <ProtectedRoute>
-                <AnnotationData />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/annotation-data/upload"
-            element={
-              <ProtectedRoute>
-                <UploadAnnotationData />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/annotators"
-            element={
-              <ProtectedRoute>
-                <Annotators />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/account"
-            element={
-              <ProtectedRoute>
-                <Account />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/review/:taskId"
-            element={
-              <ProtectedRoute>
-                <ReviewAnnotation />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/interview-prep/:interviewId"
-            element={
-              <ProtectedRoute>
-                <InterviewPrep />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/interview/:interviewId"
-            element={
-              <ProtectedRoute>
-                <InterviewPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/audio-interview/:interviewId"
-            element={
-              <ProtectedRoute>
-                <AudioInterviewPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/review/:interviewId"
-            element={
-              <ProtectedRoute>
-                <AdminInterviewReview />
-              </ProtectedRoute>
-            }
-          />
+        <MobileBlocker>
+          <Routes>
+            {/* Admin auth routes - wildcard to handle SSO callbacks */}
+            <Route path="/login/*" element={<Login />} />
+            <Route path="/signup/*" element={<Signup />} />
+            {/* Admin routes - all require authentication */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/candidates"
+              element={
+                <ProtectedRoute>
+                  <Candidates />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/interviews"
+              element={
+                <ProtectedRoute>
+                  <Interviews />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pipeline"
+              element={
+                <ProtectedRoute>
+                  <Pipeline />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/jobs"
+              element={
+                <ProtectedRoute>
+                  <Jobs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects"
+              element={
+                <ProtectedRoute>
+                  <Projects />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects/:projectId"
+              element={
+                <ProtectedRoute>
+                  <ProjectDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/data-explorer"
+              element={
+                <ProtectedRoute>
+                  <AdminDataExplorer />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/annotation-data"
+              element={
+                <ProtectedRoute>
+                  <AnnotationData />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/annotation-data/upload"
+              element={
+                <ProtectedRoute>
+                  <UploadAnnotationData />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/annotators"
+              element={
+                <ProtectedRoute>
+                  <Annotators />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/account"
+              element={
+                <ProtectedRoute>
+                  <Account />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/review/:taskId"
+              element={
+                <ProtectedRoute>
+                  <ReviewAnnotation />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/interview-prep/:interviewId"
+              element={
+                <ProtectedRoute>
+                  <InterviewPrep />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/interview/:interviewId"
+              element={
+                <ProtectedRoute>
+                  <InterviewPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/audio-interview/:interviewId"
+              element={
+                <ProtectedRoute>
+                  <AudioInterviewPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/review/:interviewId"
+              element={
+                <ProtectedRoute>
+                  <AdminInterviewReview />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* 404 catch-all route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            {/* 404 catch-all route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </MobileBlocker>
       </AuthProvider>
     </BrowserRouter>
   )

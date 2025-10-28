@@ -27,15 +27,14 @@ api.interceptors.request.use(
         const token = await clerkGetToken()
         if (token) {
           config.headers.Authorization = `Bearer ${token}`
-          console.log('✅ Clerk token added to request:', config.url)
         } else {
-          console.warn('⚠️ Clerk getToken returned null for:', config.url)
+          console.warn('Clerk getToken returned null for:', config.url)
         }
       } catch (error) {
-        console.error('❌ Error getting Clerk token:', error)
+        console.error('Error getting Clerk token:', error)
       }
     } else {
-      console.warn('⚠️ clerkGetToken not initialized yet for:', config.url)
+      console.warn('clerkGetToken not initialized yet for:', config.url)
     }
     return config
   },

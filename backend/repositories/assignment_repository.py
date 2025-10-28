@@ -100,6 +100,21 @@ class AssignmentRepository(BaseRepository):
         )
 
     @staticmethod
+    async def find_by_interview(interview_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Find assignment by interview ID.
+
+        Args:
+            interview_id: The interview ID
+
+        Returns:
+            Assignment document if exists, None otherwise
+        """
+        return await BaseRepository.find_one(
+            AssignmentRepository.collection, {"interview_id": interview_id}
+        )
+
+    @staticmethod
     async def create(assignment_doc: Dict[str, Any]) -> bool:
         """Insert a new assignment document"""
         return await BaseRepository.insert_one(
