@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import {
   Briefcase,
   Plus,
-  Search,
   FileText,
   MessagesSquare,
   Pencil,
@@ -34,7 +33,7 @@ import DataTable, {
   createColumn,
   columnRenderers,
 } from '@/components/DataTable'
-import Sidebar from '@/components/Sidebar'
+import DashboardLayout from '@/components/DashboardLayout'
 import JobForm from '@/components/JobForm'
 
 const Jobs = () => {
@@ -345,93 +344,63 @@ const Jobs = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <Sidebar />
-
-      {/* Main Content */}
-      <main className="lg:ml-64 overflow-y-auto pb-16 lg:pb-0">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          {/* Header */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-semibold text-neutral-900 mb-1">
-                  Jobs
-                </h1>
-                <p className="text-sm text-gray-500">
-                  Manage your open positions and interview configurations
-                </p>
-              </div>
-              <Button
-                onClick={() => setShowJobForm(true)}
-                type="button"
-                className="rounded-lg bg-brand-500 hover:bg-brand-600 text-white"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Job
-              </Button>
+    <DashboardLayout
+      search={searchQuery}
+      onSearchChange={(e) => setSearchQuery(e.target.value)}
+      searchPlaceholder="Search jobs by title, type, or description..."
+      actionButton={
+        <Button
+          onClick={() => setShowJobForm(true)}
+          type="button"
+          className="rounded-lg bg-brand-500 hover:bg-brand-600 text-white"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Create Job
+        </Button>
+      }
+    >
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <DataTable
+          columns={columns}
+          data={filteredJobs}
+          onRowClick={handleRowClick}
+          loading={loading}
+          emptyState={
+            <div className="p-10 text-center bg-surface border border-neutral-200 rounded-xl shadow-card">
+              <MessagesSquare
+                className="w-10 h-10 mx-auto mb-3 text-gray-300"
+                strokeWidth={1.5}
+              />
+              <p className="text-sm text-neutral-600 mb-3">
+                {searchQuery
+                  ? 'No jobs found matching your search'
+                  : 'No jobs yet. Create your first job posting to get started'}
+              </p>
+              {!searchQuery ? (
+                <Button
+                  onClick={() => setShowJobForm(true)}
+                  variant="outline"
+                  size="sm"
+                  className="rounded-lg font-normal text-xs h-8 px-3"
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1.5" />
+                  Create Your First Job
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => setSearchQuery('')}
+                  variant="outline"
+                  size="sm"
+                  className="rounded-lg font-normal text-xs h-8 px-3"
+                >
+                  Clear Search
+                </Button>
+              )}
             </div>
-          </div>
-
-          {/* Search */}
-          {jobs.length > 0 && (
-            <div className="mb-4">
-              <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  type="text"
-                  placeholder="Search jobs by title, type, or description..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 h-10 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 text-sm"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Jobs Table */}
-          <DataTable
-            columns={columns}
-            data={filteredJobs}
-            onRowClick={handleRowClick}
-            loading={loading}
-            emptyState={
-              <div className="p-10 text-center bg-surface border border-neutral-200 rounded-xl shadow-card">
-                <MessagesSquare
-                  className="w-10 h-10 mx-auto mb-3 text-gray-300"
-                  strokeWidth={1.5}
-                />
-                <p className="text-sm text-neutral-600 mb-3">
-                  {searchQuery
-                    ? 'No jobs found matching your search'
-                    : 'No jobs yet. Create your first job posting to get started'}
-                </p>
-                {!searchQuery ? (
-                  <Button
-                    onClick={() => setShowJobForm(true)}
-                    variant="outline"
-                    size="sm"
-                    className="rounded-lg font-normal text-xs h-8 px-3"
-                  >
-                    <Plus className="w-3.5 h-3.5 mr-1.5" />
-                    Create Your First Job
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={() => setSearchQuery('')}
-                    variant="outline"
-                    size="sm"
-                    className="rounded-lg font-normal text-xs h-8 px-3"
-                  >
-                    Clear Search
-                  </Button>
-                )}
-              </div>
-            }
-            size="md"
-          />
-        </div>
-      </main>
+          }
+          size="md"
+        />
+      </div>
 
       {/* Job Form Modal */}
       <JobForm
@@ -463,7 +432,7 @@ const Jobs = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </DashboardLayout>
   )
 }
 

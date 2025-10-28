@@ -33,14 +33,13 @@ import DataTable, {
   columnRenderers,
 } from '@/components/DataTable'
 import {
-  Search,
   ChevronLeft,
   ChevronRight,
   MoreVertical,
   RotateCcw,
   AlertCircle,
 } from 'lucide-react'
-import Sidebar from '@/components/Sidebar'
+import DashboardLayout from '@/components/DashboardLayout'
 
 export default function Annotators() {
   const navigate = useNavigate()
@@ -266,97 +265,71 @@ export default function Annotators() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <Sidebar />
-
-      {/* Main Content */}
-      <main className="lg:ml-64 overflow-y-auto pb-16 lg:pb-0">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-semibold text-neutral-900 mb-1">
-              Annotators
-            </h1>
-            <p className="text-sm text-gray-500">
-              Only candidates who have been accepted as annotators (not regular
-              candidates)
-            </p>
-          </div>
-
-          {/* Search and Filters */}
-          <div className="mb-4 flex gap-3 flex-wrap">
-            <div className="flex-1 min-w-64">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  type="text"
-                  placeholder="Search by name or email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 h-10 rounded-lg border-neutral-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 text-sm"
-                />
-              </div>
-            </div>
-            <Select value={jobFilter} onValueChange={setJobFilter}>
-              <SelectTrigger className="w-44 h-10 rounded-lg text-sm border-neutral-300 focus:border-brand-500">
-                <SelectValue placeholder="Job" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Jobs</SelectItem>
-                {jobs.map((job) => (
-                  <SelectItem key={job.id} value={job.id}>
-                    {job.job_title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-32 h-10 rounded-lg text-sm border-neutral-300 focus:border-brand-500">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="pass">Pass</SelectItem>
-                <SelectItem value="fail">Fail</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-44 h-10 rounded-lg text-sm border-neutral-300 focus:border-brand-500">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="score_desc">Score (High to Low)</SelectItem>
-                <SelectItem value="score_asc">Score (Low to High)</SelectItem>
-                <SelectItem value="accepted_date_desc">
-                  Date (Newest)
+    <DashboardLayout
+      search={searchTerm}
+      onSearchChange={(e) => setSearchTerm(e.target.value)}
+      searchPlaceholder="Search by name or email..."
+    >
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Filters */}
+        <div className="mb-4 flex gap-3 flex-wrap">
+          <Select value={jobFilter} onValueChange={setJobFilter}>
+            <SelectTrigger className="w-44 h-10 rounded-lg text-sm border-neutral-300 focus:border-brand-500">
+              <SelectValue placeholder="Job" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Jobs</SelectItem>
+              {jobs.map((job) => (
+                <SelectItem key={job.id} value={job.id}>
+                  {job.job_title}
                 </SelectItem>
-                <SelectItem value="accepted_date_asc">Date (Oldest)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Annotators Table */}
-          <DataTable
-            columns={columns}
-            data={items}
-            loading={loading}
-            pagination={paginationConfig}
-            emptyState={
-              <div className="p-10 text-center bg-surface border border-neutral-200 rounded-xl shadow-card">
-                <p className="text-sm text-neutral-600 mb-3">
-                  No accepted annotators found. Only candidates who have been
-                  explicitly accepted as annotators appear here.
-                </p>
-                <p className="text-xs text-neutral-500">
-                  Regular candidates (not yet accepted as annotators) are shown
-                  in the Candidates view.
-                </p>
-              </div>
-            }
-            size="md"
-          />
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-32 h-10 rounded-lg text-sm border-neutral-300 focus:border-brand-500">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="pass">Pass</SelectItem>
+              <SelectItem value="fail">Fail</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-44 h-10 rounded-lg text-sm border-neutral-300 focus:border-brand-500">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="score_desc">Score (High to Low)</SelectItem>
+              <SelectItem value="score_asc">Score (Low to High)</SelectItem>
+              <SelectItem value="accepted_date_desc">Date (Newest)</SelectItem>
+              <SelectItem value="accepted_date_asc">Date (Oldest)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-      </main>
+
+        {/* Annotators Table */}
+        <DataTable
+          columns={columns}
+          data={items}
+          loading={loading}
+          pagination={paginationConfig}
+          emptyState={
+            <div className="p-10 text-center bg-surface border border-neutral-200 rounded-xl shadow-card">
+              <p className="text-sm text-neutral-600 mb-3">
+                No accepted annotators found. Only candidates who have been
+                explicitly accepted as annotators appear here.
+              </p>
+              <p className="text-xs text-neutral-500">
+                Regular candidates (not yet accepted as annotators) are shown in
+                the Candidates view.
+              </p>
+            </div>
+          }
+          size="md"
+        />
+      </div>
 
       {/* Retry Scoring Dialog */}
       <AlertDialog open={retryDialogOpen} onOpenChange={setRetryDialogOpen}>
@@ -379,6 +352,6 @@ export default function Annotators() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </DashboardLayout>
   )
 }

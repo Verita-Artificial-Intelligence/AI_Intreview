@@ -6,7 +6,6 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import {
   Users,
-  Search,
   Mail,
   Award,
   PlayCircle,
@@ -26,7 +25,7 @@ import DataTable, {
   columnRenderers,
 } from '@/components/DataTable'
 import InterviewCreationModal from '@/components/InterviewCreationModal'
-import Sidebar from '@/components/Sidebar'
+import DashboardLayout from '@/components/DashboardLayout'
 import { cardStyles, containers } from '@/lib/design-system'
 
 const Candidates = () => {
@@ -222,87 +221,59 @@ const Candidates = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-white">
-      <Sidebar />
-
-      {/* Main Content */}
-      <main className="lg:ml-64 overflow-y-auto pb-16 lg:pb-0">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-semibold text-neutral-900 mb-1">
-              Candidates
-            </h1>
-            <p className="text-sm text-gray-500">
-              Browse and manage your candidate pool
-            </p>
-          </div>
-
-          {/* Search */}
-          {candidates.length > 0 && (
-            <div className="mb-4">
-              <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  type="text"
-                  placeholder="Search by name, position, or skills..."
-                  value={candidateSearch}
-                  onChange={(e) => setCandidateSearch(e.target.value)}
-                  className="pl-9 h-10 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 text-sm"
+    <DashboardLayout
+      search={candidateSearch}
+      onSearchChange={(e) => setCandidateSearch(e.target.value)}
+      searchPlaceholder="Search by name, position, or skills..."
+    >
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <DataTable
+          columns={columns}
+          data={filteredCandidates}
+          loading={loading}
+          emptyState={
+            candidates.length === 0 ? (
+              <div className="p-10 text-center bg-surface border border-neutral-200 rounded-xl shadow-card">
+                <Users
+                  className="w-10 h-10 mx-auto mb-3 text-gray-300"
+                  strokeWidth={1.5}
                 />
+                <p className="text-sm text-neutral-600 mb-3">
+                  No candidates yet. Candidates will appear here when they apply
+                  to your job postings
+                </p>
+                <Button
+                  onClick={() => navigate('/jobs')}
+                  variant="outline"
+                  size="sm"
+                  className="rounded-lg font-normal text-xs h-8 px-3"
+                >
+                  View Jobs
+                </Button>
               </div>
-            </div>
-          )}
-
-          {/* Candidates Table */}
-          <DataTable
-            columns={columns}
-            data={filteredCandidates}
-            loading={loading}
-            emptyState={
-              candidates.length === 0 ? (
-                <div className="p-10 text-center bg-surface border border-neutral-200 rounded-xl shadow-card">
-                  <Users
-                    className="w-10 h-10 mx-auto mb-3 text-gray-300"
-                    strokeWidth={1.5}
-                  />
-                  <p className="text-sm text-neutral-600 mb-3">
-                    No candidates yet. Candidates will appear here when they
-                    apply to your job postings
-                  </p>
-                  <Button
-                    onClick={() => navigate('/jobs')}
-                    variant="outline"
-                    size="sm"
-                    className="rounded-lg font-normal text-xs h-8 px-3"
-                  >
-                    View Jobs
-                  </Button>
-                </div>
-              ) : (
-                <div className="p-10 text-center bg-surface border border-neutral-200 rounded-xl shadow-card">
-                  <MessagesSquare
-                    className="w-10 h-10 mx-auto mb-3 text-gray-300"
-                    strokeWidth={1.5}
-                  />
-                  <p className="text-sm text-neutral-600 mb-3">
-                    No candidates match your search. Try different keywords
-                  </p>
-                  <Button
-                    onClick={() => setCandidateSearch('')}
-                    variant="outline"
-                    size="sm"
-                    className="rounded-lg font-normal text-xs h-8 px-3"
-                  >
-                    Clear Search
-                  </Button>
-                </div>
-              )
-            }
-            size="md"
-          />
-        </div>
-      </main>
+            ) : (
+              <div className="p-10 text-center bg-surface border border-neutral-200 rounded-xl shadow-card">
+                <MessagesSquare
+                  className="w-10 h-10 mx-auto mb-3 text-gray-300"
+                  strokeWidth={1.5}
+                />
+                <p className="text-sm text-neutral-600 mb-3">
+                  No candidates match your search. Try different keywords
+                </p>
+                <Button
+                  onClick={() => setCandidateSearch('')}
+                  variant="outline"
+                  size="sm"
+                  className="rounded-lg font-normal text-xs h-8 px-3"
+                >
+                  Clear Search
+                </Button>
+              </div>
+            )
+          }
+          size="md"
+        />
+      </div>
 
       <InterviewCreationModal
         open={interviewModalOpen}
@@ -313,7 +284,7 @@ const Candidates = () => {
         candidate={selectedCandidate}
         onSuccess={handleInterviewCreated}
       />
-    </div>
+    </DashboardLayout>
   )
 }
 

@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import api from '@/utils/api'
-import Sidebar from '@/components/Sidebar'
+import DashboardLayout from '@/components/DashboardLayout'
 import DataTable, {
   createColumn,
   columnRenderers,
 } from '@/components/DataTable'
 import ColumnFilterDropdown from '@/components/ColumnFilterDropdown'
-import { MessagesSquare, Search } from 'lucide-react'
+import { MessagesSquare } from 'lucide-react'
 
 const Pipeline = () => {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -266,44 +266,27 @@ const Pipeline = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Sidebar />
-      <main className="lg:ml-[212px] flex min-h-screen max-h-screen flex-col overflow-y-auto bg-white">
-        <div className="sticky top-0 z-40 border-b border-gray-200 bg-white shadow-sm">
-          <div className="flex items-center justify-center px-6 lg:px-8 py-4">
-            <div className="relative w-full max-w-2xl">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Ask anything about candidates, jobs, or interviews..."
-                className="w-full h-11 rounded-full border border-gray-200 bg-white pl-12 pr-14 text-sm text-gray-800 placeholder:text-gray-400 shadow-sm transition-all focus:border-gray-900 focus:shadow-md focus:outline-none"
-              />
-              <button className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-gray-900 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-white shadow hover:bg-gray-800 transition-colors">
-                Generate
-              </button>
-            </div>
+    <DashboardLayout
+      search={search}
+      onSearchChange={(e) => setSearch(e.target.value)}
+      searchPlaceholder="Ask anything about candidates, jobs, or interviews..."
+    >
+      <DataTable
+        columns={columns}
+        data={filteredInterviews}
+        loading={loading}
+        density={density}
+        frozenColumns={['candidate', 'job']}
+        emptyState={
+          <div className="py-20 text-center text-sm text-gray-500">
+            <MessagesSquare className="w-8 h-8 mx-auto mb-3 text-gray-300" />
+            {hasActiveFilters
+              ? 'No interviews match your filters'
+              : 'No interviews yet'}
           </div>
-        </div>
-
-        <DataTable
-          columns={columns}
-          data={filteredInterviews}
-          loading={loading}
-          density={density}
-          frozenColumns={['candidate', 'job']}
-          emptyState={
-            <div className="py-20 text-center text-sm text-gray-500">
-              <MessagesSquare className="w-8 h-8 mx-auto mb-3 text-gray-300" />
-              {hasActiveFilters
-                ? 'No interviews match your filters'
-                : 'No interviews yet'}
-            </div>
-          }
-        />
-      </main>
-    </div>
+        }
+      />
+    </DashboardLayout>
   )
 }
 

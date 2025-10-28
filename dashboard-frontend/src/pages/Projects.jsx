@@ -26,8 +26,8 @@ import DataTable, {
   createColumn,
   columnRenderers,
 } from '../components/DataTable'
-import { Search, Plus, FolderKanban } from 'lucide-react'
-import Sidebar from '../components/Sidebar'
+import { Plus, FolderKanban } from 'lucide-react'
+import DashboardLayout from '../components/DashboardLayout'
 
 export default function Projects() {
   const navigate = useNavigate()
@@ -201,91 +201,66 @@ export default function Projects() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <Sidebar />
+    <DashboardLayout
+      search={searchTerm}
+      onSearchChange={(e) => setSearchTerm(e.target.value)}
+      searchPlaceholder="Search by project name..."
+      actionButton={
+        <Button
+          onClick={() => setCreateDialogOpen(true)}
+          className="rounded-lg font-medium bg-blue-500 hover:bg-blue-600 text-white h-10 px-5 shadow-sm hover:shadow transition-shadow"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Create Project
+        </Button>
+      }
+    >
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Status Filter */}
+        <div className="mb-4">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-40 h-10 rounded-lg text-sm">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="archived">Archived</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-      {/* Main Content */}
-      <main className="lg:ml-64 overflow-y-auto pb-16 lg:pb-0">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          {/* Header */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-semibold text-neutral-900 mb-1">
-                  Projects
-                </h1>
-                <p className="text-sm text-gray-500">
-                  Manage candidate projects and assignments
-                </p>
-              </div>
+        {/* Projects Table */}
+        <DataTable
+          columns={columns}
+          data={projects}
+          onRowClick={handleRowClick}
+          loading={loading}
+          pagination={paginationConfig}
+          emptyState={
+            <div className="p-10 text-center bg-surface border border-neutral-200 rounded-xl shadow-card">
+              <FolderKanban
+                className="w-10 h-10 mx-auto mb-3 text-gray-300"
+                strokeWidth={1.5}
+              />
+              <p className="text-sm text-neutral-600 mb-3">
+                No projects yet. Create your first project to get started.
+              </p>
               <Button
                 onClick={() => setCreateDialogOpen(true)}
-                className="rounded-lg font-medium bg-blue-500 hover:bg-blue-600 text-white h-10 px-5 shadow-sm hover:shadow transition-shadow"
+                variant="outline"
+                size="sm"
+                className="rounded-lg font-normal text-xs h-8 px-3"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Create Project
               </Button>
             </div>
-          </div>
-
-          {/* Search and Filters */}
-          <div className="mb-4 flex gap-3 flex-wrap">
-            <div className="flex-1 min-w-64">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  type="text"
-                  placeholder="Search by project name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 h-10 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 text-sm"
-                />
-              </div>
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40 h-10 rounded-lg text-sm">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="archived">Archived</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Projects Table */}
-          <DataTable
-            columns={columns}
-            data={projects}
-            onRowClick={handleRowClick}
-            loading={loading}
-            pagination={paginationConfig}
-            emptyState={
-              <div className="p-10 text-center bg-surface border border-neutral-200 rounded-xl shadow-card">
-                <FolderKanban
-                  className="w-10 h-10 mx-auto mb-3 text-gray-300"
-                  strokeWidth={1.5}
-                />
-                <p className="text-sm text-neutral-600 mb-3">
-                  No projects yet. Create your first project to get started.
-                </p>
-                <Button
-                  onClick={() => setCreateDialogOpen(true)}
-                  variant="outline"
-                  size="sm"
-                  className="rounded-lg font-normal text-xs h-8 px-3"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Project
-                </Button>
-              </div>
-            }
-            size="md"
-          />
-        </div>
-      </main>
+          }
+          size="md"
+        />
+      </div>
 
       {/* Create Project Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
@@ -356,6 +331,6 @@ export default function Projects() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </DashboardLayout>
   )
 }
