@@ -69,6 +69,19 @@ export default function Annotators() {
 
   // Options for filters
   const [jobs, setJobs] = useState([])
+  const [isDeepLink, setIsDeepLink] = useState(false)
+
+  // Deep link support: Open sheet if annotator parameter is in URL on initial load
+  useEffect(() => {
+    const sheetParam = searchParams.get('sheet')
+    const idParam = searchParams.get('id')
+
+    // If there's a sheet and id param, this is a deep link
+    if (sheetParam === 'annotator' && idParam) {
+      setIsDeepLink(true)
+      openSheet('annotator', idParam, { replace: true })
+    }
+  }, []) // Only run on mount
 
   const fetchAnnotators = useCallback(async () => {
     try {
@@ -128,17 +141,24 @@ export default function Annotators() {
 
   // Sync URL params with filters (but don't run on mount to avoid overwriting URL params)
   useEffect(() => {
-    const next = new URLSearchParams()
-    if (jobFilter && jobFilter !== 'all') next.set('job', jobFilter)
-    if (statusFilter && statusFilter !== 'all') next.set('status', statusFilter)
+    // IMPORTANT: Start with existing params to preserve sheet state
+    const next = new URLSearchParams(searchParams)
 
-    // Only update URL if params have actually changed
-    const currentParams = searchParams.toString()
-    const nextParams = next.toString()
-    if (currentParams !== nextParams) {
-      setSearchParams(next, { replace: true })
+    // Update filter params
+    if (jobFilter && jobFilter !== 'all') {
+      next.set('job', jobFilter)
+    } else {
+      next.delete('job')
     }
-  }, [jobFilter, statusFilter])
+
+    if (statusFilter && statusFilter !== 'all') {
+      next.set('status', statusFilter)
+    } else {
+      next.delete('status')
+    }
+
+    setSearchParams(next, { replace: true })
+  }, [jobFilter, statusFilter, searchParams, setSearchParams])
 
   // Update assignment dropdown position
   const updateAssignDropdownPosition = useCallback(() => {
@@ -560,7 +580,10 @@ export default function Annotators() {
       <AnnotatorProfileSheetNew
         open={isOpen && sheetType === 'annotator'}
         onOpenChange={(open) => {
-          if (!open) closeSheet()
+          if (!open) {
+            closeSheet()
+            setIsDeepLink(false)
+          }
         }}
         candidateId={entityId}
         allowEdit={false}

@@ -229,6 +229,7 @@ async def get_accepted_annotators(
                 "candidateId": "$candidate_id",
                 "candidateName": "$candidate.name",
                 "candidateEmail": "$candidate.email",
+                "citizenship": "$candidate.citizenship",
                 "interviewId": "$id",
                 "jobId": "$job_id",
                 "jobTitle": "$job.job_title",

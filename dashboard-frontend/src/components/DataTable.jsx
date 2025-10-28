@@ -183,7 +183,7 @@ export default function DataTable({
 
     // Selection column is always frozen if present
     if (columnKey === '__selection__') {
-      const zIndex = isHeader ? 40 : 10
+      const zIndex = isHeader ? 50 : 10
       return {
         position: 'sticky',
         left: '0px',
@@ -212,8 +212,8 @@ export default function DataTable({
       leftPosition += columnWidths[prevColumnKey] || 160
     }
 
-    // Higher z-index for header cells to ensure dropdowns appear above content
-    const zIndex = isHeader ? 40 : frozenIndex === 0 ? 10 : 9
+    // Higher z-index for header cells to ensure they appear above sticky header background (z-index: 30)
+    const zIndex = isHeader ? 50 : frozenIndex === 0 ? 10 : 9
 
     return {
       position: 'sticky',
@@ -257,6 +257,11 @@ export default function DataTable({
         ref={headerRef}
         className="w-full overflow-x-auto border-b border-gray-200"
         style={{
+          position: 'sticky',
+          top: '73px',
+          zIndex: 30,
+          backgroundColor: '#fff',
+          boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
           paddingRight: scrollbarWidth ? `${scrollbarWidth}px` : 0,
           overflowY: 'hidden',
           scrollbarWidth: 'none',

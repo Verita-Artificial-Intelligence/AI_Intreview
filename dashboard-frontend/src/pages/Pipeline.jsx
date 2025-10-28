@@ -14,7 +14,6 @@ import { MessagesSquare } from 'lucide-react'
 const Pipeline = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const { isOpen, sheetType, entityId, openSheet, closeSheet } = useSheetState()
-  const [candidates, setCandidates] = useState([])
   const [jobs, setJobs] = useState([])
   const [interviews, setInterviews] = useState([])
   const [loading, setLoading] = useState(true)
@@ -34,12 +33,10 @@ const Pipeline = () => {
 
   const fetchData = async () => {
     try {
-      const [candidatesRes, jobsRes, interviewsRes] = await Promise.all([
-        api.get('/candidates'),
+      const [jobsRes, interviewsRes] = await Promise.all([
         api.get('/jobs'),
         api.get('/interviews'),
       ])
-      setCandidates(candidatesRes.data)
       setJobs(jobsRes.data)
       setInterviews(interviewsRes.data)
     } catch (err) {
@@ -140,9 +137,6 @@ const Pipeline = () => {
       width: 220,
       minWidth: 180,
       render: (_, interview) => {
-        const candidate = candidates.find(
-          (c) => c.id === interview.candidate_id
-        )
         return (
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded bg-blue-100 flex items-center justify-center text-xs font-medium text-blue-800 flex-shrink-0">
@@ -152,11 +146,6 @@ const Pipeline = () => {
               <div className="font-medium text-gray-900 text-truncate">
                 {interview.candidate_name || 'Unknown'}
               </div>
-              {candidate?.country && (
-                <div className="text-xs text-gray-500 text-truncate">
-                  {candidate.country}
-                </div>
-              )}
             </div>
           </div>
         )
@@ -267,7 +256,7 @@ const Pipeline = () => {
     <DashboardLayout
       search={search}
       onSearchChange={(e) => setSearch(e.target.value)}
-      searchPlaceholder="Ask anything about candidates, jobs, or interviews..."
+      searchPlaceholder="Search by candidates, jobs, or interviews..."
     >
       <DataTable
         columns={columns}
