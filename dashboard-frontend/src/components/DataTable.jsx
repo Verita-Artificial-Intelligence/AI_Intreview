@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Table,
   TableBody,
@@ -52,6 +52,88 @@ export default function DataTable({
   stickyHeader = true,
   frozenColumns = [],
 }) {
+  const headerRef = useRef(null)
+  const bodyRef = useRef(null)
+  const [scrollbarWidth, setScrollbarWidth] = useState(0)
+  const [columnWidths, setColumnWidths] = useState(() => {
+    const widths = {}
+    columns.forEach((col) => {
+      widths[col.key] = col.width || 160
+    })
+    return widths
+  })
+  const resizingRef = useRef(null)
+
+  // Handle column resizing
+  const handleMouseDown = (columnKey, e) => {
+    e.preventDefault()
+    resizingRef.current = {
+      columnKey,
+      startX: e.pageX,
+      startWidth: columnWidths[columnKey],
+    }
+  }
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!resizingRef.current) return
+
+      const { columnKey, startX, startWidth } = resizingRef.current
+      const diff = e.pageX - startX
+      const newWidth = Math.max(60, startWidth + diff)
+
+      setColumnWidths((prev) => ({
+        ...prev,
+        [columnKey]: newWidth,
+      }))
+    }
+
+    const handleMouseUp = () => {
+      resizingRef.current = null
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [])
+
+  // Sync horizontal scroll between header and body, and calculate scrollbar width
+  useEffect(() => {
+    const headerEl = headerRef.current
+    const bodyEl = bodyRef.current
+    if (!headerEl || !bodyEl) return
+
+    // Calculate scrollbar width
+    const updateScrollbarWidth = () => {
+      const width = bodyEl.offsetWidth - bodyEl.clientWidth
+      setScrollbarWidth(width)
+    }
+
+    updateScrollbarWidth()
+    window.addEventListener('resize', updateScrollbarWidth)
+
+    const syncScroll = (e) => {
+      const target = e.target
+      const other = target === headerEl ? bodyEl : headerEl
+      if (other.scrollLeft !== target.scrollLeft) {
+        other.scrollLeft = target.scrollLeft
+      }
+    }
+
+    headerEl.addEventListener('scroll', syncScroll)
+    bodyEl.addEventListener('scroll', syncScroll)
+
+    return () => {
+      window.removeEventListener('resize', updateScrollbarWidth)
+      headerEl.removeEventListener('scroll', syncScroll)
+      bodyEl.removeEventListener('scroll', syncScroll)
+    }
+  }, [])
+
   // Calculate frozen column positions
   const getFrozenColumnStyle = (columnIndex, isHeader = false) => {
     if (!frozenColumns.length) return {}
@@ -65,8 +147,8 @@ export default function DataTable({
 
     // Add widths of previous frozen columns
     for (let i = 0; i < frozenIndex; i++) {
-      const prevColumn = columns.find((col) => col.key === frozenColumns[i])
-      leftPosition += prevColumn?.width || 160
+      const prevColumnKey = frozenColumns[i]
+      leftPosition += columnWidths[prevColumnKey] || 160
     }
 
     // Higher z-index for header cells to ensure dropdowns appear above content
@@ -75,7 +157,8 @@ export default function DataTable({
     return {
       position: 'sticky',
       left: `${leftPosition}px`,
-      backgroundColor: '#fff',
+      // Only set background color for headers, not body cells (to allow hover effect)
+      ...(isHeader ? { backgroundColor: '#fff' } : {}),
       zIndex,
       borderRight: '1px solid var(--gray-200)',
     }
@@ -107,39 +190,92 @@ export default function DataTable({
   }
 
   return (
-    <div className={`w-full bg-white flex flex-col ${className}`}>
-      <div className="w-full overflow-x-auto">
+    <div className={`w-full flex flex-col flex-1 bg-white ${className}`}>
+      {/* Fixed table header */}
+      <div
+        ref={headerRef}
+        className="w-full overflow-x-auto border-b border-gray-200"
+        style={{
+          paddingRight: scrollbarWidth ? `${scrollbarWidth}px` : 0,
+          overflowY: 'hidden',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        }}
+      >
+        <style>{`
+          .header-container::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
         <Table
-          className={`
-            w-full text-[13px] leading-relaxed
-            ${density === 'compact' ? 'table-compact' : 'table-dense'}
-            ${stickyHeader ? 'table-sticky-header' : ''}
-          `}
+          className={`w-full text-[13px] leading-relaxed ${density === 'compact' ? 'table-compact' : 'table-dense'}`}
+          style={{ tableLayout: 'fixed' }}
         >
+          <colgroup>
+            {columns.map((column) => (
+              <col
+                key={`header-${column.key}`}
+                style={{
+                  width: `${columnWidths[column.key]}px`,
+                  minWidth: column.minWidth ? `${column.minWidth}px` : '60px',
+                }}
+              />
+            ))}
+          </colgroup>
           <TableHeader>
-            <TableRow className="bg-white border-b border-gray-200">
+            <TableRow className="bg-white">
               {columns.map((column, index) => (
                 <TableHead
                   key={column.key}
-                  className={`table-cell font-medium text-gray-600 text-[11px] ${column.className || ''}`}
+                  className={`font-medium text-gray-600 text-[11px] bg-white relative ${column.className || ''}`}
                   style={{
-                    width: column.width || 'auto',
-                    minWidth: column.minWidth || '120px',
+                    width: `${columnWidths[column.key]}px`,
+                    minWidth: column.minWidth ? `${column.minWidth}px` : '60px',
                     ...getFrozenColumnStyle(index, true),
                   }}
                 >
-                  {column.headerRender ? column.headerRender() : column.label}
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      {column.headerRender
+                        ? column.headerRender()
+                        : column.label}
+                    </div>
+                    <div
+                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 hover:opacity-50"
+                      onMouseDown={(e) => handleMouseDown(column.key, e)}
+                    />
+                  </div>
                 </TableHead>
               ))}
             </TableRow>
           </TableHeader>
+        </Table>
+      </div>
+
+      {/* Scrollable table body */}
+      <div ref={bodyRef} className="w-full flex-1 overflow-auto">
+        <Table
+          className={`w-full text-[13px] leading-relaxed ${density === 'compact' ? 'table-compact' : 'table-dense'}`}
+          style={{ tableLayout: 'fixed' }}
+        >
+          <colgroup>
+            {columns.map((column) => (
+              <col
+                key={`body-${column.key}`}
+                style={{
+                  width: `${columnWidths[column.key]}px`,
+                  minWidth: column.minWidth ? `${column.minWidth}px` : '60px',
+                }}
+              />
+            ))}
+          </colgroup>
           <TableBody>
             {data.map((row, rowIndex) => {
               return (
                 <TableRow
                   key={row.id || rowIndex}
                   className={`
-                    group table-row
+                    group
                     transition-colors duration-100
                     ${hoverable ? 'hover:bg-gray-50/90' : ''}
                     ${onRowClick ? 'cursor-pointer' : ''}
@@ -149,12 +285,9 @@ export default function DataTable({
                   {columns.map((column, colIndex) => (
                     <TableCell
                       key={column.key}
-                      className={`table-cell ${column.className || ''}`}
+                      className={`${column.className || ''} ${frozenColumns.includes(column.key) ? 'bg-white group-hover:bg-gray-50/90' : ''}`}
                       style={{
                         ...getFrozenColumnStyle(colIndex),
-                        backgroundColor: frozenColumns.includes(column.key)
-                          ? '#fff'
-                          : undefined,
                       }}
                     >
                       {column.render

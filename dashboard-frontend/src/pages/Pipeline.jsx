@@ -1,24 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import api from '@/utils/api'
 import Sidebar from '@/components/Sidebar'
 import DataTable, {
   createColumn,
   columnRenderers,
 } from '@/components/DataTable'
-import CompactToolbar, { createActiveFilter } from '@/components/CompactToolbar'
 import ColumnFilterDropdown from '@/components/ColumnFilterDropdown'
-import {
-  MessagesSquare,
-  Briefcase,
-  Clock,
-  ChevronRight,
-  Search,
-} from 'lucide-react'
-import { getStatusLabel } from '@/lib/design-system'
+import { MessagesSquare, Search } from 'lucide-react'
 
 const Pipeline = () => {
-  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [candidates, setCandidates] = useState([])
   const [jobs, setJobs] = useState([])
@@ -28,12 +19,14 @@ const Pipeline = () => {
   const statusParam = searchParams.get('status')
   const candidateParam = searchParams.get('candidate')
   const jobParam = searchParams.get('job')
+  const resultParam = searchParams.get('result')
 
   const [statusFilter, setStatusFilter] = useState(statusParam || 'all')
   const [candidateFilter, setCandidateFilter] = useState(
     candidateParam || 'all'
   )
   const [jobFilter, setJobFilter] = useState(jobParam || 'all')
+  const [resultFilter, setResultFilter] = useState(resultParam || 'all')
   const [density] = useState('compact')
 
   useEffect(() => {
@@ -75,6 +68,13 @@ const Pipeline = () => {
       list = list.filter((i) => i.job_id === jobFilter)
     }
 
+    // Apply result filter
+    if (resultFilter && resultFilter !== 'all') {
+      list = list.filter(
+        (i) => (i.acceptance_status || '').toLowerCase() === resultFilter
+      )
+    }
+
     // Apply search
     if (search.trim()) {
       const q = search.toLowerCase()
@@ -87,7 +87,14 @@ const Pipeline = () => {
     }
 
     return list
-  }, [interviews, search, statusFilter, candidateFilter, jobFilter])
+  }, [
+    interviews,
+    search,
+    statusFilter,
+    candidateFilter,
+    jobFilter,
+    resultFilter,
+  ])
 
   const getInitials = (name) => {
     if (!name) return 'U'
@@ -102,6 +109,7 @@ const Pipeline = () => {
     setStatusFilter('all')
     setCandidateFilter('all')
     setJobFilter('all')
+    setResultFilter('all')
     setSearch('')
     setSearchParams({})
   }
@@ -110,6 +118,7 @@ const Pipeline = () => {
     (statusFilter && statusFilter !== 'all') ||
     (candidateFilter && candidateFilter !== 'all') ||
     (jobFilter && jobFilter !== 'all') ||
+    (resultFilter && resultFilter !== 'all') ||
     Boolean(search)
 
   // Sync URL params with filters
@@ -119,30 +128,9 @@ const Pipeline = () => {
     if (candidateFilter && candidateFilter !== 'all')
       next.set('candidate', candidateFilter)
     if (jobFilter && jobFilter !== 'all') next.set('job', jobFilter)
+    if (resultFilter && resultFilter !== 'all') next.set('result', resultFilter)
     setSearchParams(next)
-  }, [statusFilter, candidateFilter, jobFilter, setSearchParams])
-
-  // Get candidate and job names for display
-  const getCandidateName = (candidateId) => {
-    const candidate = candidates.find((c) => c.id === candidateId)
-    return candidate?.name || 'Unknown'
-  }
-
-  const getJobTitle = (jobId) => {
-    const job = jobs.find((j) => j.id === jobId)
-    return job?.title || 'Unknown'
-  }
-
-  const onDeleteInterview = async (id) => {
-    if (!window.confirm('Delete this interview?')) return
-    try {
-      await api.delete(`/interviews/${id}`)
-      fetchData()
-    } catch (e) {
-      console.error('Delete failed', e)
-      alert('Failed to delete interview. Please try again.')
-    }
-  }
+  }, [statusFilter, candidateFilter, jobFilter, resultFilter, setSearchParams])
 
   // Production table columns - optimized order and layout
   const columns = [
@@ -171,10 +159,6 @@ const Pipeline = () => {
           <div className="min-w-0 flex-1">
             <div className="font-medium text-gray-900 text-truncate">
               {interview.candidate_name || 'Unknown'}
-            </div>
-            <div className="text-xs text-gray-500 flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              {columnRenderers.date(interview.created_at)}
             </div>
           </div>
         </div>
@@ -208,7 +192,7 @@ const Pipeline = () => {
     }),
     createColumn('status', 'Status', {
       width: 140,
-      className: 'text-center',
+      className: 'text-left border-l border-gray-200',
       headerRender: () => (
         <ColumnFilterDropdown
           label="Status"
@@ -237,7 +221,21 @@ const Pipeline = () => {
     }),
     createColumn('result', 'Result', {
       width: 120,
-      className: 'text-center',
+      className: 'text-left border-l border-gray-200',
+      headerRender: () => (
+        <ColumnFilterDropdown
+          label="Result"
+          value={resultFilter}
+          options={[
+            { value: 'all', label: 'All Results' },
+            { value: 'accepted', label: 'Accepted' },
+            { value: 'rejected', label: 'Rejected' },
+            { value: 'pending', label: 'Pending' },
+          ]}
+          onChange={setResultFilter}
+          searchable={false}
+        />
+      ),
       render: (_, interview) => {
         if (!interview.acceptance_status)
           return <span className="text-xs text-gray-400">—</span>
@@ -255,7 +253,7 @@ const Pipeline = () => {
     }),
     createColumn('updated', 'Updated', {
       width: 100,
-      className: 'text-right',
+      className: 'text-left border-l border-gray-200',
       render: (_, interview) => (
         <span
           className="text-xs text-gray-500"
@@ -265,80 +263,45 @@ const Pipeline = () => {
         </span>
       ),
     }),
-    createColumn('actions', '', {
-      width: 44,
-      className: 'text-right pr-4',
-      render: () => (
-        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
-      ),
-    }),
   ]
-
-  const handleRowClick = (interview) => {
-    setCandidateFilter(interview.candidate_id || 'all')
-    setJobFilter(interview.job_id || 'all')
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Sidebar />
-      <main className="lg:ml-[212px] flex min-h-screen max-h-screen flex-col overflow-hidden bg-white">
-        <div className="sticky top-0 z-40 border-b border-gray-200 bg-white">
-          <div className="flex items-center justify-between px-6 lg:px-8 py-4">
-            <div className="space-y-1">
-              <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">
-                Interviews
-              </div>
-              <div className="flex items-baseline gap-2">
-                <h1 className="text-[22px] font-semibold text-gray-900">
-                  Pipeline
-                </h1>
-                <span className="text-sm text-gray-500">
-                  {filteredInterviews.length} result
-                  {filteredInterviews.length !== 1 ? 's' : ''}
-                  {hasActiveFilters && ' • filtered'}
-                </span>
-              </div>
-            </div>
-            <div className="flex-1 px-8">
-              <div className="relative mx-auto w-full max-w-2xl">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Ask anything about candidates, jobs, or interviews..."
-                  className="w-full h-11 rounded-full border border-gray-200 bg-white pl-12 pr-14 text-sm text-gray-800 placeholder:text-gray-400 shadow-sm transition-all focus:border-gray-900 focus:shadow-md focus:outline-none"
-                />
-                <button className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-gray-900 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-white shadow hover:bg-gray-800 transition-colors">
-                  Generate
-                </button>
-              </div>
-            </div>
-            <div className="hidden text-xs text-gray-500 md:block">
-              Compact view
+      <main className="lg:ml-[212px] flex min-h-screen max-h-screen flex-col overflow-y-auto bg-white">
+        <div className="sticky top-0 z-40 border-b border-gray-200 bg-white shadow-sm">
+          <div className="flex items-center justify-center px-6 lg:px-8 py-4">
+            <div className="relative w-full max-w-2xl">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Ask anything about candidates, jobs, or interviews..."
+                className="w-full h-11 rounded-full border border-gray-200 bg-white pl-12 pr-14 text-sm text-gray-800 placeholder:text-gray-400 shadow-sm transition-all focus:border-gray-900 focus:shadow-md focus:outline-none"
+              />
+              <button className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-gray-900 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-white shadow hover:bg-gray-800 transition-colors">
+                Generate
+              </button>
             </div>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-          <DataTable
-            columns={columns}
-            data={filteredInterviews}
-            onRowClick={handleRowClick}
-            loading={loading}
-            density={density}
-            frozenColumns={['candidate', 'job']}
-            emptyState={
-              <div className="py-20 text-center text-sm text-gray-500">
-                <MessagesSquare className="w-8 h-8 mx-auto mb-3 text-gray-300" />
-                {hasActiveFilters
-                  ? 'No interviews match your filters'
-                  : 'No interviews yet'}
-              </div>
-            }
-          />
-        </div>
+        <DataTable
+          columns={columns}
+          data={filteredInterviews}
+          loading={loading}
+          density={density}
+          frozenColumns={['candidate', 'job']}
+          emptyState={
+            <div className="py-20 text-center text-sm text-gray-500">
+              <MessagesSquare className="w-8 h-8 mx-auto mb-3 text-gray-300" />
+              {hasActiveFilters
+                ? 'No interviews match your filters'
+                : 'No interviews yet'}
+            </div>
+          }
+        />
       </main>
     </div>
   )
