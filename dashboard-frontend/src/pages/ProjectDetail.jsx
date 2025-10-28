@@ -54,6 +54,7 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
+import EmailPreviewModal from '../components/EmailPreviewModal'
 
 export default function ProjectDetail() {
   const { projectId } = useParams()
@@ -709,30 +710,17 @@ export default function ProjectDetail() {
         </div>
       </main>
 
-      {/* Bulk Assign Dialog */}
-      <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Assign Candidates</DialogTitle>
-            <DialogDescription>
-              Assign {selectedCandidates.length} candidate(s) to this project.
-              Email notifications will be sent automatically.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setAssignDialogOpen(false)}
-              disabled={assigning}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleBulkAssign} disabled={assigning}>
-              {assigning ? 'Assigning...' : 'Assign Candidates'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Email Preview Modal */}
+      <EmailPreviewModal
+        open={assignDialogOpen}
+        onClose={() => setAssignDialogOpen(false)}
+        projectId={projectId}
+        assignments={selectedCandidates.map((candidateId) => ({
+          candidate_id: candidateId,
+          role: null,
+        }))}
+        onConfirm={handleBulkAssign}
+      />
 
       {/* Unassign Dialog */}
       <AlertDialog

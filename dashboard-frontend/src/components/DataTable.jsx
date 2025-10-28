@@ -483,26 +483,26 @@ export const createColumn = (key, label, options = {}) => ({
  * Common column renderers
  */
 export const columnRenderers = {
-  // Render a badge with status styling
+  // Render a badge with status styling (blue theme)
   status: (value, statusConfig = {}) => {
     const config = {
       completed: {
-        bg: 'bg-green-100',
-        text: 'text-green-800',
+        bg: 'bg-blue-100',
+        text: 'text-blue-800',
         label: 'Completed',
       },
       in_progress: {
-        bg: 'bg-yellow-100',
-        text: 'text-yellow-800',
+        bg: 'bg-blue-100',
+        text: 'text-blue-700',
         label: 'In Progress',
       },
-      pending: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Pending' },
+      pending: { bg: 'bg-blue-50', text: 'text-blue-600', label: 'Pending' },
       scheduled: {
-        bg: 'bg-purple-100',
-        text: 'text-purple-800',
+        bg: 'bg-blue-100',
+        text: 'text-blue-700',
         label: 'Scheduled',
       },
-      active: { bg: 'bg-green-100', text: 'text-green-800', label: 'Active' },
+      active: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Active' },
       archived: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Archived' },
       ...statusConfig,
     }

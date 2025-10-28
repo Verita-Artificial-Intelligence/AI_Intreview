@@ -15,14 +15,16 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import aiofiles
-from database import db
+from database import db, get_interviews_collection
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 FFMPEG_VIDEO_PRESET = os.getenv("FFMPEG_VIDEO_PRESET", "veryfast")
 FFMPEG_CRF = os.getenv("FFMPEG_CRF", "23")
-FFMPEG_AUDIO_BITRATE = os.getenv("FFMPEG_AUDIO_BITRATE", "96k")
+FFMPEG_AUDIO_BITRATE = os.getenv(
+    "FFMPEG_AUDIO_BITRATE", "192k"
+)  # Increased from 96k for better quality
 FFMPEG_THREAD_OVERRIDE = os.getenv("FFMPEG_THREADS")
 
 
@@ -434,7 +436,7 @@ async def upload_interview_video(
 
         if interview_id:
             interviews_collection = get_interviews_collection()
-            video_url = f"/uploads/{s3_key}"
+            video_url = f"/api/uploads/{s3_key}"
 
             if not combine_succeeded:
                 existing = await interviews_collection.find_one(
@@ -459,7 +461,12 @@ async def upload_interview_video(
 
             await interviews_collection.update_one(
                 {"id": interview_id},
-                {"$set": {"video_url": s3_key, "video_processing_status": "completed"}},
+                {
+                    "$set": {
+                        "video_url": video_url,
+                        "video_processing_status": "completed",
+                    }
+                },
             )
             logger.info(f"Updated interview {interview_id} with video S3 key: {s3_key}")
 
@@ -468,7 +475,7 @@ async def upload_interview_video(
             "filename": final_filename,
             "size": len(video_content),
             "s3_key": s3_key,
-            "url": f"/uploads/{s3_key}",
+            "url": f"/api/uploads/{s3_key}",
         }
 
     except Exception as e:

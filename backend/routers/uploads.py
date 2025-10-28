@@ -147,8 +147,23 @@ async def stream_file(path: str):
 
         content_type = mimetypes.guess_type(path)[0] or "application/octet-stream"
 
+        # Handle both S3 StreamingBody and local file handles
+        if hasattr(file_stream, "iter_chunks"):
+            # S3 StreamingBody
+            stream_iterator = file_stream.iter_chunks(chunk_size=65536)
+        else:
+            # Local file handle - create iterator
+            def file_iterator():
+                try:
+                    while chunk := file_stream.read(65536):
+                        yield chunk
+                finally:
+                    file_stream.close()
+
+            stream_iterator = file_iterator()
+
         return StreamingResponse(
-            file_stream.iter_chunks(chunk_size=65536),
+            stream_iterator,
             media_type=content_type,
             headers={"Cache-Control": "public, max-age=3600", "Accept-Ranges": "bytes"},
         )

@@ -183,8 +183,8 @@ const Dashboard = () => {
 
               <Card className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="p-3 rounded-lg bg-purple-100 flex-shrink-0">
-                    <FileText className="w-6 h-6 text-purple-600" />
+                  <div className="p-3 rounded-lg bg-blue-100 flex-shrink-0">
+                    <FileText className="w-6 h-6 text-blue-600" />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-600 mb-1">
@@ -274,10 +274,10 @@ const Dashboard = () => {
                                     <div
                                       className={`h-2 rounded-full transition-all ${
                                         project.completionPercent >= 75
-                                          ? 'bg-green-500'
+                                          ? 'bg-blue-600'
                                           : project.completionPercent >= 50
-                                            ? 'bg-yellow-500'
-                                            : 'bg-red-500'
+                                            ? 'bg-blue-500'
+                                            : 'bg-blue-400'
                                       }`}
                                       style={{
                                         width: `${project.completionPercent}%`,
@@ -381,7 +381,7 @@ const Dashboard = () => {
                                   {annotator.score}
                                 </p>
                                 <p
-                                  className={`text-xs ${annotator.passStatus === 'pass' ? 'text-green-600' : 'text-red-600'}`}
+                                  className={`text-xs ${annotator.passStatus === 'pass' ? 'text-blue-600' : 'text-blue-400'}`}
                                 >
                                   {annotator.passStatus === 'pass'
                                     ? 'Pass'
@@ -389,9 +389,9 @@ const Dashboard = () => {
                                 </p>
                               </div>
                               {annotator.passStatus === 'pass' ? (
-                                <TrendingUp className="w-4 h-4 text-green-500" />
+                                <TrendingUp className="w-4 h-4 text-blue-600" />
                               ) : (
-                                <TrendingDown className="w-4 h-4 text-red-500" />
+                                <TrendingDown className="w-4 h-4 text-blue-400" />
                               )}
                             </div>
                           </div>
@@ -439,7 +439,7 @@ const Dashboard = () => {
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2">
                               <div
-                                className="bg-purple-500 h-2 rounded-full transition-all"
+                                className="bg-blue-500 h-2 rounded-full transition-all"
                                 style={{ width: `${percent}%` }}
                               ></div>
                             </div>

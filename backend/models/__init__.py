@@ -48,6 +48,8 @@ from .assignment import (
     Assignment,
     AssignmentCreate,
     BulkAssignmentCreate,
+    AssignmentPreviewItem,
+    BulkAssignmentPreview,
     AssignmentStatus,
 )
 from .email_send import EmailSend, EmailStatus
@@ -109,6 +111,8 @@ __all__ = [
     "Assignment",
     "AssignmentCreate",
     "BulkAssignmentCreate",
+    "AssignmentPreviewItem",
+    "BulkAssignmentPreview",
     "AssignmentStatus",
     "EmailSend",
     "EmailStatus",

@@ -45,24 +45,24 @@ export const colors = {
     800: '#262626',
     900: '#171717',
   },
-  // Status colors
+  // Status colors (blue theme)
   status: {
-    info: '#48dbfb',
-    success: '#10b981',
-    warning: '#feca57',
-    error: '#ef4444',
+    info: '#3b82f6',
+    success: '#0ea5e9',
+    warning: '#38bdf8',
+    error: '#60a5fa',
   },
 }
 
 /**
- * Gradient definitions using Tailwind classes
+ * Gradient definitions using Tailwind classes (blue theme)
  */
 export const gradients = {
-  primary: 'bg-gradient-to-br from-brand-400 to-brand-600',
-  accent: 'bg-gradient-to-br from-accent-400 to-accent-600',
-  info: 'bg-gradient-to-br from-blue-400 to-cyan-500',
-  success: 'bg-gradient-to-br from-green-400 to-emerald-600',
-  purple: 'bg-gradient-to-br from-purple-500 to-indigo-600',
+  primary: 'bg-gradient-to-br from-blue-400 to-blue-600',
+  accent: 'bg-gradient-to-br from-blue-500 to-blue-700',
+  info: 'bg-gradient-to-br from-blue-300 to-blue-500',
+  light: 'bg-gradient-to-br from-blue-200 to-blue-400',
+  dark: 'bg-gradient-to-br from-blue-600 to-blue-800',
 }
 
 /**
@@ -70,11 +70,11 @@ export const gradients = {
  * Use Tailwind gradient classes above when possible
  */
 export const cssGradients = {
-  primary: 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)',
-  accent: 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)',
-  info: 'linear-gradient(135deg, #48dbfb 0%, #0abde3 100%)',
-  success: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-  purple: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+  primary: 'linear-gradient(135deg, #60a5fa 0%, #2563eb 100%)',
+  accent: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',
+  info: 'linear-gradient(135deg, #93c5fd 0%, #3b82f6 100%)',
+  light: 'linear-gradient(135deg, #bfdbfe 0%, #60a5fa 100%)',
+  dark: 'linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%)',
 }
 
 /**
@@ -89,37 +89,37 @@ export const shadows = {
 }
 
 /**
- * Status badge styles
+ * Status badge styles (blue theme)
  */
 export const statusStyles = {
   completed: {
-    className: 'bg-green-50 text-green-600 border-green-200',
+    className: 'bg-blue-50 text-blue-700 border-blue-200',
     label: 'Completed',
   },
   in_progress: {
-    className: 'bg-yellow-50 text-yellow-600 border-yellow-200',
+    className: 'bg-blue-100 text-blue-600 border-blue-300',
     label: 'In Progress',
   },
   pending: {
-    className: 'bg-neutral-100 text-neutral-600 border-neutral-300',
+    className: 'bg-blue-50 text-blue-500 border-blue-200',
     label: 'Pending',
   },
   failed: {
-    className: 'bg-red-50 text-red-600 border-red-200',
+    className: 'bg-blue-100 text-blue-400 border-blue-200',
     label: 'Failed',
   },
 }
 
 /**
- * Icon background styles for stat cards
+ * Icon background styles for stat cards (blue theme)
  */
 export const iconBackgrounds = {
   brand: 'bg-brand-50 text-brand-500',
   accent: 'bg-accent-50 text-accent-500',
-  purple: 'bg-purple-50 text-purple-500',
-  blue: 'bg-blue-50 text-blue-500',
-  green: 'bg-green-50 text-green-500',
-  yellow: 'bg-yellow-50 text-yellow-500',
+  primary: 'bg-blue-100 text-blue-600',
+  secondary: 'bg-blue-50 text-blue-500',
+  light: 'bg-blue-50 text-blue-400',
+  dark: 'bg-blue-600 text-blue-50',
 }
 
 /**

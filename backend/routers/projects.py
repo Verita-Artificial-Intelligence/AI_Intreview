@@ -1,6 +1,12 @@
 from fastapi import APIRouter, Query, HTTPException, Depends
 from typing import Optional
-from models import Project, ProjectCreate, ProjectUpdate, BulkAssignmentCreate
+from models import (
+    Project,
+    ProjectCreate,
+    ProjectUpdate,
+    BulkAssignmentCreate,
+    BulkAssignmentPreview,
+)
 from services.project_service import ProjectService
 from services.assignment_service import AssignmentService
 from services.email_service import EmailService
@@ -116,6 +122,85 @@ async def get_assignments(project_id: str):
     - List of assignments with candidate details
     """
     return await ProjectService.get_assignments(project_id)
+
+
+@router.post("/{project_id}/assignments/preview")
+async def preview_assignment_emails(project_id: str, bulk_data: BulkAssignmentPreview):
+    """
+    Preview assignment notification emails before sending.
+
+    Returns recipient list and email content without creating assignments.
+
+    Body:
+    - assignments: List of {candidate_id, role (optional)}
+
+    Returns:
+    - project_name: Name of the project
+    - recipients: List of {name, email, role} for each candidate
+    - email_subject: Subject line of the email
+    - email_body: Plain text email content (sample using first candidate)
+    """
+    from repositories import CandidateRepository, InterviewRepository
+    from services.email_templates import get_assignment_email_text
+    from config import settings
+
+    # Verify project exists
+    project = await ProjectService.get_project(project_id)
+
+    recipients = []
+    first_candidate_name = None
+    first_role = None
+
+    for assignment_data in bulk_data.assignments:
+        candidate_id = assignment_data.candidate_id
+        role = assignment_data.role
+
+        # Fetch candidate details
+        candidate_doc = await CandidateRepository.find_by_id(candidate_id)
+        if not candidate_doc:
+            continue
+
+        candidate_name = candidate_doc.get("name", "Candidate")
+        candidate_email = candidate_doc.get("email", "")
+
+        recipients.append(
+            {
+                "name": candidate_name,
+                "email": candidate_email,
+                "role": role,
+            }
+        )
+
+        # Store first candidate's info
+        if first_candidate_name is None:
+            first_candidate_name = candidate_name
+            first_role = role
+
+    # Generate email body
+    # If multiple recipients, use template placeholder; if single, use actual name
+    if len(recipients) > 1:
+        display_name = "[Candidate Name]"
+        display_role = first_role  # Use first role as example, or generic if mixed
+    else:
+        display_name = first_candidate_name or "Candidate"
+        display_role = first_role
+
+    sample_email_body = get_assignment_email_text(
+        candidate_name=display_name,
+        project_name=project.name,
+        role=display_role,
+        company_name=settings.COMPANY_NAME,
+        support_email=settings.SUPPORT_EMAIL,
+    )
+
+    email_subject = f"You've been assigned to {project.name}"
+
+    return {
+        "project_name": project.name,
+        "recipients": recipients,
+        "email_subject": email_subject,
+        "email_body": sample_email_body,
+    }
 
 
 @router.post("/{project_id}/assignments/bulk")

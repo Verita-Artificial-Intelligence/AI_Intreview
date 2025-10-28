@@ -27,3 +27,14 @@ class AssignmentCreate(BaseModel):
 
 class BulkAssignmentCreate(BaseModel):
     assignments: List[AssignmentCreate]
+
+
+class AssignmentPreviewItem(BaseModel):
+    """Simplified assignment for preview - project_id comes from URL"""
+
+    candidate_id: str
+    role: Optional[str] = None
+
+
+class BulkAssignmentPreview(BaseModel):
+    assignments: List[AssignmentPreviewItem]

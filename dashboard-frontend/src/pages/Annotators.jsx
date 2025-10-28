@@ -34,6 +34,7 @@ import {
 } from 'lucide-react'
 import DashboardLayout from '@/components/DashboardLayout'
 import { toast } from 'sonner'
+import EmailPreviewModal from '@/components/EmailPreviewModal'
 
 export default function Annotators() {
   const navigate = useNavigate()
@@ -72,6 +73,7 @@ export default function Annotators() {
   // Selection and assignment state
   const [selectedAnnotators, setSelectedAnnotators] = useState([])
   const [showAssignUI, setShowAssignUI] = useState(false)
+  const [showPreviewModal, setShowPreviewModal] = useState(false)
   const [projects, setProjects] = useState([])
   const [selectedProject, setSelectedProject] = useState('')
   const [assigning, setAssigning] = useState(false)
@@ -255,9 +257,7 @@ export default function Annotators() {
       await api.post(`/projects/${selectedProject}/assignments/bulk`, {
         assignments,
       })
-      toast.success(
-        `Successfully assigned ${selectedAnnotators.length} annotator(s) to project`
-      )
+      setShowPreviewModal(false)
       setShowAssignUI(false)
       setSelectedAnnotators([])
       setSelectedProject('')
@@ -593,7 +593,10 @@ export default function Annotators() {
                 </Button>
                 <Button
                   size="sm"
-                  onClick={handleBulkAssign}
+                  onClick={() => {
+                    setShowAssignUI(false)
+                    setTimeout(() => setShowPreviewModal(true), 150)
+                  }}
                   disabled={!selectedProject || assigning}
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                 >
@@ -626,6 +629,18 @@ export default function Annotators() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Email Preview Modal */}
+      <EmailPreviewModal
+        open={showPreviewModal}
+        onClose={() => setShowPreviewModal(false)}
+        projectId={selectedProject}
+        assignments={selectedAnnotators.map((candidateId) => ({
+          candidate_id: candidateId,
+          role: null,
+        }))}
+        onConfirm={handleBulkAssign}
+      />
 
       {/* Annotator Profile Sheet - Read-only when viewing others' accounts */}
       <AnnotatorProfileSheetNew
