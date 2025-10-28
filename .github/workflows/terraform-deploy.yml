@@ -81,7 +81,6 @@ jobs:
         working-directory: ./terraform
         run: |
           terraform plan \
-            -var-file="environments/dev.tfvars" \
             -var-file="secrets.tfvars" \
             -out=tfplan
         env:
@@ -92,7 +91,6 @@ jobs:
         working-directory: ./terraform
         run: |
           terraform plan \
-            -var-file="environments/prod.tfvars" \
             -var-file="secrets.tfvars" \
             -out=tfplan
         env:
