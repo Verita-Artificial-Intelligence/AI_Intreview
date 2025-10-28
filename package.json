@@ -10,6 +10,12 @@
     "lint-staged": "^15.2.11"
   },
   "lint-staged": {
+    "dashboard-frontend/package.json": [
+      "cd dashboard-frontend && npm install --package-lock-only && git add package-lock.json"
+    ],
+    "interview-frontend/package.json": [
+      "cd interview-frontend && npm install --package-lock-only && git add package-lock.json"
+    ],
     "dashboard-frontend/**/*.{js,jsx,ts,tsx,json,css,scss,md}": [
       "npx prettier --write"
     ],
