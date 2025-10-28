@@ -348,13 +348,16 @@ Summary:""",
             # Generate analysis using OpenAI
             framework_name = "Creative Portfolio & Process Assessment"
 
+            # Ensure skills is always a list, never None
+            candidate_skills = candidate.get("skills") or []
+
             analysis_prompt = get_analysis_prompt(
                 framework_name=framework_name,
                 candidate_name=candidate["name"],
                 candidate_position=interview_doc.get(
                     "job_title", "Creative Professional"
                 ),
-                candidate_skills=candidate.get("skills", []),
+                candidate_skills=candidate_skills,
                 candidate_experience_years=candidate.get("experience_years", 0),
                 conversation=conversation,
             )

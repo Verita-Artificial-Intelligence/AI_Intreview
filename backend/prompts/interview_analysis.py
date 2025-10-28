@@ -33,7 +33,20 @@ def get_analysis_prompt(
     Returns:
         Formatted prompt string for AI analysis
     """
-    skills_str = ", ".join(candidate_skills)
+    # Handle None or empty skills, and ensure all items are strings
+    if not candidate_skills:
+        skills_str = "Not specified"
+    else:
+        # Convert skill objects to strings if needed (e.g., {"name": "X"} -> "X")
+        skills_list = []
+        for skill in candidate_skills:
+            if isinstance(skill, str):
+                skills_list.append(skill)
+            elif isinstance(skill, dict) and "name" in skill:
+                skills_list.append(skill["name"])
+            elif skill:
+                skills_list.append(str(skill))
+        skills_str = ", ".join(skills_list) if skills_list else "Not specified"
 
     return f"""As an expert interview analyst, evaluate this creative professional interview using the {framework_name} framework.
 Be critical and realistic - this is for creative roles (filmmakers, musicians, writers, UI designers, etc.), not technical positions.
