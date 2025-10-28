@@ -14,6 +14,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from uuid import uuid4
 
 from config import settings
+from database import get_interviews_collection
 from services.realtime_service import RealtimeService
 from services.audio_buffer import AudioBuffer
 from services.audio_mixer import AudioMixer

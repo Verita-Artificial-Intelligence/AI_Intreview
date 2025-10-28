@@ -30,7 +30,14 @@ import ColumnFilterDropdown from '../components/ColumnFilterDropdown'
 import ProjectDetailSheetNew from '../components/ProjectDetailSheetNew'
 import AnnotatorProfileSheetNew from '../components/AnnotatorProfileSheetNew'
 import { useSheetState } from '@/hooks/useSheetState'
-import { Plus, FolderKanban } from 'lucide-react'
+import {
+  Plus,
+  FolderKanban,
+  X,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+} from 'lucide-react'
 import DashboardLayout from '../components/DashboardLayout'
 
 export default function Projects() {
@@ -44,8 +51,21 @@ export default function Projects() {
   // Filters
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [sortBy, setSortBy] = useState('updated_desc')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(25)
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchTerm('')
+    setStatusFilter('all')
+    setSortBy('updated_desc')
+    setPage(1)
+  }
+
+  // Check if any filters are active
+  const hasActiveFiltersProjects =
+    statusFilter !== 'all' || searchTerm.trim() !== ''
 
   // Create dialog
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
@@ -69,7 +89,7 @@ export default function Projects() {
 
   useEffect(() => {
     fetchProjects()
-  }, [page, pageSize, statusFilter])
+  }, [page, pageSize, statusFilter, sortBy])
 
   const fetchProjects = async () => {
     try {
@@ -77,6 +97,7 @@ export default function Projects() {
       const params = {
         page,
         page_size: pageSize,
+        sort: sortBy,
       }
 
       if (searchTerm) params.query = searchTerm
@@ -191,8 +212,27 @@ export default function Projects() {
         ),
     }),
     createColumn('updated_at', 'Last Updated', {
-      width: 140,
+      width: 160,
       className: 'text-left border-l border-gray-200',
+      headerRender: () => (
+        <button
+          onClick={() =>
+            setSortBy((prev) =>
+              prev === 'updated_desc' ? 'updated_asc' : 'updated_desc'
+            )
+          }
+          className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 transition-colors text-[11px] font-medium w-full"
+        >
+          <span>Last Updated</span>
+          {sortBy === 'updated_desc' ? (
+            <ArrowDown className="w-3 h-3" />
+          ) : sortBy === 'updated_asc' ? (
+            <ArrowUp className="w-3 h-3" />
+          ) : (
+            <ArrowUpDown className="w-3 h-3 opacity-50" />
+          )}
+        </button>
+      ),
       render: (_, project) => (
         <span className="text-sm text-gray-600">
           {formatDate(project.updated_at)}
@@ -222,6 +262,19 @@ export default function Projects() {
       search={searchTerm}
       onSearchChange={(e) => setSearchTerm(e.target.value)}
       searchPlaceholder="Search by project name..."
+      leftActions={
+        hasActiveFiltersProjects && (
+          <Button
+            onClick={clearFilters}
+            variant="outline"
+            size="sm"
+            className="text-xs h-9 border-gray-300 text-gray-700 hover:bg-gray-50"
+          >
+            <X className="w-3.5 h-3.5 mr-1.5" />
+            Clear Filters
+          </Button>
+        )
+      }
       actionButton={
         <Button
           onClick={() => setCreateDialogOpen(true)}

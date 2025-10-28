@@ -9,7 +9,14 @@ import DataTable, {
 import ColumnFilterDropdown from '@/components/ColumnFilterDropdown'
 import InterviewDetailSheetNew from '@/components/InterviewDetailSheetNew'
 import { useSheetState } from '@/hooks/useSheetState'
-import { MessagesSquare } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  MessagesSquare,
+  X,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+} from 'lucide-react'
 
 const Pipeline = () => {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -26,6 +33,7 @@ const Pipeline = () => {
   const [jobFilter, setJobFilter] = useState(jobParam || 'all')
   const [resultFilter, setResultFilter] = useState(resultParam || 'all')
   const [density] = useState('compact')
+  const [sortBy, setSortBy] = useState('updated_desc')
 
   useEffect(() => {
     fetchData()
@@ -77,8 +85,23 @@ const Pipeline = () => {
       )
     }
 
+    // Apply sort
+    if (sortBy === 'updated_desc') {
+      list.sort((a, b) => {
+        const dateA = new Date(a.updated_at || a.created_at).getTime()
+        const dateB = new Date(b.updated_at || b.created_at).getTime()
+        return dateB - dateA // Most recent first
+      })
+    } else if (sortBy === 'updated_asc') {
+      list.sort((a, b) => {
+        const dateA = new Date(a.updated_at || a.created_at).getTime()
+        const dateB = new Date(b.updated_at || b.created_at).getTime()
+        return dateA - dateB // Oldest first
+      })
+    }
+
     return list
-  }, [interviews, search, statusFilter, jobFilter, resultFilter])
+  }, [interviews, search, statusFilter, jobFilter, resultFilter, sortBy])
 
   const getInitials = (name) => {
     if (!name) return 'U'
@@ -94,6 +117,7 @@ const Pipeline = () => {
     setJobFilter('all')
     setResultFilter('all')
     setSearch('')
+    setSortBy('updated_desc')
     setSearchParams({})
   }
 
@@ -239,16 +263,38 @@ const Pipeline = () => {
       },
     }),
     createColumn('updated', 'Updated', {
-      width: 100,
+      width: 140,
       className: 'text-left border-l border-gray-200',
-      render: (_, interview) => (
-        <span
-          className="text-xs text-gray-500"
-          title={new Date(interview.created_at).toLocaleString()}
+      headerRender: () => (
+        <button
+          onClick={() =>
+            setSortBy((prev) =>
+              prev === 'updated_desc' ? 'updated_asc' : 'updated_desc'
+            )
+          }
+          className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 transition-colors text-[11px] font-medium w-full"
         >
-          {columnRenderers.date(interview.created_at)}
-        </span>
+          <span>Updated</span>
+          {sortBy === 'updated_desc' ? (
+            <ArrowDown className="w-3 h-3" />
+          ) : sortBy === 'updated_asc' ? (
+            <ArrowUp className="w-3 h-3" />
+          ) : (
+            <ArrowUpDown className="w-3 h-3 opacity-50" />
+          )}
+        </button>
       ),
+      render: (_, interview) => {
+        const date = interview.updated_at || interview.created_at
+        return (
+          <span
+            className="text-xs text-gray-500"
+            title={new Date(date).toLocaleString()}
+          >
+            {columnRenderers.date(date)}
+          </span>
+        )
+      },
     }),
   ]
 
@@ -257,6 +303,19 @@ const Pipeline = () => {
       search={search}
       onSearchChange={(e) => setSearch(e.target.value)}
       searchPlaceholder="Search by candidates, jobs, or interviews..."
+      leftActions={
+        hasActiveFilters && (
+          <Button
+            onClick={clearFilters}
+            variant="outline"
+            size="sm"
+            className="text-xs h-9 border-gray-300 text-gray-700 hover:bg-gray-50"
+          >
+            <X className="w-3.5 h-3.5 mr-1.5" />
+            Clear Filters
+          </Button>
+        )
+      }
     >
       <DataTable
         columns={columns}

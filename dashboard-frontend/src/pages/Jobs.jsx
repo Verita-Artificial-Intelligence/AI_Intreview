@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import api from '@/utils/api'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Plus, FileText, MessagesSquare } from 'lucide-react'
+import { Plus, FileText, MessagesSquare, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import DataTable, {
   createColumn,
@@ -31,6 +31,23 @@ const Jobs = () => {
   const [interviewTypeFilter, setInterviewTypeFilter] = useState('all')
   const [skillsFilter, setSkillsFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
+
+  // Clear all filters
+  const clearFilters = () => {
+    setTitleFilter('all')
+    setInterviewTypeFilter('all')
+    setSkillsFilter('all')
+    setStatusFilter('all')
+    setSearchQuery('')
+  }
+
+  // Check if any filters are active
+  const hasActiveFilters =
+    titleFilter !== 'all' ||
+    interviewTypeFilter !== 'all' ||
+    skillsFilter !== 'all' ||
+    statusFilter !== 'all' ||
+    searchQuery.trim() !== ''
 
   // Deep link support: Open sheet if job parameter is in URL on initial load
   useEffect(() => {
@@ -74,6 +91,15 @@ const Jobs = () => {
   }, [titleFilter, searchParams, setSearchParams])
 
   useEffect(() => {
+    console.log('[Jobs Filter] Running filter effect', {
+      titleFilter,
+      interviewTypeFilter,
+      skillsFilter,
+      statusFilter,
+      searchQuery,
+      totalJobs: jobs.length,
+    })
+
     let filtered = [...jobs]
 
     // Search filter
@@ -85,32 +111,49 @@ const Jobs = () => {
           job.position_type.toLowerCase().includes(query) ||
           job.description.toLowerCase().includes(query)
       )
+      console.log('[Jobs Filter] After search:', filtered.length)
     }
 
     // Title filter
     if (titleFilter && titleFilter !== 'all') {
+      console.log('[Jobs Filter] Applying title filter:', titleFilter)
+      console.log(
+        '[Jobs Filter] Sample job IDs:',
+        jobs.slice(0, 3).map((j) => ({ id: j.id, type: typeof j.id }))
+      )
       filtered = filtered.filter((job) => job.id === titleFilter)
+      console.log('[Jobs Filter] After title filter:', filtered.length)
     }
 
     // Interview Type filter
     if (interviewTypeFilter && interviewTypeFilter !== 'all') {
+      console.log(
+        '[Jobs Filter] Applying interview type filter:',
+        interviewTypeFilter
+      )
       filtered = filtered.filter(
         (job) => job.interview_type === interviewTypeFilter
       )
+      console.log('[Jobs Filter] After interview type filter:', filtered.length)
     }
 
     // Skills filter
     if (skillsFilter && skillsFilter !== 'all') {
+      console.log('[Jobs Filter] Applying skills filter:', skillsFilter)
       filtered = filtered.filter((job) =>
         job.skills?.some((skill) => skill.name === skillsFilter)
       )
+      console.log('[Jobs Filter] After skills filter:', filtered.length)
     }
 
     // Status filter
     if (statusFilter && statusFilter !== 'all') {
+      console.log('[Jobs Filter] Applying status filter:', statusFilter)
       filtered = filtered.filter((job) => job.status === statusFilter)
+      console.log('[Jobs Filter] After status filter:', filtered.length)
     }
 
+    console.log('[Jobs Filter] Final filtered count:', filtered.length)
     setFilteredJobs(filtered)
   }, [
     searchQuery,
@@ -380,6 +423,19 @@ const Jobs = () => {
       search={searchQuery}
       onSearchChange={(e) => setSearchQuery(e.target.value)}
       searchPlaceholder="Search jobs by title, type, or description..."
+      leftActions={
+        hasActiveFilters && (
+          <Button
+            onClick={clearFilters}
+            variant="outline"
+            size="sm"
+            className="text-xs h-9 border-gray-300 text-gray-700 hover:bg-gray-50"
+          >
+            <X className="w-3.5 h-3.5 mr-1.5" />
+            Clear Filters
+          </Button>
+        )
+      }
       actionButton={
         <Button
           onClick={() => openSheet('job', 'new')}

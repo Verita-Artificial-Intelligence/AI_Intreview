@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import api from '@/utils/api'
+import api, { API_BASE_URL } from '@/utils/api'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import {
@@ -121,8 +121,8 @@ const AdminInterviewReview = () => {
       setTranscriptUnavailable(false)
 
       const interviewPromise = api.get(`/interviews/${interviewId}`)
-      const messagesPromise = axios
-        .get(`${API}/interviews/${interviewId}/messages`)
+      const messagesPromise = api
+        .get(`/interviews/${interviewId}/messages`)
         .then((res) => res.data)
         .catch((error) => {
           if (error.response?.status === 404) {
@@ -135,8 +135,8 @@ const AdminInterviewReview = () => {
           }
           throw error
         })
-      const reviewPromise = axios
-        .get(`${API}/admin/review/${interviewId}`)
+      const reviewPromise = api
+        .get(`/admin/review/${interviewId}`)
         .catch((error) => {
           console.warn('Review endpoint unavailable:', error.message)
           return null
@@ -199,16 +199,19 @@ const AdminInterviewReview = () => {
           ? reviewRes.data.recordings
           : []
 
+        // Get backend URL from API_BASE_URL (remove /api suffix if present)
+        const backendUrl = API_BASE_URL.replace(/\/api$/, '')
+
         const normalizedRecordings = recordings
           .map((value) => {
             if (!value) return null
             if (value.startsWith('http://') || value.startsWith('https://')) {
               return value
             }
-            if (!BACKEND_URL) return value
-            const base = BACKEND_URL.endsWith('/')
-              ? BACKEND_URL.slice(0, -1)
-              : BACKEND_URL
+            if (!backendUrl) return value
+            const base = backendUrl.endsWith('/')
+              ? backendUrl.slice(0, -1)
+              : backendUrl
             const path = value.startsWith('/') ? value : `/${value}`
             return `${base}${path}`
           })

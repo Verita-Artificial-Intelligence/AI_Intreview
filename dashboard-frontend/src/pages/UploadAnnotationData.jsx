@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import api from '@/utils/api'
+import api, { API_BASE_URL } from '@/utils/api'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -188,7 +188,8 @@ const UploadAnnotationData = () => {
             } catch (uploadError) {
               console.error('File upload error:', uploadError)
               // Fallback: create a placeholder URL
-              dataUrl = `${BACKEND_URL}/uploads/${file.name}`
+              const backendUrl = API_BASE_URL.replace(/\/api$/, '')
+              dataUrl = `${backendUrl}/uploads/${file.name}`
             }
 
             // Create annotation data entry

@@ -28,6 +28,9 @@ import {
   Search,
   ChevronDown,
   X,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react'
 import DashboardLayout from '@/components/DashboardLayout'
 import { toast } from 'sonner'
@@ -48,6 +51,18 @@ export default function Annotators() {
   const [sortBy, setSortBy] = useState('score_desc')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(25)
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchTerm('')
+    setJobFilter('all')
+    setStatusFilter('all')
+    setPage(1)
+  }
+
+  // Check if any filters are active
+  const hasActiveFiltersAnnotators =
+    jobFilter !== 'all' || statusFilter !== 'all' || searchTerm.trim() !== ''
 
   // UI state
   const [retryDialogOpen, setRetryDialogOpen] = useState(false)
@@ -411,8 +426,31 @@ export default function Annotators() {
       ),
     }),
     createColumn('lastActivity', 'Last Activity', {
-      width: 140,
+      width: 160,
       className: 'text-left border-l border-gray-200',
+      headerRender: () => (
+        <button
+          onClick={() => {
+            if (sortBy === 'activity_desc') {
+              setSortBy('activity_asc')
+            } else if (sortBy === 'activity_asc') {
+              setSortBy('score_desc')
+            } else {
+              setSortBy('activity_desc')
+            }
+          }}
+          className="flex items-center gap-1.5 text-gray-600 hover:text-gray-900 transition-colors text-[11px] font-medium w-full"
+        >
+          <span>Last Activity</span>
+          {sortBy === 'activity_desc' ? (
+            <ArrowDown className="w-3 h-3" />
+          ) : sortBy === 'activity_asc' ? (
+            <ArrowUp className="w-3 h-3" />
+          ) : (
+            <ArrowUpDown className="w-3 h-3 opacity-50" />
+          )}
+        </button>
+      ),
       render: (_, item) => (
         <span className="text-sm text-neutral-600">
           {formatDate(item.lastActivity)}
@@ -439,21 +477,34 @@ export default function Annotators() {
       onSearchChange={(e) => setSearchTerm(e.target.value)}
       searchPlaceholder="Search by name or email..."
       leftActions={
-        <Button
-          ref={assignButtonRef}
-          onClick={() => setShowAssignUI(!showAssignUI)}
-          disabled={selectedAnnotators.length === 0}
-          className={
-            selectedAnnotators.length > 0
-              ? 'bg-blue-600 hover:bg-blue-700 text-white'
-              : 'bg-gray-200 text-gray-600 cursor-not-allowed border border-gray-300'
-          }
-        >
-          <FolderKanban className="w-4 h-4 mr-2" />
-          {selectedAnnotators.length > 0
-            ? `Assign ${selectedAnnotators.length} to Project`
-            : 'Assign to Project'}
-        </Button>
+        <>
+          <Button
+            ref={assignButtonRef}
+            onClick={() => setShowAssignUI(!showAssignUI)}
+            disabled={selectedAnnotators.length === 0}
+            className={
+              selectedAnnotators.length > 0
+                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                : 'bg-gray-200 text-gray-600 cursor-not-allowed border border-gray-300'
+            }
+          >
+            <FolderKanban className="w-4 h-4 mr-2" />
+            {selectedAnnotators.length > 0
+              ? `Assign ${selectedAnnotators.length} to Project`
+              : 'Assign to Project'}
+          </Button>
+          {hasActiveFiltersAnnotators && (
+            <Button
+              onClick={clearFilters}
+              variant="outline"
+              size="sm"
+              className="text-xs h-9 border-gray-300 text-gray-700 hover:bg-gray-50 ml-2"
+            >
+              <X className="w-3.5 h-3.5 mr-1.5" />
+              Clear Filters
+            </Button>
+          )}
+        </>
       }
     >
       <DataTable

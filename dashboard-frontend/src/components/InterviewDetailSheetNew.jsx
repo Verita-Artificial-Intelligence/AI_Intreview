@@ -150,24 +150,24 @@ export default function InterviewDetailSheet({
             title={interview.candidate_name || 'Unknown Candidate'}
             subtitle={interview.job_title || 'No Job Title'}
             avatarFallback={getInitials(interview.candidate_name)}
-            actions={[
-              {
-                label:
-                  interview.status === 'completed'
-                    ? 'Open Full Review'
-                    : 'Open Interview',
-                icon: interview.status === 'completed' ? FileText : PlayCircle,
-                variant: 'default',
-                onClick: () => {
-                  const route =
-                    interview.status === 'completed'
-                      ? `/admin/review/${interviewId}`
-                      : `/interview/${interviewId}`
-                  navigate(route)
-                  onOpenChange(false)
-                },
-              },
-            ]}
+            actions={
+              interview.status === 'completed'
+                ? [
+                    {
+                      label: 'Open Full Review',
+                      icon: FileText,
+                      variant: 'default',
+                      onClick: () => {
+                        onOpenChange(false)
+                        setTimeout(
+                          () => navigate(`/admin/review/${interviewId}`),
+                          100
+                        )
+                      },
+                    },
+                  ]
+                : []
+            }
           />
 
           {/* Candidate Bio */}

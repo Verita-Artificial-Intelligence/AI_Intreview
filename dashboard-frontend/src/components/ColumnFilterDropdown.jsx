@@ -29,6 +29,7 @@ export default function ColumnFilterDropdown({
     width: 0,
   })
   const dropdownRef = useRef(null)
+  const portalRef = useRef(null)
   const buttonRef = useRef(null)
   const searchInputRef = useRef(null)
 
@@ -61,7 +62,22 @@ export default function ColumnFilterDropdown({
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      console.log('[ColumnFilterDropdown] Click outside check')
+      const isClickInsideButton =
+        dropdownRef.current && dropdownRef.current.contains(event.target)
+      const isClickInsidePortal =
+        portalRef.current && portalRef.current.contains(event.target)
+
+      console.log('[ColumnFilterDropdown] Click locations:', {
+        insideButton: isClickInsideButton,
+        insidePortal: isClickInsidePortal,
+        target: event.target.tagName,
+      })
+
+      if (!isClickInsideButton && !isClickInsidePortal) {
+        console.log(
+          '[ColumnFilterDropdown] Closing dropdown - click was outside'
+        )
         setIsOpen(false)
         setSearchQuery('')
       }
@@ -86,9 +102,16 @@ export default function ColumnFilterDropdown({
   }, [isOpen, searchable])
 
   const handleSelect = (optionValue) => {
+    console.log('[ColumnFilterDropdown] Selected:', {
+      label,
+      optionValue,
+      currentValue: value,
+    })
     // Always call onChange, even if selecting the same value (for reset behavior)
     if (onChange) {
       onChange(optionValue)
+    } else {
+      console.warn('[ColumnFilterDropdown] No onChange handler provided!')
     }
     setIsOpen(false)
     setSearchQuery('')
@@ -100,9 +123,11 @@ export default function ColumnFilterDropdown({
         type="button"
         ref={buttonRef}
         onClick={(e) => {
+          console.log('[ColumnFilterDropdown] Header button clicked:', label)
           e.preventDefault()
           e.stopPropagation()
           setIsOpen(!isOpen)
+          console.log('[ColumnFilterDropdown] isOpen will be:', !isOpen)
         }}
         className="flex items-center gap-1 w-full cursor-pointer hover:text-gray-900 transition-colors"
       >
@@ -122,6 +147,7 @@ export default function ColumnFilterDropdown({
       {isOpen &&
         createPortal(
           <div
+            ref={portalRef}
             className="fixed w-64 bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden"
             style={{
               top: `${dropdownPosition.top}px`,
@@ -168,9 +194,20 @@ export default function ColumnFilterDropdown({
                     type="button"
                     key={option.value}
                     onClick={(e) => {
+                      console.log(
+                        '[ColumnFilterDropdown] Option clicked:',
+                        option.label,
+                        option.value
+                      )
                       e.preventDefault()
                       e.stopPropagation()
                       handleSelect(option.value)
+                    }}
+                    onMouseDown={(e) => {
+                      console.log(
+                        '[ColumnFilterDropdown] Option mousedown:',
+                        option.label
+                      )
                     }}
                     className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 transition-colors ${
                       value === option.value

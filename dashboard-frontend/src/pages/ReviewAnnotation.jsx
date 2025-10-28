@@ -8,10 +8,6 @@ import { ArrowLeft, Star } from 'lucide-react'
 import { toast } from 'sonner'
 import Sidebar from '../components/Sidebar'
 
-const API = process.env.REACT_APP_BACKEND_URL
-  ? `${process.env.REACT_APP_BACKEND_URL}/api`
-  : 'http://localhost:8000/api'
-
 export default function ReviewAnnotation() {
   const { taskId } = useParams()
   const navigate = useNavigate()
