@@ -24,6 +24,7 @@ import UploadAnnotationData from './pages/UploadAnnotationData'
 import Annotators from './pages/Annotators'
 import ReviewAnnotation from './pages/ReviewAnnotation'
 import AdminDataExplorer from './pages/AdminDataExplorer'
+import Account from './pages/Account'
 
 // Error pages
 import NotFound from './pages/NotFound'
@@ -122,6 +123,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Annotators />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/account"
+            element={
+              <ProtectedRoute>
+                <Account />
               </ProtectedRoute>
             }
           />

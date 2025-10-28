@@ -1,23 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import api from '@/utils/api'
 import { useNavigate } from 'react-router-dom'
-import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,13 +17,8 @@ import DataTable, {
   createColumn,
   columnRenderers,
 } from '@/components/DataTable'
-import {
-  ChevronLeft,
-  ChevronRight,
-  MoreVertical,
-  RotateCcw,
-  AlertCircle,
-} from 'lucide-react'
+import ColumnFilterDropdown from '@/components/ColumnFilterDropdown'
+import { RotateCcw, AlertCircle } from 'lucide-react'
 import DashboardLayout from '@/components/DashboardLayout'
 
 export default function Annotators() {
@@ -52,7 +32,7 @@ export default function Annotators() {
   const [searchTerm, setSearchTerm] = useState('')
   const [jobFilter, setJobFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [sortBy, setSortBy] = useState('accepted_date_desc')
+  const [sortBy, setSortBy] = useState('score_desc')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(25)
 
@@ -135,15 +115,9 @@ export default function Annotators() {
       return (
         <div className="flex items-center gap-2">
           <span className="font-semibold text-neutral-900">{item.score}</span>
-          <Badge
-            className={
-              isPassing
-                ? 'bg-green-100 text-green-800 hover:bg-green-100'
-                : 'bg-red-100 text-red-800 hover:bg-red-100'
-            }
-          >
+          <span className={`badge ${isPassing ? 'badge-green' : 'badge-red'}`}>
             {isPassing ? 'Pass' : 'Fail'}
-          </Badge>
+          </span>
         </div>
       )
     } else if (item.scoreStatus === 'pending') {
@@ -184,19 +158,45 @@ export default function Annotators() {
   // Table columns configuration
   const columns = [
     createColumn('name', 'Name', {
+      frozen: true,
+      width: 180,
+      minWidth: 140,
       render: (_, item) => (
         <div className="font-medium text-neutral-900">{item.candidateName}</div>
       ),
     }),
     createColumn('email', 'Email', {
+      width: 200,
       render: (_, item) => (
         <span className="text-sm text-neutral-600">{item.candidateEmail}</span>
       ),
     }),
     createColumn('job', 'Job Posting', {
-      render: (_, item) => <span className="text-sm">{item.jobTitle}</span>,
+      frozen: true,
+      width: 180,
+      minWidth: 140,
+      headerRender: () => (
+        <ColumnFilterDropdown
+          label="Job"
+          value={jobFilter}
+          options={[
+            { value: 'all', label: 'All Jobs' },
+            ...jobs.map((j) => ({ value: j.id, label: j.job_title })),
+          ]}
+          onChange={setJobFilter}
+          searchable={true}
+          placeholder="Search jobs..."
+        />
+      ),
+      render: (_, item) => (
+        <span className="text-sm">
+          {item.jobTitle || item.job_title || '-'}
+        </span>
+      ),
     }),
     createColumn('projects', 'Projects', {
+      width: 140,
+      className: 'text-left border-l border-gray-200',
       render: (_, item) => {
         if (item.projectCount > 0) {
           return (
@@ -212,9 +212,26 @@ export default function Annotators() {
       },
     }),
     createColumn('score', 'AI Score', {
+      width: 140,
+      className: 'text-left border-l border-gray-200',
+      headerRender: () => (
+        <ColumnFilterDropdown
+          label="AI Score"
+          value={statusFilter}
+          options={[
+            { value: 'all', label: 'All Status' },
+            { value: 'pass', label: 'Pass' },
+            { value: 'fail', label: 'Fail' },
+          ]}
+          onChange={setStatusFilter}
+          searchable={false}
+        />
+      ),
       render: (_, item) => renderScore(item),
     }),
     createColumn('acceptedDate', 'Accepted Date', {
+      width: 140,
+      className: 'text-left border-l border-gray-200',
       render: (_, item) => (
         <span className="text-sm text-neutral-600">
           {formatDate(item.acceptedDate)}
@@ -222,32 +239,12 @@ export default function Annotators() {
       ),
     }),
     createColumn('lastActivity', 'Last Activity', {
+      width: 140,
+      className: 'text-left border-l border-gray-200',
       render: (_, item) => (
         <span className="text-sm text-neutral-600">
           {formatDate(item.lastActivity)}
         </span>
-      ),
-    }),
-    createColumn('actions', 'Actions', {
-      className: 'text-right',
-      render: (_, item) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => navigate(`/candidates`)}>
-              View Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => navigate(`/admin/review/${item.interviewId}`)}
-            >
-              Open Interview Report
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       ),
     }),
   ]
@@ -270,66 +267,26 @@ export default function Annotators() {
       onSearchChange={(e) => setSearchTerm(e.target.value)}
       searchPlaceholder="Search by name or email..."
     >
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Filters */}
-        <div className="mb-4 flex gap-3 flex-wrap">
-          <Select value={jobFilter} onValueChange={setJobFilter}>
-            <SelectTrigger className="w-44 h-10 rounded-lg text-sm border-neutral-300 focus:border-brand-500">
-              <SelectValue placeholder="Job" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Jobs</SelectItem>
-              {jobs.map((job) => (
-                <SelectItem key={job.id} value={job.id}>
-                  {job.job_title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-32 h-10 rounded-lg text-sm border-neutral-300 focus:border-brand-500">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="pass">Pass</SelectItem>
-              <SelectItem value="fail">Fail</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-44 h-10 rounded-lg text-sm border-neutral-300 focus:border-brand-500">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="score_desc">Score (High to Low)</SelectItem>
-              <SelectItem value="score_asc">Score (Low to High)</SelectItem>
-              <SelectItem value="accepted_date_desc">Date (Newest)</SelectItem>
-              <SelectItem value="accepted_date_asc">Date (Oldest)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Annotators Table */}
-        <DataTable
-          columns={columns}
-          data={items}
-          loading={loading}
-          pagination={paginationConfig}
-          emptyState={
-            <div className="p-10 text-center bg-surface border border-neutral-200 rounded-xl shadow-card">
-              <p className="text-sm text-neutral-600 mb-3">
-                No accepted annotators found. Only candidates who have been
-                explicitly accepted as annotators appear here.
-              </p>
-              <p className="text-xs text-neutral-500">
-                Regular candidates (not yet accepted as annotators) are shown in
-                the Candidates view.
-              </p>
-            </div>
-          }
-          size="md"
-        />
-      </div>
+      <DataTable
+        columns={columns}
+        data={items}
+        loading={loading}
+        density="compact"
+        frozenColumns={['name', 'job']}
+        pagination={paginationConfig}
+        emptyState={
+          <div className="p-10 text-center bg-surface border border-neutral-200 rounded-xl shadow-card">
+            <p className="text-sm text-neutral-600 mb-3">
+              No accepted annotators found. Only candidates who have been
+              explicitly accepted as annotators appear here.
+            </p>
+            <p className="text-xs text-neutral-500">
+              Regular candidates (not yet accepted as annotators) are shown in
+              the Candidates view.
+            </p>
+          </div>
+        }
+      />
 
       {/* Retry Scoring Dialog */}
       <AlertDialog open={retryDialogOpen} onOpenChange={setRetryDialogOpen}>

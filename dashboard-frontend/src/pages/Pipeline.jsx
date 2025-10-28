@@ -17,14 +17,10 @@ const Pipeline = () => {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const statusParam = searchParams.get('status')
-  const candidateParam = searchParams.get('candidate')
   const jobParam = searchParams.get('job')
   const resultParam = searchParams.get('result')
 
   const [statusFilter, setStatusFilter] = useState(statusParam || 'all')
-  const [candidateFilter, setCandidateFilter] = useState(
-    candidateParam || 'all'
-  )
   const [jobFilter, setJobFilter] = useState(jobParam || 'all')
   const [resultFilter, setResultFilter] = useState(resultParam || 'all')
   const [density] = useState('compact')
@@ -58,11 +54,6 @@ const Pipeline = () => {
       list = list.filter((i) => (i.status || '').toLowerCase() === statusFilter)
     }
 
-    // Apply candidate filter
-    if (candidateFilter && candidateFilter !== 'all') {
-      list = list.filter((i) => i.candidate_id === candidateFilter)
-    }
-
     // Apply job filter
     if (jobFilter && jobFilter !== 'all') {
       list = list.filter((i) => i.job_id === jobFilter)
@@ -87,14 +78,7 @@ const Pipeline = () => {
     }
 
     return list
-  }, [
-    interviews,
-    search,
-    statusFilter,
-    candidateFilter,
-    jobFilter,
-    resultFilter,
-  ])
+  }, [interviews, search, statusFilter, jobFilter, resultFilter])
 
   const getInitials = (name) => {
     if (!name) return 'U'
@@ -107,7 +91,6 @@ const Pipeline = () => {
 
   const clearFilters = () => {
     setStatusFilter('all')
-    setCandidateFilter('all')
     setJobFilter('all')
     setResultFilter('all')
     setSearch('')
@@ -116,7 +99,6 @@ const Pipeline = () => {
 
   const hasActiveFilters =
     (statusFilter && statusFilter !== 'all') ||
-    (candidateFilter && candidateFilter !== 'all') ||
     (jobFilter && jobFilter !== 'all') ||
     (resultFilter && resultFilter !== 'all') ||
     Boolean(search)
@@ -125,12 +107,10 @@ const Pipeline = () => {
   useEffect(() => {
     const next = new URLSearchParams()
     if (statusFilter && statusFilter !== 'all') next.set('status', statusFilter)
-    if (candidateFilter && candidateFilter !== 'all')
-      next.set('candidate', candidateFilter)
     if (jobFilter && jobFilter !== 'all') next.set('job', jobFilter)
     if (resultFilter && resultFilter !== 'all') next.set('result', resultFilter)
     setSearchParams(next)
-  }, [statusFilter, candidateFilter, jobFilter, resultFilter, setSearchParams])
+  }, [statusFilter, jobFilter, resultFilter, setSearchParams])
 
   // Production table columns - optimized order and layout
   const columns = [
@@ -138,19 +118,6 @@ const Pipeline = () => {
       frozen: true,
       width: 220,
       minWidth: 180,
-      headerRender: () => (
-        <ColumnFilterDropdown
-          label="Candidate"
-          value={candidateFilter}
-          options={[
-            { value: 'all', label: 'All Candidates' },
-            ...candidates.map((c) => ({ value: c.id, label: c.name })),
-          ]}
-          onChange={setCandidateFilter}
-          searchable={true}
-          placeholder="Search candidates..."
-        />
-      ),
       render: (_, interview) => (
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded bg-blue-100 flex items-center justify-center text-xs font-medium text-blue-800 flex-shrink-0">

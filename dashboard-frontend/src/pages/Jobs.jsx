@@ -1,38 +1,13 @@
 import { useState, useEffect } from 'react'
 import api from '@/utils/api'
 import { useNavigate } from 'react-router-dom'
-import {
-  Briefcase,
-  Plus,
-  FileText,
-  MessagesSquare,
-  Pencil,
-  MoreVertical,
-  Eye,
-} from 'lucide-react'
-import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import { Plus, FileText, MessagesSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import DataTable, {
   createColumn,
   columnRenderers,
 } from '@/components/DataTable'
+import ColumnFilterDropdown from '@/components/ColumnFilterDropdown'
 import DashboardLayout from '@/components/DashboardLayout'
 import JobForm from '@/components/JobForm'
 
@@ -44,39 +19,71 @@ const Jobs = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [showJobForm, setShowJobForm] = useState(false)
   const [editingJob, setEditingJob] = useState(null)
-  const [showStatusDialog, setShowStatusDialog] = useState(false)
-  const [statusTransition, setStatusTransition] = useState(null)
+
+  // Column filters
+  const [titleFilter, setTitleFilter] = useState('all')
+  const [interviewTypeFilter, setInterviewTypeFilter] = useState('all')
+  const [skillsFilter, setSkillsFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
 
   useEffect(() => {
     fetchJobs()
   }, [])
 
   useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setFilteredJobs(jobs)
-    } else {
+    let filtered = [...jobs]
+
+    // Search filter
+    if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
-      setFilteredJobs(
-        jobs.filter(
-          (job) =>
-            job.title.toLowerCase().includes(query) ||
-            job.position_type.toLowerCase().includes(query) ||
-            job.description.toLowerCase().includes(query)
-        )
+      filtered = filtered.filter(
+        (job) =>
+          job.title.toLowerCase().includes(query) ||
+          job.position_type.toLowerCase().includes(query) ||
+          job.description.toLowerCase().includes(query)
       )
     }
-  }, [searchQuery, jobs])
+
+    // Title filter
+    if (titleFilter && titleFilter !== 'all') {
+      filtered = filtered.filter((job) => job.id === titleFilter)
+    }
+
+    // Interview Type filter
+    if (interviewTypeFilter && interviewTypeFilter !== 'all') {
+      filtered = filtered.filter(
+        (job) => job.interview_type === interviewTypeFilter
+      )
+    }
+
+    // Skills filter
+    if (skillsFilter && skillsFilter !== 'all') {
+      filtered = filtered.filter((job) =>
+        job.skills?.some((skill) => skill.name === skillsFilter)
+      )
+    }
+
+    // Status filter
+    if (statusFilter && statusFilter !== 'all') {
+      filtered = filtered.filter((job) => job.status === statusFilter)
+    }
+
+    setFilteredJobs(filtered)
+  }, [
+    searchQuery,
+    jobs,
+    titleFilter,
+    interviewTypeFilter,
+    skillsFilter,
+    statusFilter,
+  ])
 
   const fetchJobs = async () => {
     try {
       setLoading(true)
       const response = await api.get('/jobs')
-      // Filter out completed and archived jobs - only show active jobs
-      const activeJobs = response.data.filter(
-        (job) => job.status === 'pending' || job.status === 'in_progress'
-      )
-      setJobs(activeJobs)
-      setFilteredJobs(activeJobs)
+      setJobs(response.data)
+      setFilteredJobs(response.data)
     } catch (error) {
       console.error('Error fetching jobs:', error)
     } finally {
@@ -115,10 +122,6 @@ const Jobs = () => {
     setEditingJob(null)
   }
 
-  const handleViewInterviews = (jobId) => {
-    navigate(`/interviews?job=${jobId}`)
-  }
-
   // Centralized interview type labels (matching backend/config/interview_type_definitions.py)
   const getInterviewTypeLabel = (type) => {
     const labels = {
@@ -130,111 +133,33 @@ const Jobs = () => {
     return labels[type] || type
   }
 
-  const getStatusBadge = (status) => {
-    const badges = {
-      pending: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Pending' },
-      in_progress: {
-        bg: 'bg-yellow-100',
-        text: 'text-yellow-800',
-        label: 'In Progress',
-      },
-      archived: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Archived' },
-    }
-    return badges[status] || badges.pending
-  }
-
-  const getNextStatus = (currentStatus) => {
-    const transitions = {
-      pending: 'in_progress',
-      in_progress: 'completed',
-      completed: 'archived',
-      archived: null,
-    }
-    return transitions[currentStatus]
-  }
-
-  const getNextStatusLabel = (currentStatus) => {
-    const labels = {
-      pending: 'Move to In Progress',
-      in_progress: 'Mark as Completed',
-      completed: 'Archive Job',
-      archived: null,
-    }
-    return labels[currentStatus]
-  }
-
-  const getStatusTransitionMessage = (currentStatus, nextStatus) => {
-    const messages = {
-      in_progress: {
-        title: 'Move Job to In Progress?',
-        message:
-          'You will no longer be able to add new annotation data. Annotators will be able to start working on assigned tasks. Are you sure?',
-      },
-      completed: {
-        title: 'Mark Job as Completed?',
-        message:
-          'All annotation work for this job will be marked as complete. Make sure all tasks are finished.',
-      },
-      archived: {
-        title: 'Archive This Job?',
-        message:
-          'This job will be moved to archived jobs. You can view it later in the archived section.',
-      },
-    }
-    return (
-      messages[nextStatus] || {
-        title: 'Change Status?',
-        message: 'Are you sure?',
-      }
-    )
-  }
-
-  const handleStatusChange = async (job) => {
-    const nextStatus = getNextStatus(job.status)
-    if (!nextStatus) return
-
-    // If moving to completed, check if all tasks are done
-    if (nextStatus === 'completed') {
-      try {
-        const response = await api.get(`/jobs/${job.id}/can-complete`)
-        if (!response.data.can_complete) {
-          alert(`Cannot mark as completed: ${response.data.reason}`)
-          return
-        }
-      } catch (error) {
-        console.error('Error checking job completion:', error)
-        alert('Failed to check if job can be completed')
-        return
-      }
-    }
-
-    setStatusTransition({
-      job,
-      nextStatus,
-      ...getStatusTransitionMessage(job.status, nextStatus),
-    })
-    setShowStatusDialog(true)
-  }
-
-  const confirmStatusChange = async () => {
-    if (!statusTransition) return
-
-    try {
-      await api.put(`/jobs/${statusTransition.job.id}/status`, {
-        status: statusTransition.nextStatus,
-      })
-      setShowStatusDialog(false)
-      setStatusTransition(null)
-      fetchJobs()
-    } catch (error) {
-      console.error('Error updating job status:', error)
-      alert(error.response?.data?.detail || 'Failed to update job status')
-    }
-  }
+  // Get unique values for filters
+  const uniqueInterviewTypes = [
+    ...new Set(jobs.map((j) => j.interview_type)),
+  ].filter(Boolean)
+  const uniqueSkills = [
+    ...new Set(jobs.flatMap((j) => j.skills?.map((s) => s.name) || [])),
+  ].filter(Boolean)
 
   // Table columns configuration
   const columns = [
     createColumn('title', 'Job Title', {
+      frozen: true,
+      width: 220,
+      minWidth: 180,
+      headerRender: () => (
+        <ColumnFilterDropdown
+          label="Job Title"
+          value={titleFilter}
+          options={[
+            { value: 'all', label: 'All Jobs' },
+            ...jobs.map((j) => ({ value: j.id, label: j.title })),
+          ]}
+          onChange={setTitleFilter}
+          searchable={true}
+          placeholder="Search jobs..."
+        />
+      ),
       render: (_, job) => (
         <div>
           <div className="font-semibold text-neutral-900">{job.title}</div>
@@ -254,6 +179,23 @@ const Jobs = () => {
       ),
     }),
     createColumn('interview_type', 'Interview Type', {
+      width: 220,
+      className: 'text-left border-l border-gray-200',
+      headerRender: () => (
+        <ColumnFilterDropdown
+          label="Interview Type"
+          value={interviewTypeFilter}
+          options={[
+            { value: 'all', label: 'All Types' },
+            ...uniqueInterviewTypes.map((type) => ({
+              value: type,
+              label: getInterviewTypeLabel(type),
+            })),
+          ]}
+          onChange={setInterviewTypeFilter}
+          searchable={false}
+        />
+      ),
       render: (_, job) => (
         <div className="flex items-center gap-2">
           <FileText className="w-4 h-4 text-neutral-400" />
@@ -264,6 +206,21 @@ const Jobs = () => {
       ),
     }),
     createColumn('skills', 'Skills', {
+      width: 200,
+      className: 'text-left border-l border-gray-200',
+      headerRender: () => (
+        <ColumnFilterDropdown
+          label="Skills"
+          value={skillsFilter}
+          options={[
+            { value: 'all', label: 'All Skills' },
+            ...uniqueSkills.map((skill) => ({ value: skill, label: skill })),
+          ]}
+          onChange={setSkillsFilter}
+          searchable={true}
+          placeholder="Search skills..."
+        />
+      ),
       render: (_, job) => {
         if (!job.skills || job.skills.length === 0) {
           return <span className="text-sm text-gray-400">-</span>
@@ -289,53 +246,33 @@ const Jobs = () => {
       },
     }),
     createColumn('status', 'Status', {
+      width: 140,
+      className: 'text-left border-l border-gray-200',
+      headerRender: () => (
+        <ColumnFilterDropdown
+          label="Status"
+          value={statusFilter}
+          options={[
+            { value: 'all', label: 'All Statuses' },
+            { value: 'pending', label: 'Pending' },
+            { value: 'in_progress', label: 'In Progress' },
+            { value: 'completed', label: 'Completed' },
+            { value: 'archived', label: 'Archived' },
+          ]}
+          onChange={setStatusFilter}
+          searchable={false}
+        />
+      ),
       render: (_, job) => {
         const statusConfig = {
-          pending: {
-            bg: 'bg-blue-100',
-            text: 'text-blue-800',
-            label: 'Pending',
-          },
-          in_progress: {
-            bg: 'bg-yellow-100',
-            text: 'text-yellow-800',
-            label: 'In Progress',
-          },
-          archived: {
-            bg: 'bg-gray-100',
-            text: 'text-gray-800',
-            label: 'Archived',
-          },
+          pending: { bg: 'badge-blue', label: 'Pending' },
+          in_progress: { bg: 'badge-yellow', label: 'In Progress' },
+          completed: { bg: 'badge-green', label: 'Completed' },
+          archived: { bg: 'badge-gray', label: 'Archived' },
         }
-        return columnRenderers.status(job.status, statusConfig)
+        const config = statusConfig[job.status] || statusConfig.pending
+        return <span className={`badge ${config.bg}`}>{config.label}</span>
       },
-    }),
-    createColumn('actions', 'Actions', {
-      className: 'text-right',
-      render: (_, job) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleEditJob(job)}>
-              <Pencil className="w-4 h-4 mr-2" />
-              Edit Job
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleViewInterviews(job.id)}>
-              <Eye className="w-4 h-4 mr-2" />
-              View Interviews
-            </DropdownMenuItem>
-            {getNextStatus(job.status) && (
-              <DropdownMenuItem onClick={() => handleStatusChange(job)}>
-                {getNextStatusLabel(job.status)}
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
     }),
   ]
 
@@ -359,48 +296,47 @@ const Jobs = () => {
         </Button>
       }
     >
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <DataTable
-          columns={columns}
-          data={filteredJobs}
-          onRowClick={handleRowClick}
-          loading={loading}
-          emptyState={
-            <div className="p-10 text-center bg-surface border border-neutral-200 rounded-xl shadow-card">
-              <MessagesSquare
-                className="w-10 h-10 mx-auto mb-3 text-gray-300"
-                strokeWidth={1.5}
-              />
-              <p className="text-sm text-neutral-600 mb-3">
-                {searchQuery
-                  ? 'No jobs found matching your search'
-                  : 'No jobs yet. Create your first job posting to get started'}
-              </p>
-              {!searchQuery ? (
-                <Button
-                  onClick={() => setShowJobForm(true)}
-                  variant="outline"
-                  size="sm"
-                  className="rounded-lg font-normal text-xs h-8 px-3"
-                >
-                  <Plus className="w-3.5 h-3.5 mr-1.5" />
-                  Create Your First Job
-                </Button>
-              ) : (
-                <Button
-                  onClick={() => setSearchQuery('')}
-                  variant="outline"
-                  size="sm"
-                  className="rounded-lg font-normal text-xs h-8 px-3"
-                >
-                  Clear Search
-                </Button>
-              )}
-            </div>
-          }
-          size="md"
-        />
-      </div>
+      <DataTable
+        columns={columns}
+        data={filteredJobs}
+        onRowClick={handleRowClick}
+        loading={loading}
+        density="compact"
+        frozenColumns={['title']}
+        emptyState={
+          <div className="p-10 text-center bg-surface border border-neutral-200 rounded-xl shadow-card">
+            <MessagesSquare
+              className="w-10 h-10 mx-auto mb-3 text-gray-300"
+              strokeWidth={1.5}
+            />
+            <p className="text-sm text-neutral-600 mb-3">
+              {searchQuery
+                ? 'No jobs found matching your search'
+                : 'No jobs yet. Create your first job posting to get started'}
+            </p>
+            {!searchQuery ? (
+              <Button
+                onClick={() => setShowJobForm(true)}
+                variant="outline"
+                size="sm"
+                className="rounded-lg font-normal text-xs h-8 px-3"
+              >
+                <Plus className="w-3.5 h-3.5 mr-1.5" />
+                Create Your First Job
+              </Button>
+            ) : (
+              <Button
+                onClick={() => setSearchQuery('')}
+                variant="outline"
+                size="sm"
+                className="rounded-lg font-normal text-xs h-8 px-3"
+              >
+                Clear Search
+              </Button>
+            )}
+          </div>
+        }
+      />
 
       {/* Job Form Modal */}
       <JobForm
@@ -409,29 +345,6 @@ const Jobs = () => {
         onSubmit={handleSubmitJob}
         job={editingJob}
       />
-
-      {/* Status Transition Dialog */}
-      <AlertDialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{statusTransition?.title}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {statusTransition?.message}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setStatusTransition(null)}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmStatusChange}
-              className="bg-brand-500 hover:bg-brand-600"
-            >
-              Continue
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </DashboardLayout>
   )
 }

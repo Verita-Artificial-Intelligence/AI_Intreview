@@ -26,6 +26,7 @@ import DataTable, {
   createColumn,
   columnRenderers,
 } from '../components/DataTable'
+import ColumnFilterDropdown from '../components/ColumnFilterDropdown'
 import { Plus, FolderKanban } from 'lucide-react'
 import DashboardLayout from '../components/DashboardLayout'
 
@@ -134,6 +135,9 @@ export default function Projects() {
   // Table columns configuration
   const columns = [
     createColumn('name', 'Name', {
+      frozen: true,
+      width: 260,
+      minWidth: 200,
       render: (_, project) => (
         <div>
           <div className="font-semibold text-neutral-900">{project.name}</div>
@@ -146,28 +150,35 @@ export default function Projects() {
       ),
     }),
     createColumn('status', 'Status', {
+      width: 140,
+      className: 'text-left border-l border-gray-200',
+      headerRender: () => (
+        <ColumnFilterDropdown
+          label="Status"
+          value={statusFilter}
+          options={[
+            { value: 'all', label: 'All Status' },
+            { value: 'active', label: 'Active' },
+            { value: 'completed', label: 'Completed' },
+            { value: 'archived', label: 'Archived' },
+          ]}
+          onChange={setStatusFilter}
+          searchable={false}
+        />
+      ),
       render: (_, project) => {
         const statusConfig = {
-          active: {
-            bg: 'bg-green-100',
-            text: 'text-green-800',
-            label: 'Active',
-          },
-          completed: {
-            bg: 'bg-blue-100',
-            text: 'text-blue-800',
-            label: 'Completed',
-          },
-          archived: {
-            bg: 'bg-gray-100',
-            text: 'text-gray-800',
-            label: 'Archived',
-          },
+          active: { bg: 'badge-green', label: 'Active' },
+          completed: { bg: 'badge-blue', label: 'Completed' },
+          archived: { bg: 'badge-gray', label: 'Archived' },
         }
-        return columnRenderers.status(project.status, statusConfig)
+        const config = statusConfig[project.status] || statusConfig.active
+        return <span className={`badge ${config.bg}`}>{config.label}</span>
       },
     }),
     createColumn('capacity', 'Assigned / Capacity', {
+      width: 180,
+      className: 'text-left border-l border-gray-200',
       render: (_, project) =>
         columnRenderers.progress(
           project.assigned_count || 0,
@@ -176,6 +187,8 @@ export default function Projects() {
         ),
     }),
     createColumn('updated_at', 'Last Updated', {
+      width: 140,
+      className: 'text-left border-l border-gray-200',
       render: (_, project) => (
         <span className="text-sm text-gray-600">
           {formatDate(project.updated_at)}
@@ -215,52 +228,35 @@ export default function Projects() {
         </Button>
       }
     >
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Status Filter */}
-        <div className="mb-4">
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-40 h-10 rounded-lg text-sm">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="archived">Archived</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Projects Table */}
-        <DataTable
-          columns={columns}
-          data={projects}
-          onRowClick={handleRowClick}
-          loading={loading}
-          pagination={paginationConfig}
-          emptyState={
-            <div className="p-10 text-center bg-surface border border-neutral-200 rounded-xl shadow-card">
-              <FolderKanban
-                className="w-10 h-10 mx-auto mb-3 text-gray-300"
-                strokeWidth={1.5}
-              />
-              <p className="text-sm text-neutral-600 mb-3">
-                No projects yet. Create your first project to get started.
-              </p>
-              <Button
-                onClick={() => setCreateDialogOpen(true)}
-                variant="outline"
-                size="sm"
-                className="rounded-lg font-normal text-xs h-8 px-3"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Project
-              </Button>
-            </div>
-          }
-          size="md"
-        />
-      </div>
+      <DataTable
+        columns={columns}
+        data={projects}
+        onRowClick={handleRowClick}
+        loading={loading}
+        density="compact"
+        frozenColumns={['name']}
+        pagination={paginationConfig}
+        emptyState={
+          <div className="p-10 text-center bg-surface border border-neutral-200 rounded-xl shadow-card">
+            <FolderKanban
+              className="w-10 h-10 mx-auto mb-3 text-gray-300"
+              strokeWidth={1.5}
+            />
+            <p className="text-sm text-neutral-600 mb-3">
+              No projects yet. Create your first project to get started.
+            </p>
+            <Button
+              onClick={() => setCreateDialogOpen(true)}
+              variant="outline"
+              size="sm"
+              className="rounded-lg font-normal text-xs h-8 px-3"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Project
+            </Button>
+          </div>
+        }
+      />
 
       {/* Create Project Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
