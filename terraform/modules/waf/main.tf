@@ -21,10 +21,10 @@ resource "aws_wafv2_web_acl" "main" {
         name        = "AWSManagedRulesCommonRuleSet"
         vendor_name = "AWS"
 
-        # Exclude some rules if they cause false positives
+        # Allow file uploads by changing SizeRestrictions_BODY from block to count
         rule_action_override {
           action_to_use {
-            block {}
+            count {}
           }
 
           name = "SizeRestrictions_BODY"
