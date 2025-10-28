@@ -10,13 +10,15 @@ const api = axios.create({
 
 // Store the getToken function reference
 let clerkGetToken = null
+let clerkSignOut = null
 
 /**
- * Initialize the API client with Clerk's getToken function
+ * Initialize the API client with Clerk's getToken and signOut functions
  * This should be called from a component that has access to useAuth() from Clerk
  */
-export const initializeApiClient = (getTokenFn) => {
+export const initializeApiClient = (getTokenFn, signOutFn) => {
   clerkGetToken = getTokenFn
+  clerkSignOut = signOutFn
 }
 
 // Request interceptor to add Clerk token to all requests
@@ -46,10 +48,25 @@ api.interceptors.request.use(
 // Response interceptor for error handling
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid - Clerk will handle re-authentication
+  async (error) => {
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      // Token expired or invalid - sign out and redirect to login
       console.error('Authentication error - please sign in again')
+
+      if (clerkSignOut) {
+        try {
+          await clerkSignOut()
+          // Redirect to login page after sign out
+          window.location.href = '/login'
+        } catch (signOutError) {
+          console.error('Error signing out:', signOutError)
+          // Force redirect even if sign out fails
+          window.location.href = '/login'
+        }
+      } else {
+        // If clerkSignOut not available, just redirect
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }

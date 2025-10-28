@@ -19,12 +19,12 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  // Initialize API client with Clerk getToken function
+  // Initialize API client with Clerk getToken and signOut functions
   useEffect(() => {
-    if (getToken) {
-      initializeApiClient(getToken)
+    if (getToken && signOut) {
+      initializeApiClient(getToken, signOut)
     }
-  }, [getToken])
+  }, [getToken, signOut])
 
   // Fetch admin user profile when Clerk user is available AND getToken is ready
   useEffect(() => {
