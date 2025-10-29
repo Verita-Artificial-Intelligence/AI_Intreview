@@ -144,13 +144,13 @@ jobs:
         env:
           TF_LOG: INFO
 
-      - name: Terraform Apply (Prod) - Manual Approval Required
+      - name: Terraform Apply (Prod)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         working-directory: ./terraform
         run: |
-          echo "⚠️  Production apply requires manual approval in GitHub Environments"
-          echo "Plan complete. Review in GitHub Actions and approve to deploy."
-          terraform show tfplan
+          terraform apply -auto-approve tfplan
+        env:
+          TF_LOG: INFO
 
       - name: Get Terraform Outputs
         if: github.event_name == 'push'
