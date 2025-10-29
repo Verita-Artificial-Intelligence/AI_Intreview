@@ -7,6 +7,55 @@ resource "aws_wafv2_web_acl" "main" {
     allow {}
   }
 
+  # Allow WebSocket connections - must be first rule
+  rule {
+    name     = "AllowWebSocketConnections"
+    priority = 0
+
+    action {
+      allow {}
+    }
+
+    statement {
+      or_statement {
+        statement {
+          byte_match_statement {
+            field_to_match {
+              single_header {
+                name = "upgrade"
+              }
+            }
+            positional_constraint = "EXACTLY"
+            search_string         = "websocket"
+            text_transformation {
+              priority = 0
+              type     = "LOWERCASE"
+            }
+          }
+        }
+        statement {
+          byte_match_statement {
+            field_to_match {
+              uri_path {}
+            }
+            positional_constraint = "STARTS_WITH"
+            search_string         = "/ws/"
+            text_transformation {
+              priority = 0
+              type     = "LOWERCASE"
+            }
+          }
+        }
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "AllowWebSocketConnectionsMetric"
+      sampled_requests_enabled   = true
+    }
+  }
+
   # AWS Managed Rule - Common Rule Set (essential for production)
   rule {
     name     = "AWSManagedRulesCommonRuleSet"

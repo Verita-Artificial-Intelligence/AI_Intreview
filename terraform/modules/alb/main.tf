@@ -43,6 +43,9 @@ resource "aws_lb" "main" {
 
   enable_deletion_protection = var.environment == "prod"
 
+  # Increase idle timeout for WebSocket connections (default is 60 seconds)
+  idle_timeout = 3600 # 1 hour for long-running WebSocket connections
+
   tags = {
     Name = "${var.app_name}-alb"
   }

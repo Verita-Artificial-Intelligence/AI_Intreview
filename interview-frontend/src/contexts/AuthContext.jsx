@@ -67,7 +67,13 @@ export const AuthProvider = ({ children }) => {
   const completeProfile = async (profileData) => {
     try {
       const response = await api.put('/profile/complete', profileData)
+      // Immediately set the user from the response
       setUser(response.data)
+
+      // Fetch the user profile again to ensure backend state is synchronized
+      // This guarantees that profile_completed is properly set
+      await fetchUserProfile()
+
       return response.data
     } catch (error) {
       console.error('Error completing profile:', error)

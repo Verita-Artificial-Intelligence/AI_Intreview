@@ -253,13 +253,15 @@ export default function Onboarding() {
   const [verificationProgress, setVerificationProgress] = useState(0)
   const [verificationStep, setVerificationStep] = useState('')
   const [isVerified, setIsVerified] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Redirect to marketplace if profile is already complete
+  // Don't redirect during submission to avoid race condition
   useEffect(() => {
-    if (!authLoading && isProfileComplete) {
+    if (!authLoading && isProfileComplete && !isSubmitting) {
       navigate('/', { replace: true })
     }
-  }, [authLoading, isProfileComplete, navigate])
+  }, [authLoading, isProfileComplete, navigate, isSubmitting])
 
   const [formData, setFormData] = useState({
     // Step 1: Resume
@@ -605,6 +607,7 @@ export default function Onboarding() {
   const handleSubmit = async () => {
     try {
       setLoading(true)
+      setIsSubmitting(true)
       setIsVerifying(true)
       setVerificationProgress(0)
 
@@ -706,22 +709,24 @@ export default function Onboarding() {
         }
       }
 
-      // Call completeProfile
+      // Call completeProfile - this now includes a fetchUserProfile call
+      // to ensure state is synchronized with the backend before returning
       await completeProfile(profileData)
 
       // Verification Step 5: Finalizing
       setVerificationStep(`Finalizing setup for ${fullName}...`)
       setVerificationProgress(95)
-      await new Promise((resolve) => setTimeout(resolve, 1000))
 
       // Complete
       setVerificationProgress(100)
       setVerificationStep(`Verified! Welcome to Verita AI.`)
       setIsVerified(true)
 
-      // Wait a moment before navigating
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-      navigate('/')
+      // Wait briefly to show success state
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      // Navigate to home - state is now guaranteed to be updated
+      navigate('/', { replace: true })
     } catch (err) {
       console.error('Error completing onboarding:', err)
 
@@ -753,6 +758,7 @@ export default function Onboarding() {
       setError(errorMessage)
       setIsVerifying(false)
       setVerificationProgress(0)
+      setIsSubmitting(false)
     } finally {
       setLoading(false)
     }
