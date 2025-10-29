@@ -87,6 +87,12 @@ OPENAI_REALTIME_SILENCE_DURATION_STEP_MS = int(
 # WebSocket Configuration
 WS_HEARTBEAT_INTERVAL = 30  # seconds
 WS_MAX_MESSAGE_SIZE = 1024 * 1024 * 10  # 10MB for audio chunks
+WS_RECONNECT_MAX_ATTEMPTS = int(
+    os.environ.get("WS_RECONNECT_MAX_ATTEMPTS", "10")
+)  # Number of reconnection attempts (10 = ~2 minutes)
+WS_RECONNECT_MAX_BACKOFF = int(
+    os.environ.get("WS_RECONNECT_MAX_BACKOFF", "15")
+)  # Max backoff in seconds between attempts
 
 # Audio Configuration
 AUDIO_SAMPLE_RATE = 24000  # OpenAI Realtime API input/output
@@ -175,7 +181,7 @@ Your role is to lead a natural, conversational interview that progresses toward 
 5) Avoid helper/assistant phrasing (e.g., "I'm here to help", "How can I assist?") and avoid generic prompts like "What would you like to talk about?". You lead the interview.
 6) Use concise, professional language and be warm and encouraging.
 7) Use the STAR method for behavioral questions when appropriate.
-8) After 5–7 exchanges, summarize key strengths/concerns and conclude.
+8) After 5–7 exchanges, summarize key strengths/concerns and conclude by thanking them for their time and asking if they have any questions for you. Tell them they're welcome to end the call when they're ready, or you're happy to answer any questions they have about the role or company. Do NOT use the end_conversation function - let the candidate control when to hang up.
 
 Questioning Style for Creative Roles:
 - Focus on the candidate's creative process, problem-solving, and portfolio.
@@ -197,6 +203,8 @@ If the candidate only greets or gives a very short answer, acknowledge briefly a
     # WebSocket
     WS_HEARTBEAT_INTERVAL = WS_HEARTBEAT_INTERVAL
     WS_MAX_MESSAGE_SIZE = WS_MAX_MESSAGE_SIZE
+    WS_RECONNECT_MAX_ATTEMPTS = WS_RECONNECT_MAX_ATTEMPTS
+    WS_RECONNECT_MAX_BACKOFF = WS_RECONNECT_MAX_BACKOFF
 
     # Audio
     AUDIO_SAMPLE_RATE = AUDIO_SAMPLE_RATE
