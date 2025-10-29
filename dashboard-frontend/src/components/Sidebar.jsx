@@ -13,10 +13,12 @@ import {
   User,
   FolderKanban,
 } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function Sidebar() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { logout } = useAuth()
 
   const isActive = (path) => {
     if (path === '/') {
@@ -84,8 +86,8 @@ export default function Sidebar() {
             <span className="flex-1 text-left">Account</span>
           </button>
           <button
-            onClick={() => {
-              // Add logout logic here
+            onClick={async () => {
+              await logout()
               navigate('/login')
             }}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-neutral-600 hover:bg-red-50 hover:text-red-600 transition-colors"
