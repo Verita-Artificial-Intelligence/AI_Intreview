@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import api from '@/utils/api'
+import api, { BACKEND_URL } from '@/utils/api'
 import { AvatarCanvas } from '../components/avatar/AvatarCanvas.tsx'
 import { InterviewControls } from '../components/interview/InterviewControls.tsx'
 import { useInterviewStore } from '../store/interviewStore.ts'
@@ -15,7 +15,6 @@ import { VideoRecorder } from '../services/videoRecorder.ts'
 import { v4 as uuidv4 } from 'uuid'
 import { useAuth } from '../contexts/AuthContext'
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000'
 const WS_URL = BACKEND_URL.replace('http', 'ws')
 
 export default function RealtimeInterview() {

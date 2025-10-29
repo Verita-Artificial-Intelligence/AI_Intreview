@@ -45,27 +45,50 @@ api.interceptors.request.use(
   }
 )
 
+// Track if we're already handling auth error to prevent loops
+let isHandlingAuthError = false
+
 // Response interceptor for error handling
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401 || error.response?.status === 403) {
+    const status = error.response?.status
+    const errorDetail = error.response?.data?.detail || ''
+
+    // Only redirect on auth errors, and avoid redirect loops
+    if ((status === 401 || status === 403) && !isHandlingAuthError) {
+      // Check if it's a Clerk instance mismatch (config issue, not expired token)
+      const isInstanceMismatch =
+        errorDetail.includes('Unable to find a signin key') ||
+        errorDetail.includes('Token verification failed')
+
+      if (isInstanceMismatch) {
+        console.error('Clerk instance configuration mismatch:', errorDetail)
+        console.error(
+          'Frontend and backend are using different Clerk instances.'
+        )
+        console.error(
+          'Please check your REACT_APP_CLERK_PUBLISHABLE_KEY and backend CLERK_ADMIN_* environment variables.'
+        )
+        // Don't auto-logout for config errors, just show in console
+        return Promise.reject(error)
+      }
+
       // Token expired or invalid - sign out and redirect to login
       console.error('Authentication error - please sign in again')
+      isHandlingAuthError = true
 
       if (clerkSignOut) {
         try {
           await clerkSignOut()
-          // Redirect to login page after sign out
-          window.location.href = '/login'
+          // Use window.location.replace to avoid adding to history
+          window.location.replace('/login')
         } catch (signOutError) {
           console.error('Error signing out:', signOutError)
-          // Force redirect even if sign out fails
-          window.location.href = '/login'
+          window.location.replace('/login')
         }
       } else {
-        // If clerkSignOut not available, just redirect
-        window.location.href = '/login'
+        window.location.replace('/login')
       }
     }
     return Promise.reject(error)

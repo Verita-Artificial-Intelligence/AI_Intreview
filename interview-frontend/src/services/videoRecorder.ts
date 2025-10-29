@@ -4,8 +4,7 @@
  */
 
 import { getAuthToken } from '../utils/auth.js'
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000'
+import { BACKEND_URL } from '../utils/api.js'
 
 export class VideoRecorder {
   private mediaRecorder: MediaRecorder | null = null
