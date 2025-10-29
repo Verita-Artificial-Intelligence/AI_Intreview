@@ -98,7 +98,7 @@ jobs:
         run: |
           terraform plan \
             -var-file="secrets.tfvars" \
-            -var="app_name=verita-ai-interview-prod" \
+            -var="app_name=verita-ai-prod" \
             -out=tfplan
         env:
           TF_LOG: INFO
