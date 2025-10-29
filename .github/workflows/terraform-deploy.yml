@@ -72,9 +72,15 @@ jobs:
           echo "${{ secrets.TF_VARS_FILE_PROD }}" | base64 -d > secrets.tfvars
         shell: bash
 
-      - name: Terraform Init
+      - name: Terraform Init (Dev)
+        if: github.ref != 'refs/heads/main'
         working-directory: ./terraform
-        run: terraform init -backend=true
+        run: terraform init -backend-config="key=verita-ai-interview/dev/terraform.tfstate"
+
+      - name: Terraform Init (Prod)
+        if: github.ref == 'refs/heads/main'
+        working-directory: ./terraform
+        run: terraform init -backend-config="key=verita-ai-interview/prod/terraform.tfstate"
 
       - name: Terraform Plan (Dev)
         if: github.ref != 'refs/heads/main'
